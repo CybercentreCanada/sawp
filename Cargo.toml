@@ -1,0 +1,13 @@
+[package]
+name = "sawp"
+version = "0.1.0"
+authors = ["cccs-rtmorti"]
+description = "Security Aware Wire Protocol parsing library"
+readme = "README.md"
+edition = "2018"
+license-file = "LICENSE"
+
+[lib]
+crate-type = ["staticlib", "rlib", "cdylib"]
+
+[dependencies]
