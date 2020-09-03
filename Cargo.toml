@@ -1,13 +1,23 @@
 [package]
 name = "sawp"
 version = "0.1.0"
-authors = ["cccs-rtmorti"]
+authors = ["cccs-rtmorti", "cccs-sadugas"]
 description = "Security Aware Wire Protocol parsing library"
 readme = "README.md"
 edition = "2018"
 license-file = "LICENSE"
 
+[workspace]
+members = [
+    "sawp-modbus"
+]
+
 [lib]
 crate-type = ["staticlib", "rlib", "cdylib"]
 
-[dependencies]
+[dev-dependencies]
+criterion = "0.3"
+
+[[bench]]
+name = "modbus"
+harness = false
