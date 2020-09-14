@@ -17,7 +17,7 @@ impl Protocol for Modbus {
 }
 
 impl Parse for Modbus {
-    fn parse(_input: &[u8]) -> Result<(usize, Self::Message)> {
+    fn parse(_input: &[u8]) -> Result<(&[u8], Self::Message)> {
         Err(Error::new(ErrorKind::Unimplemented))
     }
 }
@@ -36,6 +36,9 @@ mod tests {
     )]
     #[test]
     fn test_modbus(input: &[u8], expected: Result<(usize, <Modbus as Protocol>::Message)>) {
-        assert_eq!(Modbus::parse(input), expected);
+        assert_eq!(
+            Modbus::parse(input).map(|(left, msg)| (left.len(), msg)),
+            expected
+        );
     }
 }
