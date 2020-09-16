@@ -1,0 +1,14 @@
+[package]
+name = "sawp-file"
+version = "0.1.0"
+authors = ["cccs-sadugas"]
+description = "SAWP File Format"
+readme = "../README.md"
+edition = "2018"
+license-file = "../LICENSE"
+
+[dependencies]
+sawp = { path = ".." }
+rmp-serde = "0.14.4"
+serde = "1.0.116"
+serde_derive = "1.0.116"

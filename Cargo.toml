@@ -9,7 +9,8 @@ license-file = "LICENSE"
 
 [workspace]
 members = [
-    "sawp-modbus"
+    "sawp-modbus",
+    "sawp-file",
 ]
 
 [lib]
