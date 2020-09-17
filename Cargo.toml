@@ -21,3 +21,10 @@ criterion = "0.3"
 [[bench]]
 name = "modbus"
 harness = false
+
+[package.metadata.rpm.cargo]
+buildflags = ["--release"]
+
+[package.metadata.rpm.targets]
+"libsawp.so" = { path = "/usr/local/lib/libsawp.so" }
+"libsawp_modbus.so" = { path = "/usr/local/lib/libsawp_modbus.so" }

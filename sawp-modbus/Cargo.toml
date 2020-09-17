@@ -10,5 +10,8 @@ license-file = "../LICENSE"
 sawp = { path = ".." }
 nom = "5.1.2"
 
+[lib]
+crate-type = ["cdylib"]
+
 [dev-dependencies]
 rstest = "0.6.4"

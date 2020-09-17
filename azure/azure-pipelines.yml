@@ -1,0 +1,90 @@
+# Default pipeline to build, check and test SAWP
+
+# Run daily at midnight UTC if there has been a code change since the last scheduled run
+schedules:
+- cron: "0 0 * * *"
+  displayName: Daily midnight build
+  branches:
+    include:
+    - master
+
+resources:
+- repo: self
+
+jobs:
+- job: test_SAWP
+  displayName: Test SAWP
+  pool: sawp-builders
+  steps:
+    # SAWP Steps
+    # ==============
+    - checkout: self
+      path: sawp
+  
+    # Set PATH
+    - script: echo "##vso[task.setvariable variable=PATH;]$PATH:$HOME/.cargo/bin"
+      displayName: set PATH
+      workingDirectory: $(Agent.BuildDirectory)/sawp
+    
+    # Check code formatting differences
+    - script: cargo fmt --all -- --check
+      displayName: check fmt
+      workingDirectory: $(Agent.BuildDirectory)/sawp
+    
+    # Build project
+    - script: cargo build --workspace --all-targets --all-features --release
+      displayName: build
+      workingDirectory: $(Agent.BuildDirectory)/sawp
+    
+    # Check linting warnings
+    - script: cargo clippy --workspace --all-targets --all-features -- -D warnings
+      displayName: check clippy
+      workingDirectory: $(Agent.BuildDirectory)/sawp
+
+    # TODO: Build documentation
+    #- script: cargo doc
+    #  displayName: make documentation
+    #  workingDirectory: $(Agent.BuildDirectory)/sawp
+
+    # Run the unit tests
+    - script: cargo test --workspace --all-targets --all-features
+      displayName: run tests
+      workingDirectory: $(Agent.BuildDirectory)/sawp
+
+    # Check code coverage
+    - script: |
+        OUTPUT=$(cargo tarpaulin -v --all --all-features)
+        echo "${OUTPUT}"
+
+        if [[ $(echo "${OUTPUT}" | tail -1 | cut -d ' ' -f 1) < 75 ]]
+        then
+            echo "Coverage does not meet required percentage"
+            exit 1
+        fi
+      displayName: check code coverage
+      workingDirectory: $(Agent.BuildDirectory)/sawp
+
+    # Make rpm/deb
+    - script: cargo rpm build -v
+      displayName: make rpm
+      workingDirectory: $(Agent.BuildDirectory)/sawp
+    
+    # Make deb
+    - script: cargo deb -v
+      displayName: make deb
+      workingDirectory: $(Agent.BuildDirectory)/sawp
+
+    # TODO: Add Suricata integration test
+    # Checkout Suricata
+    #- checkout: suricata
+    #  path: suricata
+
+    # TODO: Add CD integration test
+    # Checkout Cyberdeck
+    #- checkout: cyberdeck
+    #  path: cyberdeck
+
+    # TODO: Add CSP integration test
+    # Checkout CSP
+    #- checkout: csp
+    #  path: csp
