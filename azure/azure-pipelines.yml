@@ -51,6 +51,11 @@ jobs:
       displayName: run tests
       workingDirectory: $(Agent.BuildDirectory)/sawp
 
+    # Build fuzz
+    - script: cargo +nightly fuzz build
+      displayName: build fuzz
+      workingDirectory: $(Agent.BuildDirectory)/sawp
+
     # Check code coverage
     - script: |
         OUTPUT=$(cargo tarpaulin -v --all --all-features)
