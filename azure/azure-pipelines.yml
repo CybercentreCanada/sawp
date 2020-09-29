@@ -53,7 +53,7 @@ jobs:
 
     # Check code coverage
     - script: |
-        OUTPUT=$(cargo tarpaulin -v --all --all-features)
+        OUTPUT=$(cargo tarpaulin -v --all --all-features --out Xml)
         echo "${OUTPUT}"
 
         if [[ $(echo "${OUTPUT}" | tail -1 | cut -d ' ' -f 1) < 75 ]]
@@ -63,6 +63,12 @@ jobs:
         fi
       displayName: check code coverage
       workingDirectory: $(Agent.BuildDirectory)/sawp
+
+    # Publish the code coverage reports
+    - task: PublishCodeCoverageResults@1
+      inputs:
+        codeCoverageTool: 'cobertura'
+        summaryFileLocation: cobertura.xml
 
     # Make rpm/deb
     - script: cargo rpm build -v
