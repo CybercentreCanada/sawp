@@ -20,11 +20,6 @@ jobs:
     # ==============
     - checkout: self
       path: sawp
-  
-    # Set PATH
-    - script: echo "##vso[task.setvariable variable=PATH;]$PATH:$HOME/.cargo/bin"
-      displayName: set PATH
-      workingDirectory: $(Agent.BuildDirectory)/sawp
     
     # Check code formatting differences
     - script: cargo fmt --all -- --check
