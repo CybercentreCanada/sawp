@@ -9,6 +9,7 @@ license-file = "../LICENSE"
 [dependencies]
 sawp = { path = ".." }
 nom = "5.1.2"
+num_enum = "0.5.1"
 
 [lib]
 crate-type = ["cdylib", "rlib"]

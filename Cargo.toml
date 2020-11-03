@@ -19,6 +19,9 @@ crate-type = ["staticlib", "rlib", "cdylib"]
 [dev-dependencies]
 criterion = "0.3"
 
+[dependencies]
+nom = "5.1.2"
+
 [[bench]]
 name = "modbus"
 harness = false

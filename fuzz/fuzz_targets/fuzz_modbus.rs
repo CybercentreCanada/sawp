@@ -5,7 +5,8 @@ use sawp_modbus::Modbus;
 use sawp::parser::Parse;
 
 fuzz_target!(|data: &[u8]| {
-    if let Err(e) = Modbus::parse(data) {
+    let modbus = Modbus {};
+    if let Err(e) = modbus.parse(data) {
         eprintln!("Modbus: Error parsing {:?}", e);
     }
 });
