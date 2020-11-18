@@ -180,7 +180,7 @@ pub struct Message {
     pub data: Data,
 }
 
-impl Protocol for Modbus {
+impl Protocol<'_> for Modbus {
     type Message = Message;
 
     fn name() -> &'static str {
@@ -188,8 +188,8 @@ impl Protocol for Modbus {
     }
 }
 
-impl Parse for Modbus {
-    fn parse<'a>(&'a self, input: &'a [u8]) -> Result<(&'a [u8], Option<Self::Message>)> {
+impl<'a> Parse<'a> for Modbus {
+    fn parse(&self, input: &'a [u8]) -> Result<(&'a [u8], Option<Self::Message>)> {
         let (input, transaction_id) = be_u16(input)?;
         let (input, protocol_id) = be_u16(input)?;
         if protocol_id != 0 {

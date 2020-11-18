@@ -1,7 +1,7 @@
 /// Represents the basic elements of a protocol
-pub trait Protocol {
+pub trait Protocol<'a> {
     /// Type of message returned when parsing
-    type Message;
+    type Message: 'a;
 
     /// Protocol name string
     fn name() -> &'static str;

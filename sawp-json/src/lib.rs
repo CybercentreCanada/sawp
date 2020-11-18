@@ -19,7 +19,7 @@ impl Message {
     }
 }
 
-impl Protocol for Json {
+impl Protocol<'_> for Json {
     type Message = Message;
 
     fn name() -> &'static str {
@@ -27,8 +27,8 @@ impl Protocol for Json {
     }
 }
 
-impl Parse for Json {
-    fn parse<'a>(&'a self, input: &'a [u8]) -> Result<(&'a [u8], Option<Self::Message>)> {
+impl<'a> Parse<'a> for Json {
+    fn parse(&self, input: &'a [u8]) -> Result<(&'a [u8], Option<Self::Message>)> {
         let mut stream = Deserializer::from_slice(input).into_iter::<Value>();
 
         match stream.next() {
