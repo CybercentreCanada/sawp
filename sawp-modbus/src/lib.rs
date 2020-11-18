@@ -11,6 +11,7 @@ use nom::number::streaming::{be_u16, be_u8};
 
 use num_enum::TryFromPrimitive;
 use std::convert::TryFrom;
+use std::num::NonZeroUsize;
 
 #[derive(Debug, PartialEq)]
 pub struct Function {
@@ -197,9 +198,10 @@ impl Parse for Modbus {
 
         let (input, length) = be_u16(input)?;
         if usize::from(length) > input.len() {
-            return Err(Error::new(ErrorKind::Incomplete(nom::Needed::Size(
-                usize::from(length) - input.len(),
-            ))));
+            let needed = usize::from(length) - input.len();
+            let needed = NonZeroUsize::new(needed)
+                .ok_or_else(|| Error::new(ErrorKind::ExpectedNonZero(needed)))?;
+            return Err(Error::new(ErrorKind::Incomplete(nom::Needed::Size(needed))));
         }
 
         let (input, unit_id) = be_u8(input)?;
@@ -319,7 +321,7 @@ mod tests {
     #[rstest(
         input,
         expected,
-        case::empty(b"", Err(Error { kind: ErrorKind::Incomplete(nom::Needed::Size(2)) })),
+        case::empty(b"", Err(Error { kind: ErrorKind::Incomplete(nom::Needed::Size(NonZeroUsize::new(2).unwrap())) })),
         case::hello_world(b"hello world", Err(Error { kind: ErrorKind::InvalidData })),
         case::diagnostic(
             &[
@@ -745,7 +747,7 @@ mod tests {
                 // Data: 00
                 0x00
             ],
-            Err(Error { kind: ErrorKind::Incomplete(nom::Needed::Size(1)) })
+            Err(Error { kind: ErrorKind::Incomplete(nom::Needed::Size(NonZeroUsize::new(1).unwrap())) })
         ),
         case::mei_dev_id(
             &[
@@ -813,7 +815,7 @@ mod tests {
                 // Transaction ID: 0
                 0x00, 0x00,
             ],
-            Err(Error { kind: ErrorKind::Incomplete(nom::Needed::Size(2)) })
+            Err(Error { kind: ErrorKind::Incomplete(nom::Needed::Size(NonZeroUsize::new(2).unwrap())) })
         ),
     )]
     #[test]

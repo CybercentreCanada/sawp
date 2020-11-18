@@ -16,6 +16,7 @@ impl Error {
 pub enum ErrorKind {
     Unimplemented,
     InvalidData,
+    ExpectedNonZero(usize),
     Nom(nom::error::ErrorKind),
     Incomplete(nom::Needed),
 }
