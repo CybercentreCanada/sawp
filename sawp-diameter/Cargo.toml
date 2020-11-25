@@ -1,0 +1,25 @@
+[package]
+name = "sawp-diameter"
+version = "0.1.0"
+authors = ["cccs-asbumst"]
+readme = "../README.md"
+edition = "2018"
+license-file = "../LICENSE"
+
+[features]
+ffi = ["cxx-build"]
+
+[dependencies]
+sawp = { path = ".." }
+nom = "6.0"
+cxx = "0.4"
+num_enum = "0.5.1"
+
+[dev-dependencies]
+rstest = "0.6.4"
+
+[build-dependencies]
+cxx-build = {version = "0.4", optional = true}
+
+[lib]
+crate-type = ["staticlib", "rlib", "cdylib"]

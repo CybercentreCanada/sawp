@@ -21,10 +21,10 @@ pub enum ErrorKind {
     Incomplete(nom::Needed),
 }
 
-impl<I: std::fmt::Debug> From<nom::Err<(I, nom::error::ErrorKind)>> for Error {
-    fn from(nom_err: nom::Err<(I, nom::error::ErrorKind)>) -> Self {
+impl<I: std::fmt::Debug> From<nom::Err<nom::error::Error<I>>> for Error {
+    fn from(nom_err: nom::Err<nom::error::Error<I>>) -> Self {
         match nom_err {
-            nom::Err::Error(err) | nom::Err::Failure(err) => Error::new(ErrorKind::Nom(err.1)),
+            nom::Err::Error(err) | nom::Err::Failure(err) => Error::new(ErrorKind::Nom(err.code)),
             nom::Err::Incomplete(size) => Error::new(ErrorKind::Incomplete(size)),
         }
     }

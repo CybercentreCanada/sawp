@@ -12,6 +12,7 @@ members = [
     "sawp-modbus",
     "sawp-file",
     "sawp-json",
+    "sawp-diameter",
 ]
 
 [lib]
@@ -32,5 +33,6 @@ buildflags = ["--release"]
 
 [package.metadata.rpm.targets]
 "libsawp.so" = { path = "/usr/local/lib/libsawp.so" }
+"libsawp_diameter.so" = { path = "/usr/local/lib/libsawp_diameter.so" }
 "libsawp_modbus.so" = { path = "/usr/local/lib/libsawp_modbus.so" }
 "libsawp_json.so" = { path = "/usr/local/lib/libsawp_json.so" }
