@@ -235,7 +235,7 @@ impl AVP {
     }
 }
 
-impl Protocol for Diameter {
+impl Protocol<'_> for Diameter {
     type Message = Message;
 
     fn name() -> &'static str {
@@ -243,8 +243,8 @@ impl Protocol for Diameter {
     }
 }
 
-impl Parse for Diameter {
-    fn parse<'a>(&'a self, input: &'a [u8]) -> Result<(&'a [u8], Option<Self::Message>)> {
+impl<'a> Parse<'a> for Diameter {
+    fn parse(&self, input: &'a [u8]) -> Result<(&'a [u8], Option<Self::Message>)> {
         let (input, header) = Header::parse(input)?;
 
         // Don't have to worry about splitting slice causing incomplete
