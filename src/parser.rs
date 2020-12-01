@@ -13,13 +13,22 @@ pub enum Direction {
 }
 
 pub trait Parse<'a>: Protocol<'a> {
-    /// Parse a chunk of bytes into the protocol's Message type.
+    /// Returns a tuple containing the remaining unparsed data and the parsed `Message`.
     ///
-    /// `direction` may be used by some parser implementations if it influences
-    /// parsing. Otherwise, it can be ignored.
+    /// A return value of `Result::Ok` indicates that the parser has *made progress*
+    /// and should only be used when the remaining unparsed data is less than the input.
     ///
-    /// Returns a tuple containing the remaining unparsed data and optionally
-    /// the parsed message, if it was found.
+    /// A return value of `Result::Err` indicates that *no progress* was made
+    /// and the user may call the parse function again with the same input in
+    /// some scenarios:
+    /// - `ErrorKind::Incomplete`: call `parse` once more input data is available.
+    ///
+    /// Consequently, `Result::Ok(None)` is used to indicate the parser made
+    /// progress but needs more data to return a complete `Message`. Internal
+    /// buffering may occur depending on the implemenetation.
+    ///
+    /// `Result::Err(ErrorKind::Incomplete(_))` must be used instead of `Result::Ok(None)`
+    /// when no progress was made parsing the input.
     fn parse(
         &self,
         input: &'a [u8],
