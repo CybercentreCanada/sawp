@@ -13,6 +13,7 @@ cargo-fuzz = true
 libfuzzer-sys = "0.3"
 sawp = { path = ".." }
 sawp-modbus = { path = "../sawp-modbus" }
+sawp-diameter = { path = "../sawp-diameter" }
 
 # Prevent this from interfering with workspaces
 [workspace]
@@ -21,5 +22,11 @@ members = ["."]
 [[bin]]
 name = "fuzz_modbus"
 path = "fuzz_targets/fuzz_modbus.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "fuzz_diameter"
+path = "fuzz_targets/fuzz_diameter.rs"
 test = false
 doc = false
