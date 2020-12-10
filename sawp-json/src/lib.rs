@@ -1,7 +1,7 @@
 //! SAWP JSON Parser
 
 use sawp::error::{Error, ErrorKind, Result};
-use sawp::parser::Parse;
+use sawp::parser::{Direction, Parse};
 use sawp::probe::Probe;
 use sawp::protocol::Protocol;
 use serde_json::{Deserializer, Value};
@@ -29,7 +29,11 @@ impl Protocol<'_> for Json {
 }
 
 impl<'a> Parse<'a> for Json {
-    fn parse(&self, input: &'a [u8]) -> Result<(&'a [u8], Option<Self::Message>)> {
+    fn parse(
+        &self,
+        input: &'a [u8],
+        _direction: Direction,
+    ) -> Result<(&'a [u8], Option<Self::Message>)> {
         let mut stream = Deserializer::from_slice(input).into_iter::<Value>();
 
         match stream.next() {
@@ -73,7 +77,8 @@ mod tests {
         let json = Json {};
         assert_eq!(
             expected,
-            json.parse(input).map(|(left, msg)| (left.len(), msg)),
+            json.parse(input, Direction::Unknown)
+                .map(|(left, msg)| (left.len(), msg)),
         );
     }
 
@@ -86,6 +91,6 @@ mod tests {
     )]
     fn test_probe(input: &[u8], expected: Status) {
         let json = Json {};
-        assert_eq!(expected, json.probe(input));
+        assert_eq!(expected, json.probe(input, Direction::Unknown));
     }
 }

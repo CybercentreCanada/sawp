@@ -2,12 +2,10 @@
 //!    https://modbus.org/docs/Modbus_Application_Protocol_V1_1b.pdf
 //!    https://modbus.org/docs/PI_MBUS_300.pdf
 
-use sawp::parser::Parse;
+use sawp::error::{Error, ErrorKind, Result};
+use sawp::parser::{Direction, Parse};
+use sawp::probe::Probe;
 use sawp::protocol::Protocol;
-use sawp::{
-    error::{Error, ErrorKind, Result},
-    probe::Probe,
-};
 
 use nom::bytes::streaming::take;
 use nom::number::streaming::{be_u16, be_u8};
@@ -192,7 +190,11 @@ impl Protocol<'_> for Modbus {
 }
 
 impl<'a> Parse<'a> for Modbus {
-    fn parse(&self, input: &'a [u8]) -> Result<(&'a [u8], Option<Self::Message>)> {
+    fn parse(
+        &self,
+        input: &'a [u8],
+        _direction: Direction,
+    ) -> Result<(&'a [u8], Option<Self::Message>)> {
         let (input, transaction_id) = be_u16(input)?;
         let (input, protocol_id) = be_u16(input)?;
         if protocol_id != 0 {
@@ -827,7 +829,9 @@ mod tests {
     fn test_parse(input: &[u8], expected: Result<(usize, Option<<Modbus as Protocol>::Message>)>) {
         let modbus = Modbus {};
         assert_eq!(
-            modbus.parse(input).map(|(left, msg)| (left.len(), msg)),
+            modbus
+                .parse(input, Direction::Unknown)
+                .map(|(left, msg)| (left.len(), msg)),
             expected
         );
     }
@@ -859,6 +863,6 @@ mod tests {
     )]
     fn test_probe(input: &[u8], expected: Status) {
         let modbus = Modbus {};
-        assert_eq!(modbus.probe(input), expected);
+        assert_eq!(modbus.probe(input, Direction::Unknown), expected);
     }
 }

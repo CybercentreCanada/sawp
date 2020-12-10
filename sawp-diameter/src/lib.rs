@@ -2,7 +2,7 @@
 //!     https://tools.ietf.org/html/rfc6733
 
 use sawp::error::Result;
-use sawp::parser::Parse;
+use sawp::parser::{Direction, Parse};
 use sawp::probe::Probe;
 use sawp::protocol::Protocol;
 
@@ -245,7 +245,11 @@ impl Protocol<'_> for Diameter {
 }
 
 impl<'a> Parse<'a> for Diameter {
-    fn parse(&self, input: &'a [u8]) -> Result<(&'a [u8], Option<Self::Message>)> {
+    fn parse(
+        &self,
+        input: &'a [u8],
+        _direction: Direction,
+    ) -> Result<(&'a [u8], Option<Self::Message>)> {
         let (input, header) = Header::parse(input)?;
 
         // Don't have to worry about splitting slice causing incomplete
@@ -628,7 +632,7 @@ mod tests {
     fn test_parse(input: &[u8], expected: Result<(&[u8], Option<Message>)>) {
         let diameter = Diameter {};
 
-        assert_eq!(diameter.parse(input), expected);
+        assert_eq!(diameter.parse(input, Direction::Unknown), expected);
     }
 
     #[rstest(
@@ -659,6 +663,6 @@ mod tests {
     fn test_probe(input: &[u8], expected: Status) {
         let diameter = Diameter {};
 
-        assert_eq!(diameter.probe(input), expected);
+        assert_eq!(diameter.probe(input, Direction::Unknown), expected);
     }
 }

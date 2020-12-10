@@ -1,5 +1,5 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use sawp::parser::Parse;
+use sawp::parser::{Direction, Parse};
 use sawp_json::{Json, Message};
 use serde_json::json;
 
@@ -16,7 +16,7 @@ const SAMPLE_JSON: &[u8] = br#"{
 }"#;
 
 fn parse_json<'a>(json: &'a Json, input: &'a [u8]) -> (&'a [u8], Option<Message>) {
-    json.parse(input).unwrap()
+    json.parse(input, Direction::Unknown).unwrap()
 }
 
 fn criterion_benchmark(c: &mut Criterion) {
