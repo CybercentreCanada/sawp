@@ -2,6 +2,7 @@
 
 use sawp::error::{Error, ErrorKind, Result};
 use sawp::parser::Parse;
+use sawp::probe::Probe;
 use sawp::protocol::Protocol;
 use serde_json::{Deserializer, Value};
 
@@ -38,11 +39,14 @@ impl<'a> Parse<'a> for Json {
     }
 }
 
+impl<'a> Probe<'a> for Json {}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use rstest::rstest;
     use sawp::error::{Error, ErrorKind, Result};
+    use sawp::probe::Status;
     use serde_json::json;
 
     #[rstest(
@@ -65,12 +69,23 @@ mod tests {
         case::whitespace(b"\n\t{\n\r\n\"a\":    \t\"b\"\n}", Ok((0, Some(Message::new(json!({"a": "b"})))))),
         case::multi(b"{}[1]", Ok((3, Some(Message::new(json!({})))))),
     )]
-    #[test]
-    fn test_json(input: &[u8], expected: Result<(usize, Option<<Json as Protocol>::Message>)>) {
+    fn test_parse(input: &[u8], expected: Result<(usize, Option<<Json as Protocol>::Message>)>) {
         let json = Json {};
         assert_eq!(
             expected,
             json.parse(input).map(|(left, msg)| (left.len(), msg)),
         );
+    }
+
+    #[rstest(
+        input,
+        expected,
+        case::empty(b"", Status::Unrecognized),
+        case::incomplete(b"{\"a\":", Status::Unrecognized),
+        case::number(b"1234", Status::Recognized)
+    )]
+    fn test_probe(input: &[u8], expected: Status) {
+        let json = Json {};
+        assert_eq!(expected, json.probe(input));
     }
 }

@@ -2,9 +2,12 @@
 //!    https://modbus.org/docs/Modbus_Application_Protocol_V1_1b.pdf
 //!    https://modbus.org/docs/PI_MBUS_300.pdf
 
-use sawp::error::{Error, ErrorKind, Result};
 use sawp::parser::Parse;
 use sawp::protocol::Protocol;
+use sawp::{
+    error::{Error, ErrorKind, Result},
+    probe::Probe,
+};
 
 use nom::bytes::streaming::take;
 use nom::number::streaming::{be_u16, be_u8};
@@ -307,11 +310,14 @@ impl<'a> Parse<'a> for Modbus {
     }
 }
 
+impl<'a> Probe<'a> for Modbus {}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use rstest::rstest;
     use sawp::error::{Error, ErrorKind, Result};
+    use sawp::probe::Status;
 
     #[test]
     fn test_name() {
@@ -818,12 +824,41 @@ mod tests {
             Err(Error { kind: ErrorKind::Incomplete(nom::Needed::Size(NonZeroUsize::new(2).unwrap())) })
         ),
     )]
-    #[test]
-    fn test_modbus(input: &[u8], expected: Result<(usize, Option<<Modbus as Protocol>::Message>)>) {
+    fn test_parse(input: &[u8], expected: Result<(usize, Option<<Modbus as Protocol>::Message>)>) {
         let modbus = Modbus {};
         assert_eq!(
             modbus.parse(input).map(|(left, msg)| (left.len(), msg)),
             expected
         );
+    }
+
+    #[rstest(
+        input,
+        expected,
+        case::empty(b"", Status::Incomplete),
+        case::hello_world(b"hello world", Status::Unrecognized),
+        case::diagnostic(
+            &[
+                // Transaction ID: 1
+                0x00, 0x01,
+                // Protocol ID: 0
+                0x00, 0x00,
+                // Length: 6
+                0x00, 0x06,
+                // Unit ID: 3
+                0x03,
+                // Function Code: Diagnostics (8)
+                0x08,
+                // Diagnostic Code: Force Listen Only Mode (4)
+                0x00, 0x04,
+                // Data: 0000
+                0x00, 0x00
+            ],
+            Status::Recognized
+        )
+    )]
+    fn test_probe(input: &[u8], expected: Status) {
+        let modbus = Modbus {};
+        assert_eq!(modbus.probe(input), expected);
     }
 }

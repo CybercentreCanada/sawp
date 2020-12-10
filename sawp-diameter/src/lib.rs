@@ -3,6 +3,7 @@
 
 use sawp::error::Result;
 use sawp::parser::Parse;
+use sawp::probe::Probe;
 use sawp::protocol::Protocol;
 
 use nom::bytes::streaming::tag;
@@ -260,11 +261,14 @@ impl<'a> Parse<'a> for Diameter {
     }
 }
 
+impl<'a> Probe<'a> for Diameter {}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use rstest::rstest;
     use sawp::error;
+    use sawp::probe::Status;
 
     #[test]
     fn test_name() {
@@ -356,7 +360,6 @@ mod tests {
             Err(nom::Err::Incomplete(nom::Needed::new(4)))
         ),
     )]
-    #[test]
     fn test_header(input: &[u8], expected: IResult<&[u8], Header>) {
         assert_eq!(Header::parse(input), expected);
     }
@@ -412,7 +415,6 @@ mod tests {
             }))
         ),
     )]
-    #[test]
     fn test_avp(input: &[u8], expected: IResult<&[u8], AVP>) {
         assert_eq!(AVP::parse(input), expected);
     }
@@ -623,10 +625,40 @@ mod tests {
             Err(error::Error::new(error::ErrorKind::Nom(ErrorKind::Many0))),
         ),
     )]
-    #[test]
-    fn test_diameter(input: &[u8], expected: Result<(&[u8], Option<Message>)>) {
+    fn test_parse(input: &[u8], expected: Result<(&[u8], Option<Message>)>) {
         let diameter = Diameter {};
 
         assert_eq!(diameter.parse(input), expected);
+    }
+
+    #[rstest(
+        input,
+        expected,
+        case::empty(b"", Status::Incomplete),
+        case::hello_world(b"hello world", Status::Unrecognized),
+        case::header(
+        &[
+            // Version: 1
+            0x01,
+            // Length: 20
+            0x00, 0x00, 0x14,
+            // Flags: 128 (Request)
+            0x80,
+            // Code: 257 (Capability-Exchange)
+            0x00, 0x01, 0x01,
+            // Application ID: 0 (Diameter Common Messages)
+            0x00, 0x00, 0x00, 0x00,
+            // Hop-by-Hop ID: 0x53cafe6a
+            0x53, 0xca, 0xfe, 0x6a,
+            // End-to-End ID: 0x7dc0a11b
+            0x7d, 0xc0, 0xa1, 0x1b,
+            ],
+            Status::Recognized
+        ),
+    )]
+    fn test_probe(input: &[u8], expected: Status) {
+        let diameter = Diameter {};
+
+        assert_eq!(diameter.probe(input), expected);
     }
 }
