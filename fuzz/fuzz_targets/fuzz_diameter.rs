@@ -5,8 +5,8 @@ use sawp_diameter::Diameter;
 use sawp::parser::Parse;
 
 fuzz_target!(|data: &[u8]| {
-    let modbus = Diameter {};
-    if let Err(e) = modbus.parse(data) {
+    let parser = Diameter {};
+    if let Err(e) = parser.parse(data) {
         eprintln!("Diameter: Error parsing {:?}", e);
     }
 });
