@@ -1,0 +1,24 @@
+# Default pipeline to build, check and test SAWP
+
+# Run daily at midnight UTC if there has been a code change since the last scheduled run
+schedules:
+- cron: "0 0 * * *"
+  displayName: Daily midnight build
+  branches:
+    include:
+    - master
+
+resources:
+- repo: self
+
+jobs:
+- job: test_sawp
+  displayName: Test SAWP
+  pool: sawp-builders
+  steps:
+    # SAWP Steps
+    # ==============
+    - checkout: self
+      path: sawp
+    - template: qa-steps.yml
+    - template: package-steps.yml

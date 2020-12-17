@@ -1,0 +1,64 @@
+steps:
+  # Check code formatting differences
+  - script: cargo fmt --all -- --check
+    displayName: check fmt
+    workingDirectory: $(Agent.BuildDirectory)/sawp
+  
+  # Build project
+  - script: cargo build --workspace --all-targets --all-features --release
+    displayName: build
+    workingDirectory: $(Agent.BuildDirectory)/sawp
+  
+  # Check linting warnings
+  - script: cargo clippy --workspace --all-targets --all-features -- -D warnings
+    displayName: check clippy
+    workingDirectory: $(Agent.BuildDirectory)/sawp
+
+  # TODO: Build documentation
+  #- script: cargo doc
+  #  displayName: make documentation
+  #  workingDirectory: $(Agent.BuildDirectory)/sawp
+
+  # Run the unit tests
+  - script: cargo test --workspace --all-targets --all-features
+    displayName: run tests
+    workingDirectory: $(Agent.BuildDirectory)/sawp
+
+  # Build fuzz
+  - script: cargo +nightly fuzz build
+    displayName: build fuzz
+    workingDirectory: $(Agent.BuildDirectory)/sawp
+
+  # Check code coverage
+  - script: |
+      OUTPUT=$(cargo tarpaulin -v --all --all-features --out Xml)
+      echo "${OUTPUT}"
+
+      if [[ $(echo "${OUTPUT}" | tail -1 | cut -d ' ' -f 1) < 75 ]]
+      then
+          echo "Coverage does not meet required percentage"
+          exit 1
+      fi
+    displayName: check code coverage
+    workingDirectory: $(Agent.BuildDirectory)/sawp
+
+  # Publish the code coverage reports
+  - task: PublishCodeCoverageResults@1
+    inputs:
+      codeCoverageTool: 'cobertura'
+      summaryFileLocation: cobertura.xml
+
+  # TODO: Add Suricata integration test
+  # Checkout Suricata
+  #- checkout: suricata
+  #  path: suricata
+
+  # TODO: Add CD integration test
+  # Checkout Cyberdeck
+  #- checkout: cyberdeck
+  #  path: cyberdeck
+
+  # TODO: Add CSP integration test
+  # Checkout CSP
+  #- checkout: csp
+  #  path: csp

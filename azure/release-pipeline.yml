@@ -1,0 +1,68 @@
+parameters:
+  - name: src
+    displayName: Source Branch
+    type: string
+    default: master
+  - name: dest
+    displayName: Destination Branch
+    type: string
+    default: staging
+  - name: package
+    displayName: Package and/or Sub Package
+    type: string
+    default: sawp
+  - name: args
+    displayName: Cargo Release Extra Args
+    type: string
+    default: --no-confirm --skip-push --skip-publish 
+
+trigger: none
+
+resources:
+- repo: self
+
+jobs:
+- job: release_sawp
+  displayName: Release SAWP
+  pool: sawp-builders
+  steps:
+    # SAWP Steps
+    # ==============
+    - checkout: self
+      clean: true
+      path: sawp
+      persistCredentials: true
+
+    # The src branch is the code you want to release -- e.g. master
+    # The dest branch is where you want the code to go -- e.g. staging
+    - script: git remote update origin
+      displayName: update
+    - script: git checkout ${{ parameters.dest }} && git pull origin ${{ parameters.dest }} && git merge origin/${{ parameters.src }} || git checkout -b ${{ parameters.dest }} origin/${{ parameters.src }}
+      displayName: merge
+
+    # Check all contributors are in .contributors list
+    - script: chmod +x ./.contributors.sh && ./.contributors.sh -r ${{ parameters.dest }}
+      displayName: contributors
+
+    # QA Checks
+    # ==============
+    - template: qa-steps.yml
+
+    # Release
+    # ==============
+
+    # Check if cargo release is installed
+    - script: cargo release --help > /dev/null || cargo install cargo-release
+      displayName: install cargo-release
+
+    # Commit and tag the release
+    - script: cargo release --package ${{ parameters.package }} ${{ parameters.args }} -- $(level)
+      displayName: cargo release
+      workingDirectory: $(Agent.BuildDirectory)/sawp
+
+    # Don't push with cargo release because it will fail
+    - script: git push --follow-tags origin ${{ parameters.dest }}
+
+    # Release Artifacts
+    # ==============
+    - template: package-steps.yml

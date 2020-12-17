@@ -1,0 +1,10 @@
+steps:
+  # Make rpm/deb
+  - script: cargo rpm build -v
+    displayName: make rpm
+    workingDirectory: $(Agent.BuildDirectory)/sawp
+  
+  # Make deb
+  - script: cargo deb -v
+    displayName: make deb
+    workingDirectory: $(Agent.BuildDirectory)/sawp
