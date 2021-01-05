@@ -10,6 +10,7 @@ license-file = "../LICENSE"
 sawp = { path = ".." }
 nom = "6.0.0"
 num_enum = "0.5.1"
+bitflags = "1.2.1"
 
 [lib]
 crate-type = ["cdylib", "rlib"]
