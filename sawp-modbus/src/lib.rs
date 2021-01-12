@@ -485,8 +485,8 @@ impl Message {
         self.length - 2
     }
 
-    ///          Num Bytes  Byte Placement
-    /// Code:    1          (0)
+    //          Num Bytes  Byte Placement
+    // Code:    1          (0)
     fn parse_exception<'a>(&mut self, input: &'a [u8]) -> Result<&'a [u8]> {
         let (input, exc_code) = be_u8(input)?;
         let exc = Exception::new(exc_code);
@@ -513,13 +513,13 @@ impl Message {
         Ok(input)
     }
 
-    ///                             Num Bytes   Byte Placement
-    /// Request:
-    ///     Diagnostic Code:        2           (0,1)
-    ///     Data:                   2           (2,3)
-    /// Response:
-    ///     Diagnostic Code:        2           (0,1)
-    ///     Data:                   x           (2..)
+    //                             Num Bytes   Byte Placement
+    // Request:
+    //     Diagnostic Code:        2           (0,1)
+    //     Data:                   2           (2,3)
+    // Response:
+    //     Diagnostic Code:        2           (0,1)
+    //     Data:                   x           (2..)
     fn parse_diagnostic<'a>(&mut self, input: &'a [u8]) -> Result<&'a [u8]> {
         if self.data_length() < 2 {
             return Err(Error::new(ErrorKind::InvalidData));
@@ -535,9 +535,9 @@ impl Message {
         Ok(input)
     }
 
-    ///                             Num Bytes   Byte Placement
-    ///     MEI Code:               2           (0,1)
-    ///     Data:                   x           (2..)
+    //                             Num Bytes   Byte Placement
+    //     MEI Code:               2           (0,1)
+    //     Data:                   x           (2..)
     fn parse_mei<'a>(&mut self, input: &'a [u8]) -> Result<&'a [u8]> {
         if self.data_length() < 1 {
             return Err(Error::new(ErrorKind::InvalidData));
@@ -561,9 +561,9 @@ impl Message {
         Ok(input)
     }
 
-    ///                     Num Bytes   Byte Placement
-    /// Starting Address:   2           (0,1)
-    /// Quantity of Regs:   2           (2,3)
+    //                     Num Bytes   Byte Placement
+    // Starting Address:   2           (0,1)
+    // Quantity of Regs:   2           (2,3)
     fn parse_read_request<'a>(&mut self, input: &'a [u8]) -> Result<&'a [u8]> {
         let (input, address) = be_u16(input)?;
         let (input, quantity) = be_u16(input)?;
@@ -588,9 +588,9 @@ impl Message {
         Ok(input)
     }
 
-    ///          Num Bytes  Byte Placement
-    /// Count:   1          (0)
-    /// Data:    Count      (1..Count + 1)
+    //          Num Bytes  Byte Placement
+    // Count:   1          (0)
+    // Data:    Count      (1..Count + 1)
     fn parse_read_response<'a>(&mut self, input: &'a [u8]) -> Result<&'a [u8]> {
         if self.data_length() < 1 {
             return Err(Error::new(ErrorKind::InvalidData));
@@ -611,23 +611,23 @@ impl Message {
         Ok(input)
     }
 
-    ///                             Num Bytes       Byte Placement
-    /// FunctionCode::RdWrMultRegs:
-    ///     Read Address:           2               (0,1)
-    ///     Read Quantity:          2               (2,3)
-    ///     <Multiple writes>
-    /// FunctionCode::MaskWrReg:
-    ///     Starting Address:       2               (0,1)
-    ///     And_mask:               2               (2,3)
-    ///     Or_mask:                2               (4,5)
-    /// Single write:
-    ///     Starting Address:       2               (0,1)
-    ///     Data:                   2               (2,3)
-    /// Multiple writes:
-    ///     Starting Address:       2               (0,1)
-    ///     Quantity of Regs:       2               (2,3)
-    ///     Byte Count:             1               (4)
-    ///     Data:                   Count           (5 to (Count + 5))
+    //                             Num Bytes       Byte Placement
+    // FunctionCode::RdWrMultRegs:
+    //     Read Address:           2               (0,1)
+    //     Read Quantity:          2               (2,3)
+    //     <Multiple writes>
+    // FunctionCode::MaskWrReg:
+    //     Starting Address:       2               (0,1)
+    //     And_mask:               2               (2,3)
+    //     Or_mask:                2               (4,5)
+    // Single write:
+    //     Starting Address:       2               (0,1)
+    //     Data:                   2               (2,3)
+    // Multiple writes:
+    //     Starting Address:       2               (0,1)
+    //     Quantity of Regs:       2               (2,3)
+    //     Byte Count:             1               (4)
+    //     Data:                   Count           (5 to (Count + 5))
     fn parse_write_request<'a>(&mut self, input: &'a [u8]) -> Result<&'a [u8]> {
         let (input, address) = be_u16(input)?;
 
@@ -703,17 +703,17 @@ impl Message {
         }
     }
 
-    ///                             Num Bytes   Byte Placement
-    /// FunctionCode::MaskWrReg:
-    ///     Starting Address:       2           (0,1)
-    ///     And_mask:               2           (2,3)
-    ///     Or_mask:                2           (4,5)
-    /// Single write:
-    ///     Starting Address:       2           (0,1)
-    ///     Data:                   2           (2,3)
-    /// Multiple writes:
-    ///     Starting Address:       2           (0,1)
-    ///     Quantity of Regs:       2           (2,3)
+    //                             Num Bytes   Byte Placement
+    // FunctionCode::MaskWrReg:
+    //     Starting Address:       2           (0,1)
+    //     And_mask:               2           (2,3)
+    //     Or_mask:                2           (4,5)
+    // Single write:
+    //     Starting Address:       2           (0,1)
+    //     Data:                   2           (2,3)
+    // Multiple writes:
+    //     Starting Address:       2           (0,1)
+    //     Quantity of Regs:       2           (2,3)
     fn parse_write_response<'a>(&mut self, input: &'a [u8]) -> Result<&'a [u8]> {
         let (input, address) = be_u16(input)?;
 
