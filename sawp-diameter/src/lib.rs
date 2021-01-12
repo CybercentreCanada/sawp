@@ -304,7 +304,7 @@ mod tests {
             Err(nom::Err::Error(Error::new(
                 &[
                     // Flags: 128 (Request)
-                    0x80 as u8,
+                    0x80_u8,
                     // Code: 257 (Capability-Exchange)
                     0x00, 0x01, 0x01,
                     // Application ID: 0 (Diameter Common Messages)
@@ -340,8 +340,8 @@ mod tests {
                 flags: 128,
                 code: 257,
                 app_id: 0,
-                hop_id: 0x53c_afe6a,
-                end_id: 0x7dc_0a11b,
+                hop_id: 0x53ca_fe6a,
+                end_id: 0x7dc0_a11b,
             }))
         ),
         case::diagnostic(
@@ -454,8 +454,8 @@ mod tests {
                         flags: 128,
                         code: 257,
                         app_id: 0,
-                        hop_id: 0x53c_afe6a,
-                        end_id: 0x7dc_0a11b,
+                        hop_id: 0x53ca_fe6a,
+                        end_id: 0x7dc0_a11b,
                     },
                     avps: Vec::new(),
                 })
@@ -513,8 +513,8 @@ mod tests {
                     flags: 128,
                     code: 257,
                     app_id: 0,
-                    hop_id: 0x53c_afe6a,
-                    end_id: 0x7dc_0a11b,
+                    hop_id: 0x53ca_fe6a,
+                    end_id: 0x7dc0_a11b,
                 },
                 avps: vec![
                     AVP {

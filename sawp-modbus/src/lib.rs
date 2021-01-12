@@ -598,7 +598,7 @@ impl Message {
 
         let (input, count) = be_u8(input)?;
 
-        if count < MIN_RD_COUNT || count > MAX_RD_COUNT {
+        if !(MIN_RD_COUNT..=MAX_RD_COUNT).contains(&count) {
             self.flags |= ErrorFlags::DATA_VALUE;
         }
 
