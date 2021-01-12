@@ -1,4 +1,10 @@
 # Default pipeline to build, check and test SAWP
+trigger:
+  - master
+  - staging
+pr:
+  - master
+  - staging
 
 # Run daily at midnight UTC if there has been a code change since the last scheduled run
 schedules:

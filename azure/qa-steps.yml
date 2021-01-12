@@ -1,4 +1,16 @@
 steps:
+  # Check dependencies
+  - script: echo "##vso[task.setvariable variable=PATH;]$PATH:$HOME/.cargo/bin"
+    displayName: set path
+  - script: cargo --version || curl https://sh.rustup.rs -sSf | sh -s -- -y
+    displayName: install rust
+  - script: cargo tarpaulin --version || cargo install cargo-tarpaulin
+    displayName: install cargo-tarpaulin
+  - script: cargo +nightly --version || rustup install nightly
+    displayName: install rust nightly
+  - script: cargo +nightly fuzz --version || cargo +nightly install cargo-fuzz
+    displayName: install cargo-fuzz
+
   # Check code formatting differences
   - script: cargo fmt --all -- --check
     displayName: check fmt

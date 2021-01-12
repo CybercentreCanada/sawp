@@ -8,15 +8,28 @@ parameters:
     type: string
     default: staging
   - name: package
-    displayName: Package and/or Sub Package
+    displayName: Use --package <package> or --workspace to release all packages
     type: string
-    default: sawp
+    default: --workspace
+  - name: level
+    displayName: Level (major|minor|patch|rc|alpha|beta|release|<version>)
+    type: string
+    default: rc
   - name: args
     displayName: Cargo Release Extra Args
     type: string
     default: --no-confirm --skip-push --skip-publish 
+  - name: name
+    displayName: Author Name
+    type: string
+    default: sa-sawp
+  - name: email
+    displayName: Author Email
+    type: string
+    default: sa-sawp@cyber.gc.ca
 
 trigger: none
+pr: none
 
 resources:
 - repo: self
@@ -32,6 +45,10 @@ jobs:
       clean: true
       path: sawp
       persistCredentials: true
+    
+    # Configure author to commit release with
+    - script: git config user.name ${{ parameters.name }}
+    - script: git config user.email ${{ parameters.email }}
 
     # The src branch is the code you want to release -- e.g. master
     # The dest branch is where you want the code to go -- e.g. staging
@@ -56,9 +73,8 @@ jobs:
       displayName: install cargo-release
 
     # Commit and tag the release
-    - script: cargo release --package ${{ parameters.package }} ${{ parameters.args }} -- $(level)
+    - script: cargo release ${{ parameters.package }} ${{ parameters.args }} -- ${{ parameters.level }}
       displayName: cargo release
-      workingDirectory: $(Agent.BuildDirectory)/sawp
 
     # Don't push with cargo release because it will fail
     - script: git push --follow-tags origin ${{ parameters.dest }}
