@@ -12,6 +12,7 @@ pub enum Direction {
     Unknown,
 }
 
+/// Trait for parsing message from an input byte stream.
 pub trait Parse<'a>: Protocol<'a> {
     /// Returns a tuple containing the remaining unparsed data and the parsed `Message`.
     ///
@@ -25,7 +26,7 @@ pub trait Parse<'a>: Protocol<'a> {
     ///
     /// Consequently, `Result::Ok(None)` is used to indicate the parser made
     /// progress but needs more data to return a complete `Message`. Internal
-    /// buffering may occur depending on the implemenetation.
+    /// buffering may occur depending on the implementation.
     ///
     /// `Result::Err(ErrorKind::Incomplete(_))` must be used instead of `Result::Ok(None)`
     /// when no progress was made parsing the input.

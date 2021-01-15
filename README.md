@@ -9,16 +9,39 @@ metadata back. The bytes are expected to be at the session layer,
 so the engine is responsible for assembling transport layer
 data into a session payload, which is then fed into this library.
 
+This library aims to be resilient and parse as many messages as 
+possible that are seen in the wild. If a message is invalid or
+out-of-spec, it should not be discarded by the parser. Parsers
+will set flags on the message when it fails validation instead
+of returning an error.
+
 The interface to each parser is uniform and simple, consisting of
 only a few functions to:
 
 - test that a payload is or is not the protocol in question
   (eg. is this modbus?)
 - provide more bytes to the parser
-- set callbacks to invoke on per-protocol metadata events
+- set callbacks to invoke on per-protocol metadata events (todo)
 - indicate that some bytes are unavailable (ie. notify of packet
-  loss)
-- indicate a session has ended
+  loss) (todo)
+- indicate a session has ended (todo)
 
 The library exposes Rust and C bindings for easy integration into
-existing and future network security sensor platforms.
+existing and future network security sensor platforms. (todo)
+
+# Usage
+Start using SAWP by including a parser in your project's `Cargo.toml`
+dependencies. The base library will also be required for using common
+types.
+
+## Example
+```
+[dependencies]
+sawp-modbus = "0.1.0"
+sawp = "0.1.0"
+```
+
+# Contributing
+
+This project is actively maintained and accepting open source
+contributions.  See [CONTRIBUTING.md] for more details.

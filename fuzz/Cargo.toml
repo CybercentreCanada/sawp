@@ -2,7 +2,7 @@
 [package]
 name = "sawp-fuzz"
 version = "0.0.0"
-authors = ["Automatically generated"]
+authors = ["Canadian Centre for Cyber Security <sa-sawp@cyber.gc.ca>"]
 publish = false
 edition = "2018"
 

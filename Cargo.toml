@@ -1,11 +1,21 @@
 [package]
 name = "sawp"
 version = "0.1.0"
-authors = ["cccs-rtmorti", "cccs-sadugas"]
+authors = ["Canadian Centre for Cyber Security <sa-sawp@cyber.gc.ca>"]
 description = "Security Aware Wire Protocol parsing library"
 readme = "README.md"
 edition = "2018"
 license-file = "LICENSE"
+repository = "https://github.com/CybercentreCanada/sawp"
+homepage = "https://github.com/CybercentreCanada/sawp"
+keywords = ["parser", "streaming", "protocols", "network", "api"]
+categories = ["parsing", "network-programming"]
+include = [
+    "Cargo.toml",
+    "LICENSE",
+    "README.md",
+    "src/**/*.rs",
+]
 
 [workspace]
 members = [
@@ -17,6 +27,7 @@ members = [
 
 [lib]
 crate-type = ["staticlib", "rlib", "cdylib"]
+bench = false
 
 [dev-dependencies]
 criterion = "0.3"
@@ -26,6 +37,7 @@ nom = "6.0.0"
 
 [[bench]]
 name = "modbus"
+path = "benches/modbus.rs"
 harness = false
 
 [package.metadata.rpm.cargo]
@@ -36,3 +48,8 @@ buildflags = ["--release"]
 "libsawp_diameter.so" = { path = "/usr/local/lib/libsawp_diameter.so" }
 "libsawp_modbus.so" = { path = "/usr/local/lib/libsawp_modbus.so" }
 "libsawp_json.so" = { path = "/usr/local/lib/libsawp_json.so" }
+
+[package.metadata.release]
+pre-release-replacements = [
+  {file="README.md", search="sawp = .*", replace="sawp = \"{{version}}\""},
+]

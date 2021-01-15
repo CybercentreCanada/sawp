@@ -1,10 +1,20 @@
 [package]
 name = "sawp-json"
 version = "0.1.0"
-authors = ["sharksforarms"]
+authors = ["Canadian Centre for Cyber Security <sa-sawp@cyber.gc.ca>"]
 readme = "../README.md"
 edition = "2018"
 license-file = "../LICENSE"
+repository = "https://github.com/CybercentreCanada/sawp"
+homepage = "https://github.com/CybercentreCanada/sawp"
+keywords = ["json", "parser", "protocols"]
+categories = ["parsing", "network-programming"]
+include = [
+    "Cargo.toml",
+    "../LICENSE",
+    "../README.md",
+    "src/**/*.rs",
+]
 
 [dependencies]
 sawp = { path = ".." }

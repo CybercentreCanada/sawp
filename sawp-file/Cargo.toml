@@ -1,11 +1,21 @@
 [package]
 name = "sawp-file"
 version = "0.1.0"
-authors = ["cccs-sadugas"]
+authors = ["Canadian Centre for Cyber Security <sa-sawp@cyber.gc.ca>"]
 description = "SAWP File Format"
 readme = "../README.md"
 edition = "2018"
 license-file = "../LICENSE"
+repository = "https://github.com/CybercentreCanada/sawp"
+homepage = "https://github.com/CybercentreCanada/sawp"
+keywords = ["parser", "protocols", "serialization"]
+categories = ["parsing", "network-programming", "encoding"]
+include = [
+    "Cargo.toml",
+    "../LICENSE",
+    "../README.md",
+    "src/**/*.rs",
+]
 
 [dependencies]
 sawp = { path = ".." }

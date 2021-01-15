@@ -1,0 +1,11 @@
+# These settings are shared across all workspace packages
+# Use Cargo.toml to customize settings for a particular package.
+disable-publish=true
+disable-push=true
+consolidate-commits=true
+pre-release-commit-message="sawp: release package(s)"
+post-release-commit-message="sawp: bump version"
+no-dev-version=true
+enable-all-features=true
+tag-prefix="{{crate_name}}"
+tag-name="{{prefix}}-{{version}}"

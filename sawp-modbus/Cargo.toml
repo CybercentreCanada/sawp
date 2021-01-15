@@ -1,10 +1,20 @@
 [package]
 name = "sawp-modbus"
 version = "0.1.0"
-authors = ["cccs-sadugas"]
+authors = ["Canadian Centre for Cyber Security <sa-sawp@cyber.gc.ca>"]
 readme = "../README.md"
 edition = "2018"
 license-file = "../LICENSE"
+repository = "https://github.com/CybercentreCanada/sawp"
+homepage = "https://github.com/CybercentreCanada/sawp"
+keywords = ["modbus", "parser", "protocol", "hardware", "automation"]
+categories = ["parsing", "network-programming"]
+include = [
+    "Cargo.toml",
+    "../LICENSE",
+    "../README.md",
+    "src/**/*.rs",
+]
 
 [dependencies]
 sawp = { path = ".." }
@@ -17,3 +27,8 @@ crate-type = ["cdylib", "rlib"]
 
 [dev-dependencies]
 rstest = "0.6.4"
+
+[package.metadata.release]
+pre-release-replacements = [
+  {file="../README.md", search="sawp-modbus = .*", replace="sawp-modbus = \"{{version}}\""},
+]

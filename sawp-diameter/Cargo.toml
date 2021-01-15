@@ -1,10 +1,21 @@
 [package]
 name = "sawp-diameter"
 version = "0.1.0"
-authors = ["cccs-asbumst"]
+authors = ["Canadian Centre for Cyber Security <sa-sawp@cyber.gc.ca>"]
+description = "SAWP Protocol Parser for Modbus"
 readme = "../README.md"
 edition = "2018"
 license-file = "../LICENSE"
+repository = "https://github.com/CybercentreCanada/sawp"
+homepage = "https://github.com/CybercentreCanada/sawp"
+keywords = ["diameter", "parser", "protocol", "mobility", "core-network"]
+categories = ["parsing", "network-programming"]
+include = [
+    "Cargo.toml",
+    "../LICENSE",
+    "../README.md",
+    "src/**/*.rs",
+]
 
 [features]
 ffi = ["cxx-build"]

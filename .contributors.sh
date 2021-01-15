@@ -74,7 +74,11 @@ function contributors() {
 
 # show contributors not in .contributors
 function diff_contributors() {
-    contributors | comm -23 - .contributors
+    # sorted order is different on centos and ubuntu
+    tmp="/tmp/.contributors.tmp"
+    cat .contributors | sort > $tmp
+    contributors | comm -23 - $tmp
+    rm $tmp
 }
 
 # fails if a contributor is not in the approved list
