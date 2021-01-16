@@ -1,6 +1,6 @@
 [package]
 name = "sawp"
-version = "0.1.0"
+version = "0.1.1-rc.1"
 authors = ["Canadian Centre for Cyber Security <sa-sawp@cyber.gc.ca>"]
 description = "Security Aware Wire Protocol parsing library"
 readme = "README.md"
