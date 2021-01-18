@@ -21,7 +21,7 @@ include = [
 ffi = ["cxx-build"]
 
 [dependencies]
-sawp = { path = ".." }
+sawp = "0.1.1-rc.1"
 nom = "6.0"
 cxx = "0.4"
 num_enum = "0.5.1"

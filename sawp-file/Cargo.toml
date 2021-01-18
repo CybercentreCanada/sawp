@@ -18,7 +18,7 @@ include = [
 ]
 
 [dependencies]
-sawp = { path = ".." }
+sawp = "0.1.1-rc.1"
 rmp-serde = "0.14.4"
 serde = "1.0.116"
 serde_derive = "1.0.116"
