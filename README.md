@@ -44,4 +44,4 @@ sawp = "0.1.0"
 # Contributing
 
 This project is actively maintained and accepting open source
-contributions.  See [CONTRIBUTING.md] for more details.
+contributions.  See [CONTRIBUTING](CONTRIBUTING.md) for more details.
