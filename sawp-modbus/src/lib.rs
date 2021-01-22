@@ -53,7 +53,6 @@ use nom::number::streaming::{be_u16, be_u8};
 
 use num_enum::TryFromPrimitive;
 use std::convert::TryFrom;
-use std::num::NonZeroUsize;
 use std::ops::RangeInclusive;
 use std::str::FromStr;
 
@@ -1089,7 +1088,7 @@ impl Message {
                 _ => return None,
             };
 
-            if *start == u16::MAX || start >= address {
+            if *start == std::u16::MAX || start >= address {
                 return None;
             }
 
@@ -1185,8 +1184,6 @@ impl<'a> Parse<'a> for Modbus {
         }
         if usize::from(length) > input.len() {
             let needed = usize::from(length) - input.len();
-            let needed = NonZeroUsize::new(needed)
-                .ok_or_else(|| Error::new(ErrorKind::ExpectedNonZero(needed)))?;
             return Err(Error::new(ErrorKind::Incomplete(nom::Needed::Size(needed))));
         }
 
@@ -1234,7 +1231,7 @@ mod tests {
     #[rstest(
         input,
         expected,
-        case::empty(b"", Err(Error { kind: ErrorKind::Incomplete(nom::Needed::Size(NonZeroUsize::new(2).unwrap())) })),
+        case::empty(b"", Err(Error { kind: ErrorKind::Incomplete(nom::Needed::Size(2)) })),
         case::hello_world(b"hello world", Err(Error { kind: ErrorKind::InvalidData })),
         case::diagnostic(
             &[
@@ -1455,7 +1452,7 @@ mod tests {
                 // Function Code: Diagnostics (8) -- Exception
                 0x88
             ],
-            Err(Error::new(ErrorKind::Incomplete(nom::Needed::Size(NonZeroUsize::new(1).unwrap()))))
+            Err(Error::new(ErrorKind::Incomplete(nom::Needed::Size(1))))
         ),
         case::exception_with_extra(
             &[
@@ -1743,7 +1740,7 @@ mod tests {
                 // Data: 00
                 0x00
             ],
-            Err(Error { kind: ErrorKind::Incomplete(nom::Needed::Size(NonZeroUsize::new(1).unwrap())) })
+            Err(Error { kind: ErrorKind::Incomplete(nom::Needed::Size(1)) })
         ),
         case::mei_dev_id(
             &[
@@ -1819,7 +1816,7 @@ mod tests {
                 // Transaction ID: 0
                 0x00, 0x00,
             ],
-            Err(Error { kind: ErrorKind::Incomplete(nom::Needed::Size(NonZeroUsize::new(2).unwrap())) })
+            Err(Error { kind: ErrorKind::Incomplete(nom::Needed::Size(2)) })
         ),
     )]
     fn test_parse(input: &[u8], expected: Result<(usize, Option<<Modbus as Protocol>::Message>)>) {

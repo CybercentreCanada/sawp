@@ -4,6 +4,8 @@ steps:
     displayName: set path
   - script: cargo --version || curl https://sh.rustup.rs -sSf | sh -s -- -y
     displayName: install rust
+  - script: rustup install 1.41.1
+    displayName: install rust (msrv)
   - script: cargo tarpaulin --version || cargo install cargo-tarpaulin
     displayName: install cargo-tarpaulin
   - script: cargo +nightly --version || rustup install nightly
@@ -20,6 +22,10 @@ steps:
     displayName: check fmt
   
   # Build project
+  # First, with the minimum supported rust version
+  - script: cargo +1.41.1 build --workspace --all-targets --all-features --release
+    displayName: build (msrv)
+  # Then, with stable
   - script: cargo build --workspace --all-targets --all-features --release
     displayName: build
   

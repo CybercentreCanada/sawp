@@ -1,5 +1,10 @@
-/// Helper trait that uses this module's error type
+/// Helper that uses this module's error type
 pub type Result<T> = std::result::Result<T, Error>;
+
+/// Helper for nom's default error type
+// A better nom error will be available once we can migrate
+// to nom 6.0+
+pub type NomError<I> = (I, nom::error::ErrorKind);
 
 /// Common protocol or parsing error
 ///
@@ -36,8 +41,6 @@ pub enum ErrorKind {
     // returning Ok and adding validation error flags to the
     // parser's `Message` instead.
     InvalidData,
-    /// A value of zero was not expected here.
-    ExpectedNonZero(usize),
     /// Generic nom parsing error.
     Nom(nom::error::ErrorKind),
     /// Parser did not advance because more data is required to
@@ -47,10 +50,10 @@ pub enum ErrorKind {
     Incomplete(nom::Needed),
 }
 
-impl<I: std::fmt::Debug> From<nom::Err<nom::error::Error<I>>> for Error {
-    fn from(nom_err: nom::Err<nom::error::Error<I>>) -> Self {
+impl<I: std::fmt::Debug> From<nom::Err<NomError<I>>> for Error {
+    fn from(nom_err: nom::Err<NomError<I>>) -> Self {
         match nom_err {
-            nom::Err::Error(err) | nom::Err::Failure(err) => Error::new(ErrorKind::Nom(err.code)),
+            nom::Err::Error(err) | nom::Err::Failure(err) => Error::new(ErrorKind::Nom(err.1)),
             nom::Err::Incomplete(size) => Error::new(ErrorKind::Incomplete(size)),
         }
     }

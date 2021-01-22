@@ -9,7 +9,7 @@ use sawp::protocol::Protocol;
 use nom::bytes::streaming::tag;
 use nom::bytes::streaming::take;
 use nom::combinator;
-use nom::error::{Error, ErrorKind};
+use nom::error::ErrorKind;
 use nom::multi::many0;
 use nom::number::streaming::{be_u24, be_u32, be_u8};
 use nom::IResult;
@@ -53,9 +53,9 @@ fn length(read: usize) -> impl Fn(&[u8]) -> IResult<&[u8], u32> {
         let (input, length) = be_u24(input)?;
         let len = length as usize;
         if len < read {
-            Err(nom::Err::Error(Error::new(input, ErrorKind::LengthValue)))
+            Err(nom::Err::Error((input, ErrorKind::LengthValue)))
         } else if len > (input.len() + read) {
-            Err(nom::Err::Incomplete(nom::Needed::new(
+            Err(nom::Err::Incomplete(nom::Needed::Size(
                 len - (input.len() + read),
             )))
         } else {
@@ -124,7 +124,7 @@ impl Header {
         let (input, version) = tag(&[1u8])(input)?;
         let (input, length) = length(Self::PRE_LENGTH_SIZE)(input)?;
         if (length as usize) < Self::SIZE {
-            return Err(nom::Err::Error(Error::new(input, ErrorKind::LengthValue)));
+            return Err(nom::Err::Error((input, ErrorKind::LengthValue)));
         }
         let (input, flags) = be_u8(input)?;
         let (input, code) = be_u24(input)?;
@@ -210,7 +210,7 @@ impl AVP {
             Self::PRE_LENGTH_SIZE
         };
         if (length as usize) < header_size {
-            return Err(nom::Err::Error(Error::new(input, ErrorKind::LengthValue)));
+            return Err(nom::Err::Error((input, ErrorKind::LengthValue)));
         }
         let data_length = (length as usize) - header_size;
         let (input, vendor_id) = if Self::vendor_specific_flag(flags) {
@@ -258,7 +258,7 @@ impl<'a> Parse<'a> for Diameter {
         let (rest, avps) = many0(combinator::complete(AVP::parse))(avps_input)?;
         if !rest.is_empty() {
             // many0 will stop if subparser fails, but should read all
-            Err(nom::Err::Error(Error::new(avps_input, ErrorKind::Many0)).into())
+            Err(nom::Err::Error((avps_input, ErrorKind::Many0)).into())
         } else {
             Ok((input, Some(Message { header, avps })))
         }
@@ -282,8 +282,8 @@ mod tests {
     #[rstest(
         input,
         expected,
-        case::empty(b"", Err(nom::Err::Incomplete(nom::Needed::new(1)))),
-        case::hello_world(b"hello world", Err(nom::Err::Error(Error::new(b"hello world" as &[u8], ErrorKind::Tag)))),
+        case::empty(b"", Err(nom::Err::Incomplete(nom::Needed::Size(1)))),
+        case::hello_world(b"hello world", Err(nom::Err::Error((b"hello world" as &[u8], ErrorKind::Tag)))),
         case::invalid_length(
             &[
                 // Version: 1
@@ -301,7 +301,7 @@ mod tests {
                 // End-to-End ID: 0x7dc0a11b
                 0x7d, 0xc0, 0xa1, 0x1b,
             ],
-            Err(nom::Err::Error(Error::new(
+            Err(nom::Err::Error((
                 &[
                     // Flags: 128 (Request)
                     0x80_u8,
@@ -361,7 +361,7 @@ mod tests {
                 // End-to-End ID: 0x7dc0a11b
                 0x7d, 0xc0, 0xa1, 0x1b,
             ],
-            Err(nom::Err::Incomplete(nom::Needed::new(4)))
+            Err(nom::Err::Incomplete(nom::Needed::Size(4)))
         ),
     )]
     fn test_header(input: &[u8], expected: IResult<&[u8], Header>) {
@@ -371,7 +371,7 @@ mod tests {
     #[rstest(
         input,
         expected,
-        case::empty(b"", Err(nom::Err::Incomplete(nom::Needed::new(4)))),
+        case::empty(b"", Err(nom::Err::Incomplete(nom::Needed::Size(4)))),
         case::diagnostic(
             &[
                 // Code: 264 (Origin-Host)
@@ -428,7 +428,7 @@ mod tests {
     #[rstest(
         input,
         expected,
-        case::empty(b"", Err(error::Error { kind: error::ErrorKind::Incomplete(nom::Needed::new(1)) })),
+        case::empty(b"", Err(error::Error { kind: error::ErrorKind::Incomplete(nom::Needed::Size(1)) })),
         case::header(
         &[
             // Version: 1
@@ -580,7 +580,7 @@ mod tests {
                 // Data:
                 // Padding:
             ],
-            Err(error::Error { kind: error::ErrorKind::Incomplete(nom::Needed::new(2)) })
+            Err(error::Error { kind: error::ErrorKind::Incomplete(nom::Needed::Size(2)) })
         ),
         case::invalid_avp(
             &[
