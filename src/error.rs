@@ -1,10 +1,14 @@
+// Re-export types used for ErrorKind
+pub use nom::error::ErrorKind as NomErrorKind;
+pub use nom::Needed;
+
 /// Helper that uses this module's error type
 pub type Result<T> = std::result::Result<T, Error>;
 
 /// Helper for nom's default error type
 // A better nom error will be available once we can migrate
 // to nom 6.0+
-pub type NomError<I> = (I, nom::error::ErrorKind);
+pub type NomError<I> = (I, NomErrorKind);
 
 /// Common protocol or parsing error
 ///
@@ -42,19 +46,19 @@ pub enum ErrorKind {
     // parser's `Message` instead.
     InvalidData,
     /// Generic nom parsing error.
-    Nom(nom::error::ErrorKind),
+    Nom(NomErrorKind),
     /// Parser did not advance because more data is required to
     /// make a decision.
     ///
     /// The caller should gather more data and try again.
-    Incomplete(nom::Needed),
+    Incomplete(Needed),
 }
 
 impl<I: std::fmt::Debug> From<nom::Err<NomError<I>>> for Error {
     fn from(nom_err: nom::Err<NomError<I>>) -> Self {
         match nom_err {
             nom::Err::Error(err) | nom::Err::Failure(err) => Error::new(ErrorKind::Nom(err.1)),
-            nom::Err::Incomplete(size) => Error::new(ErrorKind::Incomplete(size)),
+            nom::Err::Incomplete(needed) => Error::new(ErrorKind::Incomplete(needed)),
         }
     }
 }

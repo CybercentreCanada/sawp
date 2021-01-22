@@ -1184,7 +1184,9 @@ impl<'a> Parse<'a> for Modbus {
         }
         if usize::from(length) > input.len() {
             let needed = usize::from(length) - input.len();
-            return Err(Error::new(ErrorKind::Incomplete(nom::Needed::Size(needed))));
+            return Err(Error::new(ErrorKind::Incomplete(
+                sawp::error::Needed::Size(needed),
+            )));
         }
 
         let (input, unit_id) = be_u8(input)?;
