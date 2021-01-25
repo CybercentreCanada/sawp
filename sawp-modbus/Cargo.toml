@@ -18,7 +18,7 @@ include = [
 ]
 
 [dependencies]
-sawp = { path = ".." }
+sawp = { path = "..", version = "0.1.1-rc.2" }
 nom = "= 5.1.1"
 num_enum = "0.5.1"
 bitflags = "1.2.1"
