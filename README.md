@@ -34,11 +34,13 @@ Start using SAWP by including a parser in your project's `Cargo.toml`
 dependencies. The base library will also be required for using common
 types.
 
+**The minimum supported version of `rustc` is `1.41.1`.**
+
 ## Example
 ```
 [dependencies]
-sawp-modbus = "0.1.1-rc.1"
-sawp = "0.1.1-rc.1"
+sawp-modbus = "0.1.1-rc.2"
+sawp = "0.1.1-rc.2"
 ```
 
 # Contributing
