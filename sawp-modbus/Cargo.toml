@@ -19,9 +19,9 @@ include = [
 
 [dependencies]
 sawp = { path = "..", version = "0.1.1-rc.2" }
-nom = "= 5.1.1"
+nom = "5.1.2"
 num_enum = "0.5.1"
-bitflags = "1.2.1"
+bitflags = "1.0.4"
 
 [lib]
 crate-type = ["cdylib", "rlib"]
