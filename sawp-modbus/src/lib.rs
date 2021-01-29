@@ -242,7 +242,7 @@ impl Function {
 }
 
 /// Function code names as stated in the [protocol reference](https://modbus.org/docs/Modbus_Application_Protocol_V1_1b.pdf)
-#[derive(Debug, PartialEq, TryFromPrimitive)]
+#[derive(Clone, Copy, Debug, PartialEq, TryFromPrimitive)]
 #[repr(u8)]
 pub enum FunctionCode {
     RdCoils = 0x01,
@@ -304,7 +304,7 @@ impl Diagnostic {
 }
 
 /// Subunction code names as stated in the [protocol reference](https://modbus.org/docs/Modbus_Application_Protocol_V1_1b.pdf)
-#[derive(Debug, PartialEq, TryFromPrimitive)]
+#[derive(Clone, Copy, Debug, PartialEq, TryFromPrimitive)]
 #[repr(u16)]
 pub enum DiagnosticSubfunction {
     RetQueryData = 0x00,
@@ -354,7 +354,7 @@ impl MEI {
 }
 
 /// MEI function code names as stated in the [protocol reference](https://modbus.org/docs/Modbus_Application_Protocol_V1_1b.pdf)
-#[derive(Debug, PartialEq, TryFromPrimitive)]
+#[derive(Clone, Copy, Debug, PartialEq, TryFromPrimitive)]
 #[repr(u8)]
 pub enum MEIType {
     Unknown = 0x00,
@@ -387,7 +387,7 @@ impl Exception {
 }
 
 /// Exception code names as stated in the [protocol reference](https://modbus.org/docs/Modbus_Application_Protocol_V1_1b.pdf)
-#[derive(Debug, PartialEq, TryFromPrimitive)]
+#[derive(Clone, Copy, Debug, PartialEq, TryFromPrimitive)]
 #[repr(u8)]
 pub enum ExceptionCode {
     IllegalFunction = 0x01,
