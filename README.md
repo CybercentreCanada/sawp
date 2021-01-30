@@ -39,8 +39,8 @@ types.
 ## Example
 ```
 [dependencies]
-sawp-modbus = "0.1.1-rc.2"
-sawp = "0.1.1-rc.2"
+sawp-modbus = "0.1.1-rc.3"
+sawp = "0.1.1-rc.3"
 ```
 
 # Contributing
