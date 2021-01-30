@@ -54,7 +54,7 @@ jobs:
     # The dest branch is where you want the code to go -- e.g. staging
     - script: git remote update origin
       displayName: update
-    - script: git checkout ${{ parameters.dest }} && git pull origin ${{ parameters.dest }} && git merge origin/${{ parameters.src }} || git checkout -b ${{ parameters.dest }} origin/${{ parameters.src }}
+    - script: git checkout ${{ parameters.dest }} && git pull --ff-only origin ${{ parameters.dest }} && git merge --ff-only origin/${{ parameters.src }} || git checkout -b ${{ parameters.dest }} origin/${{ parameters.src }}
       displayName: merge
 
     # Check all contributors are in .contributors list
