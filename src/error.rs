@@ -1,6 +1,8 @@
+use std::num::NonZeroUsize;
+
 // Re-export types used for ErrorKind
-pub use nom::error::ErrorKind as NomErrorKind;
-pub use nom::Needed;
+use nom::error::ErrorKind as NomErrorKind;
+use nom::Needed as NomNeeded;
 
 /// Helper that uses this module's error type
 pub type Result<T> = std::result::Result<T, Error>;
@@ -26,6 +28,42 @@ impl Error {
     pub fn new(kind: ErrorKind) -> Self {
         Self { kind }
     }
+
+    /// Helper for creating an error with a `ErrorKind::Incomplete` and a needed size.
+    pub fn incomplete_needed(size: usize) -> Self {
+        Error::new(ErrorKind::Incomplete(
+            NonZeroUsize::new(size)
+                .map(Needed::Size)
+                .unwrap_or(Needed::Unknown),
+        ))
+    }
+
+    /// Helper for creating an error with a `ErrorKind::Incomplete` and an unknown size.
+    pub fn incomplete() -> Self {
+        Error::new(ErrorKind::Incomplete(Needed::Unknown))
+    }
+
+    /// Helper for creating a parse error.
+    #[cfg(verbose)]
+    pub fn parse(msg: Option<String>) -> Self {
+        Error::new(ErrorKind::ParseError(msg))
+    }
+
+    /// Helper for creating a parse error.
+    #[cfg(not(verbose))]
+    pub fn parse(_msg: Option<String>) -> Self {
+        Error::new(ErrorKind::ParseError(None))
+    }
+}
+
+/// Number of bytes needed for the next parsing attempt.
+///
+/// Used in `ErrorKind::Incomplete` to tell the caller how many bytes to wait
+/// for before calling the parser with more data.
+#[derive(Debug, PartialEq)]
+pub enum Needed {
+    Unknown,
+    Size(NonZeroUsize),
 }
 
 /// Kinds of common errors used by the parsers
@@ -45,8 +83,8 @@ pub enum ErrorKind {
     // returning Ok and adding validation error flags to the
     // parser's `Message` instead.
     InvalidData,
-    /// Generic nom parsing error.
-    Nom(NomErrorKind),
+    /// Generic parsing error with optional message.
+    ParseError(Option<String>),
     /// Parser did not advance because more data is required to
     /// make a decision.
     ///
@@ -54,11 +92,26 @@ pub enum ErrorKind {
     Incomplete(Needed),
 }
 
+impl From<NomErrorKind> for ErrorKind {
+    #[cfg(verbose)]
+    fn from(kind: NomErrorKind) -> Self {
+        Self::ParseError(Some(format!("{:?}", kind)))
+    }
+
+    #[cfg(not(verbose))]
+    fn from(_kind: NomErrorKind) -> Self {
+        Self::ParseError(None)
+    }
+}
+
 impl<I: std::fmt::Debug> From<nom::Err<NomError<I>>> for Error {
     fn from(nom_err: nom::Err<NomError<I>>) -> Self {
         match nom_err {
-            nom::Err::Error(err) | nom::Err::Failure(err) => Error::new(ErrorKind::Nom(err.1)),
-            nom::Err::Incomplete(needed) => Error::new(ErrorKind::Incomplete(needed)),
+            nom::Err::Error(err) | nom::Err::Failure(err) => Error::new(err.1.into()),
+            nom::Err::Incomplete(needed) => match needed {
+                NomNeeded::Unknown => Error::incomplete(),
+                NomNeeded::Size(size) => Error::incomplete_needed(size),
+            },
         }
     }
 }

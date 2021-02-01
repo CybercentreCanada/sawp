@@ -1184,9 +1184,7 @@ impl<'a> Parse<'a> for Modbus {
         }
         if usize::from(length) > input.len() {
             let needed = usize::from(length) - input.len();
-            return Err(Error::new(ErrorKind::Incomplete(
-                sawp::error::Needed::Size(needed),
-            )));
+            return Err(Error::incomplete_needed(needed));
         }
 
         let (input, unit_id) = be_u8(input)?;
@@ -1233,7 +1231,7 @@ mod tests {
     #[rstest(
         input,
         expected,
-        case::empty(b"", Err(Error { kind: ErrorKind::Incomplete(nom::Needed::Size(2)) })),
+        case::empty(b"", Err(Error::incomplete_needed(2))),
         case::hello_world(b"hello world", Err(Error { kind: ErrorKind::InvalidData })),
         case::diagnostic(
             &[
@@ -1454,7 +1452,7 @@ mod tests {
                 // Function Code: Diagnostics (8) -- Exception
                 0x88
             ],
-            Err(Error::new(ErrorKind::Incomplete(nom::Needed::Size(1))))
+            Err(Error::incomplete_needed(1))
         ),
         case::exception_with_extra(
             &[
@@ -1742,7 +1740,7 @@ mod tests {
                 // Data: 00
                 0x00
             ],
-            Err(Error { kind: ErrorKind::Incomplete(nom::Needed::Size(1)) })
+            Err(Error::incomplete_needed(1))
         ),
         case::mei_dev_id(
             &[
@@ -1818,7 +1816,7 @@ mod tests {
                 // Transaction ID: 0
                 0x00, 0x00,
             ],
-            Err(Error { kind: ErrorKind::Incomplete(nom::Needed::Size(2)) })
+            Err(Error::incomplete_needed(2))
         ),
     )]
     fn test_parse(input: &[u8], expected: Result<(usize, Option<<Modbus as Protocol>::Message>)>) {

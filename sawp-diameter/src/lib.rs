@@ -428,7 +428,7 @@ mod tests {
     #[rstest(
         input,
         expected,
-        case::empty(b"", Err(error::Error { kind: error::ErrorKind::Incomplete(nom::Needed::Size(1)) })),
+        case::empty(b"", Err(error::Error::incomplete_needed(1))),
         case::header(
         &[
             // Version: 1
@@ -580,7 +580,7 @@ mod tests {
                 // Data:
                 // Padding:
             ],
-            Err(error::Error { kind: error::ErrorKind::Incomplete(nom::Needed::Size(2)) })
+            Err(error::Error::incomplete_needed(2))
         ),
         case::invalid_avp(
             &[
@@ -626,7 +626,7 @@ mod tests {
                 // Data:
                 // Padding:
             ],
-            Err(error::Error::new(error::ErrorKind::Nom(ErrorKind::Many0))),
+            Err(error::Error::parse(Some("Many0".to_string()))),
         ),
     )]
     fn test_parse(input: &[u8], expected: Result<(&[u8], Option<Message>)>) {

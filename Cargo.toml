@@ -25,6 +25,11 @@ members = [
     "sawp-diameter",
 ]
 
+[features]
+# Makes error messages more descriptive and verbose at the cost of allocating
+# more strings
+verbose = []
+
 [lib]
 crate-type = ["staticlib", "rlib", "cdylib"]
 bench = false
