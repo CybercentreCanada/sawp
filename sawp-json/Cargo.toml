@@ -1,6 +1,6 @@
 [package]
 name = "sawp-json"
-version = "0.1.1-rc.3"
+version = "0.1.1-rc.4"
 authors = ["Canadian Centre for Cyber Security <sa-sawp@cyber.gc.ca>"]
 description = "SAWP Protocol Parser for Json"
 readme = "../README.md"
