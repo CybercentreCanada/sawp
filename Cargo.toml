@@ -19,6 +19,8 @@ include = [
 
 [workspace]
 members = [
+    "sawp-ffi",
+    "sawp-ffi-derive",
     "sawp-modbus",
     "sawp-file",
     "sawp-json",
@@ -26,6 +28,7 @@ members = [
 ]
 
 [features]
+ffi = ["cbindgen", "cdylib-link-lines", "sawp-ffi"]
 # Makes error messages more descriptive and verbose at the cost of allocating
 # more strings
 verbose = []
@@ -34,10 +37,15 @@ verbose = []
 crate-type = ["staticlib", "rlib", "cdylib"]
 bench = false
 
+[build-dependencies]
+cbindgen = {version = "0.15", optional = true}
+cdylib-link-lines = {version = "0.1.1", optional = true}
+
 [dev-dependencies]
 criterion = "0.3"
 
 [dependencies]
+sawp-ffi = { path = "sawp-ffi", optional = true}
 nom = "5.1.2"
 
 [[bench]]

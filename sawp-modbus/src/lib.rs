@@ -58,6 +58,13 @@ use std::str::FromStr;
 
 use bitflags::bitflags;
 
+/// FFI structs and Accessors
+#[cfg(feature = "ffi")]
+mod ffi;
+
+#[cfg(feature = "ffi")]
+use sawp_ffi::GenerateFFI;
+
 // Used for exception handling -- any function above this is an exception
 const ERROR_MASK: u8 = 0x80;
 // Maximum read/write quantity
@@ -218,11 +225,14 @@ impl std::fmt::Display for ErrorFlags {
 }
 
 /// Information on the function code parsed
+#[cfg_attr(feature = "ffi", derive(GenerateFFI))]
+#[cfg_attr(feature = "ffi", sawp_ffi(prefix = "sawp_modbus"))]
 #[derive(Debug, PartialEq)]
 pub struct Function {
     /// Value of the function byte
     pub raw: u8,
     /// Function name associated with the raw value
+    #[cfg_attr(feature = "ffi", sawp_ffi(copy))]
     pub code: FunctionCode,
 }
 
@@ -286,11 +296,14 @@ impl FunctionCode {
 }
 
 /// Information on the diagnostic subfunction code parsed
+#[cfg_attr(feature = "ffi", derive(GenerateFFI))]
+#[cfg_attr(feature = "ffi", sawp_ffi(prefix = "sawp_modbus"))]
 #[derive(Debug, PartialEq)]
 pub struct Diagnostic {
     /// Value of the subfunction bytes
     pub raw: u16,
     /// Subfunction name associated with the raw value
+    #[cfg_attr(feature = "ffi", sawp_ffi(copy))]
     pub code: DiagnosticSubfunction,
 }
 
@@ -303,7 +316,7 @@ impl Diagnostic {
     }
 }
 
-/// Subunction code names as stated in the [protocol reference](https://modbus.org/docs/Modbus_Application_Protocol_V1_1b.pdf)
+/// Subfunction code names as stated in the [protocol reference](https://modbus.org/docs/Modbus_Application_Protocol_V1_1b.pdf)
 #[derive(Clone, Copy, Debug, PartialEq, TryFromPrimitive)]
 #[repr(u16)]
 pub enum DiagnosticSubfunction {
@@ -336,11 +349,14 @@ impl std::fmt::Display for DiagnosticSubfunction {
 }
 
 /// Information on the mei code parsed
+#[cfg_attr(feature = "ffi", derive(GenerateFFI))]
+#[cfg_attr(feature = "ffi", sawp_ffi(prefix = "sawp_modbus"))]
 #[derive(Debug, PartialEq)]
 pub struct MEI {
     /// Value of the mei function byte
     pub raw: u8,
     /// Function name associated with the raw value
+    #[cfg_attr(feature = "ffi", sawp_ffi(copy))]
     pub code: MEIType,
 }
 
@@ -369,11 +385,14 @@ impl std::fmt::Display for MEIType {
 }
 
 /// Information on the exception code parsed
+#[cfg_attr(feature = "ffi", derive(GenerateFFI))]
+#[cfg_attr(feature = "ffi", sawp_ffi(prefix = "sawp_modbus"))]
 #[derive(Debug, PartialEq)]
 pub struct Exception {
     /// Value of the exception code byte
     pub raw: u8,
     /// Exception name associated with the raw value
+    #[cfg_attr(feature = "ffi", sawp_ffi(copy))]
     pub code: ExceptionCode,
 }
 
@@ -410,6 +429,8 @@ impl std::fmt::Display for ExceptionCode {
 }
 
 /// Read information on parsed in function data
+#[cfg_attr(feature = "ffi", derive(GenerateFFI))]
+#[cfg_attr(feature = "ffi", sawp_ffi(prefix = "sawp_modbus"))]
 #[derive(Clone, Debug, PartialEq)]
 pub enum Read {
     Request { address: u16, quantity: u16 },
@@ -417,6 +438,8 @@ pub enum Read {
 }
 
 /// Write information on parsed in function data
+#[cfg_attr(feature = "ffi", derive(GenerateFFI))]
+#[cfg_attr(feature = "ffi", sawp_ffi(prefix = "sawp_modbus"))]
 #[derive(Debug, PartialEq)]
 pub enum Write {
     /// [`AccessType::MULTIPLE`] requests, responses fall in [`Write::Other`]
@@ -438,6 +461,8 @@ pub enum Write {
 }
 
 /// Represents the various fields found in the PDU
+#[cfg_attr(feature = "ffi", derive(GenerateFFI))]
+#[cfg_attr(feature = "ffi", sawp_ffi(prefix = "sawp_modbus"))]
 #[derive(Debug, PartialEq)]
 pub enum Data {
     Exception(Exception),
@@ -464,6 +489,8 @@ pub enum Data {
 pub struct Modbus {}
 
 /// Breakdown of the parsed modbus bytes
+#[cfg_attr(feature = "ffi", derive(GenerateFFI))]
+#[cfg_attr(feature = "ffi", sawp_ffi(prefix = "sawp_modbus"))]
 #[derive(Debug, PartialEq)]
 pub struct Message {
     pub transaction_id: u16,
@@ -471,9 +498,12 @@ pub struct Message {
     length: u16,
     pub unit_id: u8,
     pub function: Function,
+    #[cfg_attr(feature = "ffi", sawp_ffi(u8_flag))]
     pub access_type: AccessType,
+    #[cfg_attr(feature = "ffi", sawp_ffi(u8_flag))]
     pub category: CodeCategory,
     pub data: Data,
+    #[cfg_attr(feature = "ffi", sawp_ffi(u8_flag))]
     pub flags: ErrorFlags,
 }
 

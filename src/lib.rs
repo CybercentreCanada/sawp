@@ -37,3 +37,6 @@ pub mod probe;
 
 /// Describe a Protocol
 pub mod protocol;
+
+#[cfg(feature = "ffi")]
+pub mod ffi;

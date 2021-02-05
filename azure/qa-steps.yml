@@ -8,6 +8,8 @@ steps:
     displayName: install rust (msrv)
   - script: cargo tarpaulin --version || cargo install cargo-tarpaulin
     displayName: install cargo-tarpaulin
+  - script: cbindgen --version || cargo install + cbindgen
+    displayName: install cbindgen
   - script: cargo +nightly --version || rustup install nightly
     displayName: install rust nightly
   - script: cargo +nightly fuzz --version || cargo +nightly install cargo-fuzz
@@ -59,6 +61,10 @@ steps:
   # Build fuzz
   - script: cargo +nightly fuzz build
     displayName: build fuzz
+
+  # Build headers
+  - script: make headers
+    displayName: build headers
 
   # Check code coverage
   - script: |

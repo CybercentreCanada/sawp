@@ -1,0 +1,21 @@
+[package]
+name = "sawp-ffi"
+version = "0.1.0"
+authors = ["Canadian Centre for Cyber Security <sa-sawp@cyber.gc.ca>"]
+description = "FFI helper macros and traits"
+readme = "../README.md"
+license-file = "../LICENSE"
+repository = "https://github.com/CybercentreCanada/sawp"
+homepage = "https://github.com/CybercentreCanada/sawp"
+keywords = ["ffi"]
+categories = ["ffi"]
+include = [
+    "Cargo.toml",
+    "../LICENSE",
+    "../README.md",
+    "src/**/*.rs",
+]
+
+[dependencies]
+sawp-ffi-derive = { path = "../sawp-ffi-derive"}
+bitflags = "1.2.1"

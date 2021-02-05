@@ -1,0 +1,30 @@
+[package]
+name = "sawp-ffi-derive"
+version = "0.1.0"
+authors = ["Canadian Centre for Cyber Security <sa-sawp@cyber.gc.ca>"]
+description = "Generate cbindgen compatible member accessors for structs and enums"
+readme = "../README.md"
+edition = "2018"
+license-file = "../LICENSE"
+repository = "https://github.com/CybercentreCanada/sawp"
+homepage = "https://github.com/CybercentreCanada/sawp"
+keywords = ["ffi", "code-generation"]
+categories = ["ffi"]
+include = [
+    "Cargo.toml",
+    "../LICENSE",
+    "../README.md",
+    "src/**/*.rs",
+]
+
+[dependencies]
+quote = "1.0"
+syn = "1.0"
+proc-macro2 = "1.0"
+heck = "0.3"
+
+[dev-dependencies]
+bitflags = "1.2.1"
+
+[lib]
+proc-macro = true

@@ -1,3 +1,6 @@
+#[cfg(feature = "ffi")]
+use sawp_ffi::GenerateFFI;
+
 use std::num::NonZeroUsize;
 
 // Re-export types used for ErrorKind
@@ -20,6 +23,8 @@ pub type NomError<I> = (I, NomErrorKind);
 /// types if they wish to avoid adding extra dependencies
 /// to the base crate.
 #[derive(Debug, PartialEq)]
+#[cfg_attr(feature = "ffi", derive(GenerateFFI))]
+#[cfg_attr(feature = "ffi", sawp_ffi(prefix = "sawp"))]
 pub struct Error {
     pub kind: ErrorKind,
 }
@@ -69,6 +74,8 @@ pub enum Needed {
 /// Kinds of common errors used by the parsers
 #[derive(Debug, PartialEq)]
 #[non_exhaustive]
+#[cfg_attr(feature = "ffi", derive(GenerateFFI))]
+#[cfg_attr(feature = "ffi", sawp_ffi(type_only, prefix = "sawp"))]
 pub enum ErrorKind {
     /// Feature is not yet implemented.
     Unimplemented,

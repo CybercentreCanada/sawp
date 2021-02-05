@@ -17,14 +17,26 @@ include = [
     "src/**/*.rs",
 ]
 
+[features]
+ffi = ["cbindgen", "sawp/ffi", "sawp-ffi"]
+# Prevent --all-features from requiring nightly
+# Headers will only be generated when "ffi" is explicitly specified
+# and "no-headers" isn't, since generating headers with cbindgen
+# and macros requires nightly
+no-headers = []
+
+[build-dependencies]
+cbindgen = {version = "0.15", optional = true}
+
 [dependencies]
+sawp-ffi = { path = "../sawp-ffi", optional = true}
 sawp = { path = "..", version = "0.1.1-rc.3" }
 nom = "5.1.2"
 num_enum = "0.5.1"
 bitflags = "1.0.4"
 
 [lib]
-crate-type = ["cdylib", "rlib"]
+crate-type = ["staticlib", "rlib", "cdylib"]
 
 [dev-dependencies]
 rstest = "0.6.4"
