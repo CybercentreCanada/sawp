@@ -34,3 +34,7 @@ cxx-build = {version = "0.4", optional = true}
 
 [lib]
 crate-type = ["staticlib", "rlib", "cdylib"]
+
+# Override default replacements
+[package.metadata.release]
+pre-release-replacements = []

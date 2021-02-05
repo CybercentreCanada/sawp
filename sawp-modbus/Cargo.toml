@@ -29,6 +29,7 @@ crate-type = ["cdylib", "rlib"]
 [dev-dependencies]
 rstest = "0.6.4"
 
+# Override default replacements
 [package.metadata.release]
 pre-release-replacements = [
   {file="../README.md", search="sawp-modbus = .*", replace="sawp-modbus = \"{{version}}\""},

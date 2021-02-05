@@ -53,8 +53,3 @@ buildflags = ["--release"]
 "libsawp_diameter.so" = { path = "/usr/local/lib/libsawp_diameter.so" }
 "libsawp_modbus.so" = { path = "/usr/local/lib/libsawp_modbus.so" }
 "libsawp_json.so" = { path = "/usr/local/lib/libsawp_json.so" }
-
-[package.metadata.release]
-pre-release-replacements = [
-  {file="README.md", search="sawp = .*", replace="sawp = \"{{version}}\""},
-]

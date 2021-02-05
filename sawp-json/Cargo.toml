@@ -33,3 +33,7 @@ rstest = "0.6"
 name = "json"
 path = "benches/json.rs"
 harness = false
+
+# Override default replacements
+[package.metadata.release]
+pre-release-replacements = []
