@@ -215,6 +215,7 @@ bitflags! {
         const DATA_VALUE    = 0b00000001;
         const DATA_LENGTH   = 0b00000010;
         const EXC_CODE      = 0b00000100;
+        const FUNC_CODE     = 0b00001000;
     }
 }
 
@@ -520,12 +521,16 @@ impl Message {
         let (input, exc_code) = be_u8(input)?;
         let exc = Exception::new(exc_code);
         match exc.code {
-            ExceptionCode::IllegalDataValue if self.function.code == FunctionCode::Diagnostic => {
+            ExceptionCode::IllegalDataValue
+                if self.function.code != FunctionCode::Diagnostic
+                    && ((self.function.raw > 6 && self.function.raw < 15)
+                        || (self.function.raw > 16 && self.function.raw < 20)) =>
+            {
                 self.flags |= ErrorFlags::EXC_CODE
             }
             ExceptionCode::IllegalDataAddr
                 if (self.function.raw > 6 && self.function.raw < 15)
-                    || (self.function.raw > 16 && self.function.raw < 22) =>
+                    || (self.function.raw > 16 && self.function.raw < 20) =>
             {
                 self.flags |= ErrorFlags::EXC_CODE
             }
@@ -535,6 +540,7 @@ impl Message {
             {
                 self.flags |= ErrorFlags::EXC_CODE
             }
+            ExceptionCode::Unknown => self.flags |= ErrorFlags::EXC_CODE,
             _ => {}
         }
 
@@ -682,7 +688,7 @@ impl Message {
             }
 
             if quantity == 0 || self.length - offset != count.into() {
-                self.flags |= ErrorFlags::DATA_VALUE;
+                self.flags |= ErrorFlags::DATA_LENGTH;
             }
 
             if self.access_type.contains(AccessType::BIT_ACCESS_MASK) {
@@ -845,6 +851,10 @@ impl Message {
                 self.flags |= ErrorFlags::DATA_LENGTH
             }
             _ => {
+                if self.function.raw == 0 || self.function.raw >= ERROR_MASK {
+                    self.flags |= ErrorFlags::FUNC_CODE;
+                }
+
                 if self.access_type.intersects(AccessType::READ) {
                     let input = self.parse_read_request(input)?;
 
@@ -1466,7 +1476,7 @@ mod tests {
                 access_type: AccessType::NONE,
                 category: CodeCategory::NONE,
                 data: Data::Exception(Exception { raw: 12, code: ExceptionCode::Unknown }),
-                flags: ErrorFlags::NONE,
+                flags: ErrorFlags::EXC_CODE,
             })))
         ),
         case::exception_missing_code(
