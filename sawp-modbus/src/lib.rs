@@ -669,9 +669,6 @@ impl Message {
         if self.access_type.contains(AccessType::SINGLE) {
             let (input, data) = be_u16(input)?;
 
-            if self.data_length() > 4 {
-                self.flags |= ErrorFlags::DATA_LENGTH;
-            }
             if self.access_type.contains(AccessType::COILS) && data != 0x0000 && data != 0xff00 {
                 self.flags |= ErrorFlags::DATA_VALUE;
             }
@@ -725,10 +722,6 @@ impl Message {
             let (input, and_mask) = be_u16(input)?;
             let (input, or_mask) = be_u16(input)?;
 
-            if self.data_length() > 6 {
-                self.flags |= ErrorFlags::DATA_LENGTH;
-            }
-
             self.data = Data::Write(Write::Mask {
                 address,
                 and_mask,
@@ -754,18 +747,10 @@ impl Message {
 
         if self.access_type.contains(AccessType::SINGLE) {
             let (input, data) = be_u16(input)?;
-
-            if self.data_length() > 4 {
-                self.flags |= ErrorFlags::DATA_LENGTH;
-            }
-
             self.data = Data::Write(Write::Other { address, data });
             Ok(input)
         } else if self.access_type.contains(AccessType::MULTIPLE) {
             let (input, quantity) = be_u16(input)?;
-            if self.data_length() > 4 {
-                self.flags |= ErrorFlags::DATA_LENGTH;
-            }
             if quantity == 0 {
                 self.flags |= ErrorFlags::DATA_VALUE;
             }
@@ -786,10 +771,6 @@ impl Message {
         } else {
             let (input, and_mask) = be_u16(input)?;
             let (input, or_mask) = be_u16(input)?;
-
-            if self.data_length() > 6 {
-                self.flags |= ErrorFlags::DATA_LENGTH;
-            }
 
             self.data = Data::Write(Write::Mask {
                 address,
@@ -930,84 +911,97 @@ impl Message {
             return true;
         }
 
-        match &self.data {
-            Data::Exception(_) => true,
-            Data::ByteVec(_) => true,
-            Data::Read(Read::Response(data)) => {
-                let count = data.len();
-                let other_count = match &other.data {
-                    Data::Read(Read::Request {
-                        address: _,
-                        quantity,
-                    })
-                    | Data::ReadWrite {
-                        read:
-                            Read::Request {
-                                address: _,
-                                quantity,
-                            },
-                        write: _,
-                    } => usize::from(*quantity),
-                    _ => return false,
-                };
+        match (&self.data, &other.data) {
+            (Data::Exception(_), _) => true,
+            (Data::ByteVec(_), Data::ByteVec(_)) => true,
+            (Data::ByteVec(_), _) => self.flags.intersects(ErrorFlags::DATA_LENGTH),
+            (_, Data::ByteVec(_)) => other.flags.intersects(ErrorFlags::DATA_LENGTH),
+            (
+                Data::Read(Read::Response(data)),
+                Data::Read(Read::Request {
+                    address: _,
+                    quantity,
+                }),
+            ) => {
+                let other_count = usize::from(*quantity);
 
-                if self.function.code != FunctionCode::RdWrMultRegs {
-                    if count != (other_count / 8) + usize::from((other_count % 8) != 0) {
-                        self.flags |= ErrorFlags::DATA_VALUE;
-                    }
-                } else if count != 2 * other_count {
+                if data.len() != (other_count / 8) + usize::from((other_count % 8) != 0) {
                     self.flags |= ErrorFlags::DATA_VALUE;
                 }
 
                 true
             }
-            Data::Read(Read::Request {
-                address: _,
-                quantity,
-            })
-            | Data::ReadWrite {
-                read:
-                    Read::Request {
-                        address: _,
-                        quantity,
-                    },
-                write: _,
-            } => {
+            (
+                Data::Read(Read::Response(data)),
+                Data::ReadWrite {
+                    read:
+                        Read::Request {
+                            address: _,
+                            quantity,
+                        },
+                    write: _,
+                },
+            ) => {
+                if data.len() != 2 * usize::from(*quantity) {
+                    self.flags |= ErrorFlags::DATA_VALUE;
+                }
+
+                true
+            }
+            (
+                Data::Read(Read::Request {
+                    address: _,
+                    quantity,
+                }),
+                Data::Read(Read::Response(data)),
+            ) => {
                 let count = usize::from(*quantity);
-                let other_count = match &other.data {
-                    Data::Read(Read::Response(data)) => data.len(),
-                    _ => return false,
-                };
 
-                if self.function.code != FunctionCode::RdWrMultRegs {
-                    if other_count != (count / 8) + usize::from((count % 8) != 0) {
-                        self.flags |= ErrorFlags::DATA_VALUE;
-                    }
-                } else if other_count != 2 * count {
+                if data.len() != (count / 8) + usize::from((count % 8) != 0) {
                     self.flags |= ErrorFlags::DATA_VALUE;
                 }
 
                 true
             }
-            Data::Write(Write::Other {
-                address: addr,
-                data,
-            }) => match &other.data {
+            (
+                Data::ReadWrite {
+                    read:
+                        Read::Request {
+                            address: _,
+                            quantity,
+                        },
+                    write: _,
+                },
+                Data::Read(Read::Response(data)),
+            ) => {
+                if data.len() != 2 * usize::from(*quantity) {
+                    self.flags |= ErrorFlags::DATA_VALUE;
+                }
+
+                true
+            }
+            (
                 Data::Write(Write::Other {
+                    address: addr,
+                    data,
+                }),
+                Data::Write(other_write),
+            ) => match &other_write {
+                Write::Other {
                     address: other_addr,
                     data: other_data,
-                }) => {
+                } => {
                     if addr != other_addr || data != other_data {
                         self.flags |= ErrorFlags::DATA_VALUE;
                     }
 
                     true
                 }
-                Data::Write(Write::MultReq {
+                Write::MultReq {
                     address: other_addr,
                     quantity: other_quantity,
                     data: _,
-                }) => {
+                } => {
                     if addr != other_addr || data != other_quantity {
                         self.flags |= ErrorFlags::DATA_VALUE;
                     }
@@ -1016,68 +1010,56 @@ impl Message {
                 }
                 _ => false,
             },
-            Data::Write(Write::MultReq {
-                address: addr,
-                quantity,
-                data: _,
-            }) => {
-                if let Data::Write(Write::Other {
+            (
+                Data::Write(Write::MultReq {
+                    address: addr,
+                    quantity,
+                    data: _,
+                }),
+                Data::Write(Write::Other {
                     address: other_addr,
                     data: other_data,
-                }) = &other.data
-                {
-                    if addr != other_addr || quantity != other_data {
-                        self.flags |= ErrorFlags::DATA_VALUE;
-                    }
-
-                    true
-                } else {
-                    false
+                }),
+            ) => {
+                if addr != other_addr || quantity != other_data {
+                    self.flags |= ErrorFlags::DATA_VALUE;
                 }
+
+                true
             }
-            Data::Write(Write::Mask {
-                address: addr,
-                and_mask: and,
-                or_mask: or,
-            }) => {
-                if let Data::Write(Write::Mask {
+            (
+                Data::Write(Write::Mask {
+                    address: addr,
+                    and_mask: and,
+                    or_mask: or,
+                }),
+                Data::Write(Write::Mask {
                     address: other_addr,
                     and_mask: other_and,
                     or_mask: other_or,
-                }) = &other.data
-                {
-                    if addr != other_addr || and != other_and || or != other_or {
-                        self.flags |= ErrorFlags::DATA_VALUE;
-                    }
-
-                    return true;
+                }),
+            ) => {
+                if addr != other_addr || and != other_and || or != other_or {
+                    self.flags |= ErrorFlags::DATA_VALUE;
                 }
 
-                false
+                true
             }
-            Data::Diagnostic { func, data: _ } => {
-                if let Data::Diagnostic {
+            (
+                Data::Diagnostic { func, data: _ },
+                Data::Diagnostic {
                     func: other_func,
                     data: _,
-                } = &other.data
-                {
-                    func == other_func
-                } else {
-                    false
-                }
-            }
-            Data::MEI { mei_type, data: _ } => {
-                if let Data::MEI {
+                },
+            ) => func == other_func,
+            (
+                Data::MEI { mei_type, data: _ },
+                Data::MEI {
                     mei_type: other_mei,
                     data: _,
-                } = &other.data
-                {
-                    mei_type == other_mei
-                } else {
-                    false
-                }
-            }
-            _ => true,
+                },
+            ) => mei_type == other_mei,
+            _ => false,
         }
     }
 
@@ -1244,11 +1226,28 @@ impl<'a> Parse<'a> for Modbus {
             flags: ErrorFlags::NONE,
         };
 
-        let input = match direction {
-            Direction::ToServer => message.parse_request(input)?,
-            Direction::ToClient => message.parse_response(input)?,
-            Direction::Unknown => message.parse_unknown(input)?,
+        let (input, data) = take(message.data_length())(input)?;
+        let result = match direction {
+            Direction::ToServer => message.parse_request(data),
+            Direction::ToClient => message.parse_response(data),
+            Direction::Unknown => message.parse_unknown(data),
         };
+        match result {
+            Ok(rest) => {
+                if !rest.is_empty() {
+                    message.flags |= ErrorFlags::DATA_LENGTH;
+                }
+            }
+            Err(Error {
+                kind: ErrorKind::Incomplete(_),
+            }) => {
+                message.flags |= ErrorFlags::DATA_LENGTH;
+                if message.data == Data::Empty {
+                    message.data = Data::ByteVec(data.to_vec());
+                }
+            }
+            Err(err) => return Err(err),
+        }
 
         message.category = CodeCategory::from(&message);
 
@@ -1492,7 +1491,17 @@ mod tests {
                 // Function Code: Diagnostics (8) -- Exception
                 0x88
             ],
-            Err(Error::incomplete_needed(1))
+            Ok((0, Some(Message{
+                transaction_id: 0,
+                protocol_id: 0,
+                length: 2,
+                unit_id: 8,
+                function: Function { raw: 136, code: FunctionCode::Diagnostic },
+                access_type: AccessType::NONE,
+                category: CodeCategory::NONE,
+                data: Data::ByteVec(Vec::new()),
+                flags: ErrorFlags::DATA_LENGTH,
+            })))
         ),
         case::exception_with_extra(
             &[
@@ -2103,6 +2112,46 @@ mod tests {
                 flags: ErrorFlags::NONE,
             })))
         ),
+        case::write_mult_regs_invalid_length(
+            &[
+                // Transaction ID: 1
+                0x00, 0x01,
+                // Protocol ID: 0
+                0x00, 0x00,
+                // Length: 9
+                0x00, 0x09,
+                // Unit ID: 1
+                0x01,
+                // Function Code: Write Multiple Registers (16)
+                0x10,
+                // Start Address: 3
+                0x00, 0x03,
+                // Quantity: 2
+                0x00, 0x02,
+                // Byte Count: 4
+                0x04,
+                // Value
+                0x0a, 0x0b,
+                0x00, 0x00
+            ],
+            Ok((2, Some(Message{
+                transaction_id: 1,
+                protocol_id: 0,
+                length: 9,
+                unit_id: 1,
+                function: Function { raw: 16, code: FunctionCode::WrMultRegs },
+                access_type: AccessType::HOLDING | AccessType::WRITE_MULTIPLE,
+                category: CodeCategory::PUBLIC_ASSIGNED,
+                data: Data::Write (
+                    Write::MultReq {
+                        address: 0x0003,
+                        quantity: 0x0002,
+                        data: vec![0x0a, 0x0b]
+                    }
+                ),
+                flags: ErrorFlags::DATA_LENGTH,
+            })))
+        ),
         case::read_write_mult_regs(
             &[
                 // Transaction ID: 1
@@ -2185,6 +2234,66 @@ mod tests {
                     }
                 ),
                 flags: ErrorFlags::NONE,
+            })))
+        ),
+        case::mask_write_reg_invalid_length(
+            &[
+                // Transaction ID: 1
+                0x00, 0x01,
+                // Protocol ID: 0
+                0x00, 0x00,
+                // Length: 6
+                0x00, 0x06,
+                // Unit ID: 1
+                0x01,
+                // Function Code: Mask Write Register (22)
+                0x16,
+                // Start Address: 1
+                0x00, 0x01,
+                // And mask: 2
+                0x00, 0x02,
+            ],
+            Ok((0, Some(Message{
+                transaction_id: 1,
+                protocol_id: 0,
+                length: 6,
+                unit_id: 1,
+                function: Function { raw: 22, code: FunctionCode::MaskWrReg },
+                access_type: AccessType::WRITE | AccessType::HOLDING,
+                category: CodeCategory::PUBLIC_ASSIGNED,
+                data: Data::ByteVec ([0x00, 0x01, 0x00, 0x02].to_vec()),
+                flags: ErrorFlags::DATA_LENGTH,
+            })))
+        ),
+        case::mask_write_reg_invalid_length_complete(
+            &[
+                // Transaction ID: 1
+                0x00, 0x01,
+                // Protocol ID: 0
+                0x00, 0x00,
+                // Length: 6
+                0x00, 0x06,
+                // Unit ID: 1
+                0x01,
+                // Function Code: Mask Write Register (22)
+                0x16,
+                // Start Address: 1
+                0x00, 0x01,
+                // And mask: 2
+                0x00, 0x02,
+                // Or mask: 3
+                0x00, 0x03,
+            ],
+            Ok((2, Some(Message{
+                transaction_id: 1,
+                protocol_id: 0,
+                length: 6,
+                unit_id: 1,
+                function: Function { raw: 22, code: FunctionCode::MaskWrReg },
+                access_type: AccessType::WRITE | AccessType::HOLDING,
+                category: CodeCategory::PUBLIC_ASSIGNED,
+                data: Data::ByteVec ([0x00, 0x01, 0x00, 0x02].to_vec()),
+                flags: ErrorFlags::DATA_LENGTH,
             })))
         ),
         case::mei_gen_ref(
