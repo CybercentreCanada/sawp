@@ -83,3 +83,7 @@ steps:
     inputs:
       codeCoverageTool: 'cobertura'
       summaryFileLocation: cobertura.xml
+
+  # Check if cargo release would pass
+  - script: cargo release --workspace --dry-run -- patch
+    displayName: check release

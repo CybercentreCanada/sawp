@@ -28,3 +28,7 @@ bitflags = "1.2.1"
 
 [lib]
 proc-macro = true
+
+# Override default replacements
+[package.metadata.release]
+pre-release-replacements = []
