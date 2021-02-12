@@ -87,3 +87,7 @@ steps:
   # Check if cargo release would pass
   - script: cargo release --workspace --dry-run -- patch
     displayName: check release
+
+  # Check if cargo publish would pass
+  - script: cargo publish --dry-run
+    displayName: check publish
