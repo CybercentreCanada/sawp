@@ -1,6 +1,6 @@
 [package]
 name = "sawp-ffi"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Canadian Centre for Cyber Security <sa-sawp@cyber.gc.ca>"]
 description = "FFI helper macros and traits"
 readme = "../README.md"

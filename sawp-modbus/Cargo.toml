@@ -1,6 +1,6 @@
 [package]
 name = "sawp-modbus"
-version = "0.1.1-rc.4"
+version = "0.1.1"
 authors = ["Canadian Centre for Cyber Security <sa-sawp@cyber.gc.ca>"]
 description = "SAWP Protocol Parser for Modbus"
 readme = "../README.md"
@@ -30,7 +30,7 @@ cbindgen = {version = "0.15", optional = true}
 
 [dependencies]
 sawp-ffi = { path = "../sawp-ffi", optional = true}
-sawp = { path = "..", version = "0.1.1-rc.3" }
+sawp = { path = "..", version = "^0.1.1"}
 nom = "5.1.2"
 num_enum = "0.5.1"
 bitflags = "1.0.4"
