@@ -45,7 +45,7 @@
 
 use sawp::error::{Error, ErrorKind, Result};
 use sawp::parser::{Direction, Parse};
-use sawp::probe::Probe;
+use sawp::probe::{Probe, Status};
 use sawp::protocol::Protocol;
 
 use nom::bytes::streaming::take;
@@ -73,6 +73,9 @@ const MAX_QUANTITY_WORD_ACCESS: u16 = 125;
 // Valid count range for reading
 const MIN_RD_COUNT: u8 = 1;
 const MAX_RD_COUNT: u8 = 250;
+
+const MIN_LENGTH: u16 = 2;
+const MAX_LENGTH: u16 = 254;
 
 bitflags! {
     /// Function code groups based on general use. Allows for easier
@@ -216,6 +219,7 @@ bitflags! {
         const DATA_LENGTH   = 0b00000010;
         const EXC_CODE      = 0b00000100;
         const FUNC_CODE     = 0b00001000;
+        const PROTO_ID      = 0b00010000;
     }
 }
 
@@ -557,7 +561,8 @@ impl Message {
     //     Data:                   x           (2..)
     fn parse_diagnostic<'a>(&mut self, input: &'a [u8]) -> Result<&'a [u8]> {
         if self.data_length() < 2 {
-            return Err(Error::new(ErrorKind::InvalidData));
+            self.flags |= ErrorFlags::DATA_LENGTH;
+            return Ok(input);
         }
 
         let (input, diag_func) = be_u16(input)?;
@@ -575,7 +580,8 @@ impl Message {
     //     Data:                   x           (2..)
     fn parse_mei<'a>(&mut self, input: &'a [u8]) -> Result<&'a [u8]> {
         if self.data_length() < 1 {
-            return Err(Error::new(ErrorKind::InvalidData));
+            self.flags |= ErrorFlags::DATA_LENGTH;
+            return Ok(input);
         }
 
         let (input, raw_mei) = be_u8(input)?;
@@ -628,7 +634,8 @@ impl Message {
     // Data:    Count      (1..Count + 1)
     fn parse_read_response<'a>(&mut self, input: &'a [u8]) -> Result<&'a [u8]> {
         if self.data_length() < 1 {
-            return Err(Error::new(ErrorKind::InvalidData));
+            self.flags |= ErrorFlags::DATA_LENGTH;
+            return Ok(input);
         }
 
         let (input, count) = be_u8(input)?;
@@ -1186,7 +1193,24 @@ impl Protocol<'_> for Modbus {
     }
 }
 
-impl<'a> Probe<'a> for Modbus {}
+impl<'a> Probe<'a> for Modbus {
+    fn probe(&self, input: &'a [u8], direction: Direction) -> Status {
+        match self.parse(input, direction) {
+            Ok((_, Some(msg))) => {
+                if msg.flags == ErrorFlags::NONE {
+                    Status::Recognized
+                } else {
+                    Status::Unrecognized
+                }
+            }
+            Ok((_, _)) => Status::Recognized,
+            Err(Error {
+                kind: ErrorKind::Incomplete(_),
+            }) => Status::Incomplete,
+            Err(_) => Status::Unrecognized,
+        }
+    }
+}
 
 impl<'a> Parse<'a> for Modbus {
     fn parse(
@@ -1196,37 +1220,41 @@ impl<'a> Parse<'a> for Modbus {
     ) -> Result<(&'a [u8], Option<Self::Message>)> {
         let (input, transaction_id) = be_u16(input)?;
         let (input, protocol_id) = be_u16(input)?;
+        let mut err_flags = ErrorFlags::NONE;
         if protocol_id != 0 {
-            return Err(Error::new(ErrorKind::InvalidData));
+            err_flags |= ErrorFlags::PROTO_ID;
         }
 
         let (input, length) = be_u16(input)?;
-        if length < 2 {
-            return Err(Error::new(ErrorKind::InvalidData));
-        }
-        if usize::from(length) > input.len() {
-            let needed = usize::from(length) - input.len();
-            return Err(Error::incomplete_needed(needed));
-        }
-
-        let (input, unit_id) = be_u8(input)?;
-        let (input, raw_func) = be_u8(input)?;
-        let function = Function::new(raw_func);
-        let access_type = AccessType::from(&function.code);
 
         let mut message = Message {
             transaction_id,
             protocol_id,
             length,
-            unit_id,
-            function,
-            access_type,
+            unit_id: 0,
+            function: Function::new(0),
+            access_type: AccessType::NONE,
             category: CodeCategory::NONE,
             data: Data::Empty,
-            flags: ErrorFlags::NONE,
+            flags: err_flags,
         };
 
-        let (input, data) = take(message.data_length())(input)?;
+        if !(MIN_LENGTH..=MAX_LENGTH).contains(&length) {
+            message.flags |= ErrorFlags::DATA_LENGTH;
+            if input.len() > usize::from(length) {
+                return Ok((&input[usize::from(length)..input.len()], Some(message)));
+            } else {
+                return Ok((&[], Some(message)));
+            }
+        }
+
+        let (input, data) = take(length)(input)?;
+        let (data, unit_id) = be_u8(data)?;
+        let (data, raw_func) = be_u8(data)?;
+        message.unit_id = unit_id;
+        message.function = Function::new(raw_func);
+        message.access_type = AccessType::from(&message.function.code);
+
         let result = match direction {
             Direction::ToServer => message.parse_request(data),
             Direction::ToClient => message.parse_response(data),
@@ -1259,7 +1287,7 @@ impl<'a> Parse<'a> for Modbus {
 mod tests {
     use super::*;
     use rstest::rstest;
-    use sawp::error::{Error, ErrorKind, Result};
+    use sawp::error::{Error, Result};
     use sawp::probe::Status;
 
     #[test]
@@ -1271,7 +1299,20 @@ mod tests {
         input,
         expected,
         case::empty(b"", Err(Error::incomplete_needed(2))),
-        case::hello_world(b"hello world", Err(Error { kind: ErrorKind::InvalidData })),
+        case::hello_world(
+            b"hello world",
+            Ok((0, Some(Message{
+                transaction_id: 26725,
+                protocol_id: 27756,
+                length: 28448,
+                unit_id: 0,
+                function: Function { raw: 0, code: FunctionCode::Unknown },
+                access_type: AccessType::NONE,
+                category: CodeCategory::NONE,
+                data: Data::Empty,
+                flags: ErrorFlags::PROTO_ID | ErrorFlags::DATA_LENGTH,
+            })))
+        ),
         case::diagnostic(
             &[
                 // Transaction ID: 1
@@ -1314,7 +1355,17 @@ mod tests {
                 // Function Code: Diagnostics (8)
                 0x08
             ],
-            Err(Error::new(ErrorKind::InvalidData))
+            Ok((0, Some(Message{
+                transaction_id: 1,
+                protocol_id: 0,
+                length: 2,
+                unit_id: 3,
+                function: Function { raw: 8, code: FunctionCode::Diagnostic },
+                access_type: AccessType::NONE,
+                category: CodeCategory::NONE,
+                data: Data::Empty,
+                flags: ErrorFlags::DATA_LENGTH,
+            })))
         ),
         case::diagnostic_reserved_1(
             &[
@@ -1547,7 +1598,17 @@ mod tests {
                 // Exception Code: Gateway target device failed to respond (11)
                 0x0b
             ],
-            Err(Error { kind: ErrorKind::InvalidData })
+            Ok((1, Some(Message{
+                transaction_id: 0,
+                protocol_id: 4,
+                length: 2,
+                unit_id: 8,
+                function: Function { raw: 136, code: FunctionCode::Diagnostic },
+                access_type: AccessType::NONE,
+                category: CodeCategory::NONE,
+                data: Data::ByteVec([].to_vec()),
+                flags: ErrorFlags::PROTO_ID | ErrorFlags::DATA_LENGTH,
+            })))
         ),
         case::server_id(
             &[
@@ -1614,7 +1675,17 @@ mod tests {
                 // Function Code: Report Server ID (17)
                 0x11
             ],
-            Err(Error { kind: ErrorKind::InvalidData })
+            Ok((1, Some(Message{
+                transaction_id: 1,
+                protocol_id: 0,
+                length: 1,
+                unit_id: 0,
+                function: Function { raw: 0, code: FunctionCode::Unknown },
+                access_type: AccessType::NONE,
+                category: CodeCategory::NONE,
+                data: Data::Empty,
+                flags: ErrorFlags::DATA_LENGTH,
+            })))
         ),
         case::unknown_func(
             &[
@@ -1770,7 +1841,17 @@ mod tests {
                 // Data: 00
                 0x00
             ],
-            Err(Error { kind: ErrorKind::InvalidData })
+            Ok((2, Some(Message{
+                transaction_id: 0,
+                protocol_id: 0,
+                length: 2,
+                unit_id: 1,
+                function: Function { raw: 43, code: FunctionCode::MEI },
+                access_type: AccessType::NONE,
+                category: CodeCategory::NONE,
+                data: Data::Empty,
+                flags: ErrorFlags::DATA_LENGTH,
+            })))
         ),
         case::mei_missing_bytes(
             &[
@@ -1789,7 +1870,7 @@ mod tests {
                 // Data: 00
                 0x00
             ],
-            Err(Error::incomplete_needed(1))
+            Err(Error::incomplete_needed(5))
         ),
         case::mei_dev_id(
             &[
@@ -1854,11 +1935,42 @@ mod tests {
                 // Protocol ID: 0
                 0x00, 0x00,
                 // Length: 0
+                0x00, 0x00
+            ],
+            Ok((0, Some(Message{
+                transaction_id: 0,
+                protocol_id: 0,
+                length: 0,
+                unit_id: 0,
+                function: Function { raw: 0, code: FunctionCode::Unknown },
+                access_type: AccessType::NONE,
+                category: CodeCategory::NONE,
+                data: Data::Empty,
+                flags: ErrorFlags::DATA_LENGTH,
+            })))
+        ),
+        case::zero_length(
+            &[
+                // Transaction ID: 0
+                0x00, 0x00,
+                // Protocol ID: 0
+                0x00, 0x00,
+                // Length: 0
                 0x00, 0x00,
                 // Extra: 00 00 00 00
                 0x00, 0x00, 0x00, 0x00
             ],
-            Err(Error { kind: ErrorKind::InvalidData })
+            Ok((4, Some(Message{
+                transaction_id: 0,
+                protocol_id: 0,
+                length: 0,
+                unit_id: 0,
+                function: Function { raw: 0, code: FunctionCode::Unknown },
+                access_type: AccessType::NONE,
+                category: CodeCategory::NONE,
+                data: Data::Empty,
+                flags: ErrorFlags::DATA_LENGTH,
+            })))
         ),
         case::missing_bytes(
             &[
@@ -2394,7 +2506,17 @@ mod tests {
                 // Function Code: Diagnostics (8)
                 0x08
             ],
-            Err(Error::new(ErrorKind::InvalidData))
+            Ok((0, Some(Message{
+                transaction_id: 1,
+                protocol_id: 0,
+                length: 2,
+                unit_id: 3,
+                function: Function { raw: 8, code: FunctionCode::Diagnostic },
+                access_type: AccessType::NONE,
+                category: CodeCategory::NONE,
+                data: Data::Empty,
+                flags: ErrorFlags::DATA_LENGTH,
+            })))
         ),
         case::diagnostic_reserved(
             &[
@@ -3097,6 +3219,21 @@ mod tests {
                 0x00, 0x00
             ],
             Status::Recognized
+        ),
+        case::invalid_diagnostic(
+            &[
+                // Transaction ID: 1
+                0x00, 0x01,
+                // Protocol ID: 0
+                0x00, 0x00,
+                // Length: 2
+                0x00, 0x02,
+                // Unit ID: 3
+                0x03,
+                // Function Code: Diagnostics (8)
+                0x08
+            ],
+            Status::Unrecognized
         )
     )]
     fn test_probe(input: &[u8], expected: Status) {
