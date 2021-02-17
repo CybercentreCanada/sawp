@@ -43,6 +43,20 @@ sawp-modbus = "0.1.1"
 sawp = "0.1.1"
 ```
 
+## FFI Support
+Some parsers have a foreign function interface for use in C/C++ projects.
+FFI Support can be enabled by building with the `ffi` feature.
+
+A [Makefile](Makefile) is also provided to ease the build process. Please refer to this file for more in-depth documentation.
+
+```
+# Install cbindgen which is required to generate headers
+cargo install --force cbindgen
+
+# Build headers and shared objects
+make
+```
+
 # Contributing
 
 This project is actively maintained and accepting open source

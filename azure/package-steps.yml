@@ -1,16 +1,22 @@
 steps:
+  # Get the package version
+  - script: echo "##vso[task.setvariable variable=version]$((test -f Cargo.lock || cargo generate-lockfile) && cargo pkgid | cut -d# -f 2)"
+    displayName: package version
+
   # Check dependencies
-  - script: cargo rpm --version || cargo install cargo-rpm
-    displayName: install cargo-rpm
-  - script: cargo deb --version || cargo install cargo-deb
-    displayName: install cargo-deb
+  - script: rpmbuild --version || yum install -y rpmbuild
+    displayName: install rpmbuild
 
-  # Make rpm/deb
-  - script: cargo rpm build -v
+  # Make rpm
+  - script: make rpm
     displayName: make rpm
-    workingDirectory: $(Agent.BuildDirectory)/sawp
 
-  # Make deb
-  - script: cargo deb -v
-    displayName: make deb
-    workingDirectory: $(Agent.BuildDirectory)/sawp
+  - task: PublishBuildArtifacts@1
+    inputs:
+      pathToPublish: target/rpmbuild/SOURCES/sawp-$(version).tar.gz
+      artifactName: sawp-$(version).tar.gz
+
+  - task: PublishBuildArtifacts@1
+    inputs:
+      pathToPublish: target/rpmbuild/RPMS/x86_64/sawp-$(version)-1.x86_64.rpm
+      artifactName: sawp-$(version)-1.x86_64.rpm

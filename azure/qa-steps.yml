@@ -46,12 +46,12 @@ steps:
       includeRootFolder: false
       archiveType: tar
       tarCompression: gz
-      archiveFile: $(Build.ArtifactStagingDirectory)/sawp-$(version).tar.gz
+      archiveFile: $(Build.ArtifactStagingDirectory)/sawp-doc-$(version).tar.gz
       replaceExistingArchive: true
 
   - task: PublishBuildArtifacts@1
     inputs:
-      pathToPublish: $(Build.ArtifactStagingDirectory)/sawp-$(version).tar.gz
+      pathToPublish: $(Build.ArtifactStagingDirectory)/sawp-doc-$(version).tar.gz
       artifactName: sawp-$(version).tar.gz
 
   # Run the unit tests
@@ -61,10 +61,6 @@ steps:
   # Build fuzz
   - script: cargo +nightly fuzz build
     displayName: build fuzz
-
-  # Build headers
-  - script: make headers
-    displayName: build headers
 
   # Check code coverage
   - script: |
@@ -83,10 +79,6 @@ steps:
     inputs:
       codeCoverageTool: 'cobertura'
       summaryFileLocation: cobertura.xml
-
-  # Check if cargo release would pass
-  - script: cargo release --workspace --dry-run -- patch
-    displayName: check release
 
   # Check if cargo publish would pass
   - script: cargo publish --dry-run

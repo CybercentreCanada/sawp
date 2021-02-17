@@ -82,3 +82,18 @@ jobs:
     # Release Artifacts
     # ==============
     - template: package-steps.yml
+
+    # Get the package version
+    - script: echo "##vso[task.setvariable variable=version]$((test -f Cargo.lock || cargo generate-lockfile) && cargo pkgid | cut -d# -f 2)"
+      displayName: package version
+
+    # Push RPM to repository
+    - script: azure/deploy-rpm.sh
+      env:
+        SRC_DIR: target/rpmbuild/RPMS/x86_64
+        SRC_PATTERN: sawp-$(version)*.rpm
+        RPM_HOST: $(rpm_host)
+        RPM_USER: $(rpm_user)
+        RPM_DIR: $(rpm_dir)
+        RPM_CHOWN: root:root
+        RPM_CHMOD: 644

@@ -52,12 +52,3 @@ nom = "5.1.2"
 name = "modbus"
 path = "benches/modbus.rs"
 harness = false
-
-[package.metadata.rpm.cargo]
-buildflags = ["--release"]
-
-[package.metadata.rpm.targets]
-"libsawp.so" = { path = "/usr/local/lib/libsawp.so" }
-"libsawp_diameter.so" = { path = "/usr/local/lib/libsawp_diameter.so" }
-"libsawp_modbus.so" = { path = "/usr/local/lib/libsawp_modbus.so" }
-"libsawp_json.so" = { path = "/usr/local/lib/libsawp_json.so" }

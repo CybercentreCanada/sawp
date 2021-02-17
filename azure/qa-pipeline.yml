@@ -28,3 +28,7 @@ jobs:
       path: sawp
     - template: qa-steps.yml
     - template: package-steps.yml
+
+    # Check if cargo release would pass
+    - script: cargo release --workspace --dry-run -- patch
+      displayName: check release
