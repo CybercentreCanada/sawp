@@ -17,6 +17,9 @@ include = [
     "src/**/*.rs",
 ]
 
+[features]
+verbose = ["sawp/verbose"]
+
 [dependencies]
 sawp = { path = "..", version = "^0.1.1"}
 serde = "1.0"

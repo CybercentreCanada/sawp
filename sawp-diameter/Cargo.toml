@@ -19,6 +19,7 @@ include = [
 
 [features]
 ffi = ["cxx-build"]
+verbose = ["sawp/verbose"]
 
 [dependencies]
 sawp = { path = "..", version = "^0.1.1"}

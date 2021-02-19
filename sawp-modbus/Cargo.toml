@@ -19,11 +19,7 @@ include = [
 
 [features]
 ffi = ["cbindgen", "sawp/ffi", "sawp-ffi"]
-# Prevent --all-features from requiring nightly
-# Headers will only be generated when "ffi" is explicitly specified
-# and "no-headers" isn't, since generating headers with cbindgen
-# and macros requires nightly
-no-headers = []
+verbose = ["sawp/verbose"]
 
 [build-dependencies]
 cbindgen = {version = "0.15", optional = true}
