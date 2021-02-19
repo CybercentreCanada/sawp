@@ -7,15 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+### Fixed
+- sawp-ffi: missing version number was preventing cargo publish.
+- sawp: verbose feature was not being used by protocol parsers.
+- sawp-modbus: added error flag for handling invalid protocol instead of failing
+  to parse the message.
+- sawp-modbus: made probing function more strict by failing if any validation
+  flags are set.
+- sawp-modbus: added min and max length checks for better recovery when invalid
+  lengths are provided. 
+
+### Added
+- sawp: support for building an rpm with all FFI libraries and headers.
 
 ## [0.1.1] - 2021-02-12
 ### Added
-- Initial release of sawp, containing common traits and types used by protocol parsers.
-- Initial release of sawp-modbus, our first complete protocol parser. Integration was tested
-  with suricata.
-- Initial release of sawp-diameter protocol parser (todo: add missing AVPs for mobility).
-- Initial release of sawp-json protocol parser (todo: use for 5G protocols).
-- Initial release of sawp-file for logging and debugging SAWP API calls (todo: not in use yet).
+- sawp: initial release containing common traits and types used by protocol parsers.
+- sawp-modbus: initial release of our first complete protocol parser. Integration
+  was tested with suricata.
+- sawp-diameter: initial release of a protocol parser (todo: add missing AVPs for mobility).
+- sawp-json: initial release of a protocol parser (todo: use for 5G protocols).
+- sawp-file: initial release for logging and debugging SAWP API calls (todo: not in use yet).
+- sawp-ffi: initial release of FFI helper macros and traits.
+- sawp-ffi-derive: initial release for generating FFI accessor functions.
+- sawp-modbus: FFI support.
 
 <!-- next-url -->
 [Unreleased]: https://github.com/CybercentreCanada/sawp/compare/sawp-0.1.1...HEAD
