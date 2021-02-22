@@ -14,7 +14,7 @@
 # - `RPM_CHOWN`: User/group for chown command.
 # - `RPM_CHMOD`: File permissions for chmod command. 
 scp ${SRC_DIR}/${SRC_PATTERN} ${RPM_USER}@${RPM_HOST}:${RPM_DIR}
-ssh -t ${RPM_USER}@${RPM_HOST} 'sudo -u root sh -c "cd ${RPM_DIR} && \
+ssh -t ${RPM_USER}@${RPM_HOST} "sudo -u root sh -c 'cd ${RPM_DIR} && \
     chown ${RPM_CHOWN} ${SRC_PATTERN} && \
     chmod ${RPM_CHMOD} ${SRC_PATTERN} && \
-    createrepo ."'
+    createrepo .'"
