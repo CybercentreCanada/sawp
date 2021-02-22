@@ -127,3 +127,28 @@ package: headers release_objects
 	cp target/sawp/*.h target/_temp/include/sawp
 	cp -d target/release/*.so.* target/_temp/lib64
 	tar -czvf target/rpmbuild/SOURCES/sawp-${CRATE_VERSION}.tar.gz target/_temp --transform 'flags=r;s#^target/_temp#sawp-${CRATE_VERSION}#'
+
+# cargo publish
+# =============
+#
+# Upload all packages in this workspace to crates.io. Uploads the dependencies
+# in the right order. A sleep is used so the newly published crates can be
+# fetched from crates.io.
+#
+# Ideally we could use a command like `cargo workspaces publish --from-git` but
+# that doesn't seem to work.
+.PHONY: publish
+publish:
+	cd sawp-ffi-derive && cargo publish
+	sleep 5
+	cd sawp-ffi && cargo publish
+	sleep 5
+	cargo publish
+	cd sawp-modbus && cargo publish
+	sleep 5
+	cd sawp-diameter && cargo publish
+	sleep 5
+	cd sawp-json && cargo publish
+	sleep 5
+	cd sawp-file && cargo publish
+	sleep 5
