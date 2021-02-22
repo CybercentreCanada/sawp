@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+
+## [0.2.0] - 2021-02-22
 ### Fixed
 - sawp-ffi: missing version number was preventing cargo publish.
 - sawp: verbose feature was not being used by protocol parsers.
@@ -33,5 +35,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - sawp-modbus: FFI support.
 
 <!-- next-url -->
-[Unreleased]: https://github.com/CybercentreCanada/sawp/compare/sawp-0.1.1...HEAD
+[Unreleased]: https://github.com/CybercentreCanada/sawp/compare/sawp-0.2.0...HEAD
+[0.2.0]: https://github.com/CybercentreCanada/sawp/releases/tag/sawp-0.2.0
 [0.1.1]: https://github.com/CybercentreCanada/sawp/releases/tag/sawp-0.1.1

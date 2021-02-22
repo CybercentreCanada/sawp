@@ -1,6 +1,6 @@
 [package]
 name = "sawp-diameter"
-version = "0.1.1"
+version = "0.2.0"
 authors = ["Canadian Centre for Cyber Security <sa-sawp@cyber.gc.ca>"]
 description = "SAWP Protocol Parser for Diameter"
 readme = "../README.md"
@@ -22,7 +22,7 @@ ffi = ["cxx-build"]
 verbose = ["sawp/verbose"]
 
 [dependencies]
-sawp = { path = "..", version = "^0.1.1"}
+sawp = { path = "..", version = "^0.2.0"}
 nom = "5.1.2"
 cxx = "0.4"
 num_enum = "0.5.1"
