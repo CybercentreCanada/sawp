@@ -26,6 +26,8 @@ members = [
     "sawp-file",
     "sawp-json",
     "sawp-diameter",
+    "sawp-flags",
+    "sawp-flags-derive",
 ]
 
 [features]

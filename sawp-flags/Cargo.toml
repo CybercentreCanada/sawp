@@ -1,0 +1,24 @@
+[package]
+name = "sawp-flags"
+version = "0.2.0"
+authors = ["Canadian Centre for Cyber Security <sa-sawp@cyber.gc.ca>"]
+description = "SAWP BitFlags Handling and Storage"
+readme = "../README.md"
+edition = "2018"
+license-file = "../LICENSE"
+repository = "https://github.com/CybercentreCanada/sawp"
+homepage = "https://github.com/CybercentreCanada/sawp"
+keywords = ["bitflags", "bit", "flags", "bitmask"]
+include = [
+    "Cargo.toml",
+    "../LICENSE",
+    "../README.md",
+    "src/**/*.rs",
+]
+
+[dependencies]
+sawp-flags-derive = { path = "../sawp-flags-derive", version = "0.2.0" }
+
+# Override default replacements
+[package.metadata.release]
+pre-release-replacements = []
