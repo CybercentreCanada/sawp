@@ -48,15 +48,14 @@ use sawp::parser::{Direction, Parse};
 use sawp::probe::{Probe, Status};
 use sawp::protocol::Protocol;
 
+use sawp_flags::{BitFlags, Flag, Flags};
+
 use nom::bytes::streaming::take;
 use nom::number::streaming::{be_u16, be_u8};
 
 use num_enum::TryFromPrimitive;
 use std::convert::TryFrom;
 use std::ops::RangeInclusive;
-use std::str::FromStr;
-
-use bitflags::bitflags;
 
 /// FFI structs and Accessors
 #[cfg(feature = "ffi")]
@@ -77,46 +76,29 @@ const MAX_RD_COUNT: u8 = 250;
 const MIN_LENGTH: u16 = 2;
 const MAX_LENGTH: u16 = 254;
 
-bitflags! {
-    /// Function code groups based on general use. Allows for easier
-    /// parsing of certain functions, since generally most functions in a group
-    /// will have the same request/response structure.
-    pub struct AccessType: u8 {
-        const NONE                = 0b00000000;
-        const READ                = 0b00000001;
-        const WRITE               = 0b00000010;
-        const DISCRETES           = 0b00000100;
-        const COILS               = 0b00001000;
-        const INPUT               = 0b00010000;
-        const HOLDING             = 0b00100000;
-        const SINGLE              = 0b01000000;
-        const MULTIPLE            = 0b10000000;
-        const BIT_ACCESS_MASK     = Self::DISCRETES.bits | Self::COILS.bits;
-        const FUNC_MASK           = Self::DISCRETES.bits | Self::COILS.bits | Self::INPUT.bits | Self::HOLDING.bits;
-        const WRITE_SINGLE        = Self::WRITE.bits | Self::SINGLE.bits;
-        const WRITE_MULTIPLE      = Self::WRITE.bits | Self::MULTIPLE.bits;
-    }
+/// Function code groups based on general use. Allows for easier
+/// parsing of certain functions, since generally most functions in a group
+/// will have the same request/response structure.
+#[allow(non_camel_case_types)]
+#[repr(u8)]
+#[derive(Copy, Clone, Debug, PartialEq, BitFlags)]
+pub enum AccessType {
+    READ = 0b00000001,
+    WRITE = 0b00000010,
+    DISCRETES = 0b00000100,
+    COILS = 0b00001000,
+    INPUT = 0b00010000,
+    HOLDING = 0b00100000,
+    SINGLE = 0b01000000,
+    MULTIPLE = 0b10000000,
+    BIT_ACCESS_MASK = Self::DISCRETES as u8 | Self::COILS as u8,
+    FUNC_MASK = Self::DISCRETES as u8 | Self::COILS as u8 | Self::INPUT as u8 | Self::HOLDING as u8,
+    WRITE_SINGLE = Self::WRITE as u8 | Self::SINGLE as u8,
+    WRITE_MULTIPLE = Self::WRITE as u8 | Self::MULTIPLE as u8,
 }
 
-impl FromStr for AccessType {
-    type Err = ();
-    fn from_str(access: &str) -> std::result::Result<AccessType, Self::Err> {
-        match access {
-            "read" => Ok(AccessType::READ),
-            "write" => Ok(AccessType::WRITE),
-            "discretes" => Ok(AccessType::DISCRETES),
-            "coils" => Ok(AccessType::COILS),
-            "input" => Ok(AccessType::INPUT),
-            "holding" => Ok(AccessType::HOLDING),
-            "single" => Ok(AccessType::SINGLE),
-            "multiple" => Ok(AccessType::MULTIPLE),
-            _ => Err(()),
-        }
-    }
-}
-
-impl From<&FunctionCode> for AccessType {
-    fn from(code: &FunctionCode) -> Self {
+impl From<FunctionCode> for Flags<AccessType> {
+    fn from(code: FunctionCode) -> Self {
         match code {
             FunctionCode::RdCoils => AccessType::COILS | AccessType::READ,
             FunctionCode::RdDiscreteInputs => AccessType::DISCRETES | AccessType::READ,
@@ -130,103 +112,85 @@ impl From<&FunctionCode> for AccessType {
             FunctionCode::RdWrMultRegs => {
                 AccessType::HOLDING | AccessType::READ | AccessType::WRITE_MULTIPLE
             }
-            _ => AccessType::NONE,
+            _ => AccessType::none(),
         }
     }
 }
 
-impl std::fmt::Display for AccessType {
-    fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(fmt, "{:?}", self)
-    }
+/// Function Code Categories as stated in the [protocol reference](https://modbus.org/docs/Modbus_Application_Protocol_V1_1b.pdf)
+#[allow(non_camel_case_types)]
+#[repr(u8)]
+#[derive(Copy, Clone, Debug, PartialEq, BitFlags)]
+pub enum CodeCategory {
+    PUBLIC_ASSIGNED = 0b00000001,
+    PUBLIC_UNASSIGNED = 0b00000010,
+    USER_DEFINED = 0b00000100,
+    RESERVED = 0b00001000,
 }
 
-bitflags! {
-    /// Function Code Categories as stated in the [protocol reference](https://modbus.org/docs/Modbus_Application_Protocol_V1_1b.pdf)
-    pub struct CodeCategory: u8 {
-        const NONE              = 0b00000000;
-        const PUBLIC_ASSIGNED   = 0b00000001;
-        const PUBLIC_UNASSIGNED = 0b00000010;
-        const USER_DEFINED      = 0b00000100;
-        const RESERVED          = 0b00001000;
-    }
-}
-
-impl From<u8> for CodeCategory {
-    fn from(id: u8) -> Self {
+impl CodeCategory {
+    fn from_raw(id: u8) -> Flags<Self> {
         match id {
-            0 => CodeCategory::NONE,
-            x if x < 9 => CodeCategory::PUBLIC_UNASSIGNED,
-            x if x < 15 => CodeCategory::RESERVED,
-            x if x < 41 => CodeCategory::PUBLIC_UNASSIGNED,
-            x if x < 43 => CodeCategory::RESERVED,
-            x if x < 65 => CodeCategory::PUBLIC_UNASSIGNED,
-            x if x < 73 => CodeCategory::USER_DEFINED,
-            x if x < 90 => CodeCategory::PUBLIC_UNASSIGNED,
-            x if x < 92 => CodeCategory::RESERVED,
-            x if x < 100 => CodeCategory::PUBLIC_UNASSIGNED,
-            x if x < 111 => CodeCategory::USER_DEFINED,
-            x if x < 125 => CodeCategory::PUBLIC_UNASSIGNED,
-            x if x < 128 => CodeCategory::RESERVED,
-            _ => CodeCategory::NONE,
+            0 => CodeCategory::none(),
+            x if x < 9 => CodeCategory::PUBLIC_UNASSIGNED.into(),
+            x if x < 15 => CodeCategory::RESERVED.into(),
+            x if x < 41 => CodeCategory::PUBLIC_UNASSIGNED.into(),
+            x if x < 43 => CodeCategory::RESERVED.into(),
+            x if x < 65 => CodeCategory::PUBLIC_UNASSIGNED.into(),
+            x if x < 73 => CodeCategory::USER_DEFINED.into(),
+            x if x < 90 => CodeCategory::PUBLIC_UNASSIGNED.into(),
+            x if x < 92 => CodeCategory::RESERVED.into(),
+            x if x < 100 => CodeCategory::PUBLIC_UNASSIGNED.into(),
+            x if x < 111 => CodeCategory::USER_DEFINED.into(),
+            x if x < 125 => CodeCategory::PUBLIC_UNASSIGNED.into(),
+            x if x < 128 => CodeCategory::RESERVED.into(),
+            _ => CodeCategory::none(),
         }
     }
 }
 
-impl From<&Message> for CodeCategory {
+impl From<&Message> for Flags<CodeCategory> {
     fn from(msg: &Message) -> Self {
         match msg.function.code {
             FunctionCode::Diagnostic => match &msg.data {
                 Data::Diagnostic { func, data: _ } => {
                     if func.code == DiagnosticSubfunction::Reserved {
-                        CodeCategory::RESERVED
+                        CodeCategory::RESERVED.into()
                     } else {
-                        CodeCategory::PUBLIC_ASSIGNED
+                        CodeCategory::PUBLIC_ASSIGNED.into()
                     }
                 }
-                _ => CodeCategory::NONE,
+                _ => CodeCategory::none(),
             },
             FunctionCode::MEI => match &msg.data {
                 Data::MEI { mei_type, data: _ } => {
                     if mei_type.code == MEIType::Unknown {
-                        CodeCategory::RESERVED
+                        CodeCategory::RESERVED.into()
                     } else {
-                        CodeCategory::PUBLIC_ASSIGNED
+                        CodeCategory::PUBLIC_ASSIGNED.into()
                     }
                 }
-                _ => CodeCategory::NONE,
+                _ => CodeCategory::none(),
             },
-            FunctionCode::Unknown => CodeCategory::from(msg.function.raw),
-            _ => CodeCategory::PUBLIC_ASSIGNED,
+            FunctionCode::Unknown => CodeCategory::from_raw(msg.function.raw),
+            _ => CodeCategory::PUBLIC_ASSIGNED.into(),
         }
     }
 }
 
-impl std::fmt::Display for CodeCategory {
-    fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(fmt, "{:?}", self)
-    }
-}
-
-bitflags! {
-    /// Flags which identify messages which parse as modbus
-    /// but contain invalid data. The caller can use the message's
-    /// error flags to see if and what errors were in the
-    /// pack of bytes and take action using this information.
-    pub struct ErrorFlags: u8 {
-        const NONE          = 0b00000000;
-        const DATA_VALUE    = 0b00000001;
-        const DATA_LENGTH   = 0b00000010;
-        const EXC_CODE      = 0b00000100;
-        const FUNC_CODE     = 0b00001000;
-        const PROTO_ID      = 0b00010000;
-    }
-}
-
-impl std::fmt::Display for ErrorFlags {
-    fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(fmt, "{:?}", self)
-    }
+/// Flags which identify messages which parse as modbus
+/// but contain invalid data. The caller can use the message's
+/// error flags to see if and what errors were in the
+/// pack of bytes and take action using this information.
+#[allow(non_camel_case_types)]
+#[repr(u8)]
+#[derive(Copy, Clone, Debug, PartialEq, BitFlags)]
+pub enum ErrorFlags {
+    DATA_VALUE = 0b00000001,
+    DATA_LENGTH = 0b00000010,
+    EXC_CODE = 0b00000100,
+    FUNC_CODE = 0b00001000,
+    PROTO_ID = 0b00010000,
 }
 
 /// Information on the function code parsed
@@ -503,13 +467,10 @@ pub struct Message {
     length: u16,
     pub unit_id: u8,
     pub function: Function,
-    #[cfg_attr(feature = "ffi", sawp_ffi(u8_flag))]
-    pub access_type: AccessType,
-    #[cfg_attr(feature = "ffi", sawp_ffi(u8_flag))]
-    pub category: CodeCategory,
+    pub access_type: Flags<AccessType>,
+    pub category: Flags<CodeCategory>,
     pub data: Data,
-    #[cfg_attr(feature = "ffi", sawp_ffi(u8_flag))]
-    pub error_flags: ErrorFlags,
+    pub error_flags: Flags<ErrorFlags>,
 }
 
 impl Message {
@@ -1197,7 +1158,7 @@ impl<'a> Probe<'a> for Modbus {
     fn probe(&self, input: &'a [u8], direction: Direction) -> Status {
         match self.parse(input, direction) {
             Ok((_, Some(msg))) => {
-                if msg.error_flags == ErrorFlags::NONE {
+                if msg.error_flags == ErrorFlags::none() {
                     Status::Recognized
                 } else {
                     Status::Unrecognized
@@ -1220,7 +1181,7 @@ impl<'a> Parse<'a> for Modbus {
     ) -> Result<(&'a [u8], Option<Self::Message>)> {
         let (input, transaction_id) = be_u16(input)?;
         let (input, protocol_id) = be_u16(input)?;
-        let mut err_flags = ErrorFlags::NONE;
+        let mut err_flags = ErrorFlags::none();
         if protocol_id != 0 {
             err_flags |= ErrorFlags::PROTO_ID;
         }
@@ -1233,8 +1194,8 @@ impl<'a> Parse<'a> for Modbus {
             length,
             unit_id: 0,
             function: Function::new(0),
-            access_type: AccessType::NONE,
-            category: CodeCategory::NONE,
+            access_type: AccessType::none(),
+            category: CodeCategory::none(),
             data: Data::Empty,
             error_flags: err_flags,
         };
@@ -1253,7 +1214,7 @@ impl<'a> Parse<'a> for Modbus {
         let (data, raw_func) = be_u8(data)?;
         message.unit_id = unit_id;
         message.function = Function::new(raw_func);
-        message.access_type = AccessType::from(&message.function.code);
+        message.access_type = message.function.code.into();
 
         let result = match direction {
             Direction::ToServer => message.parse_request(data),
@@ -1277,7 +1238,7 @@ impl<'a> Parse<'a> for Modbus {
             Err(err) => return Err(err),
         }
 
-        message.category = CodeCategory::from(&message);
+        message.category = Flags::from(&message);
 
         Ok((input, Some(message)))
     }
@@ -1289,6 +1250,7 @@ mod tests {
     use rstest::rstest;
     use sawp::error::{Error, Result};
     use sawp::probe::Status;
+    use std::str::FromStr;
 
     #[test]
     fn test_name() {
@@ -1307,8 +1269,8 @@ mod tests {
                 length: 28448,
                 unit_id: 0,
                 function: Function { raw: 0, code: FunctionCode::Unknown },
-                access_type: AccessType::NONE,
-                category: CodeCategory::NONE,
+                access_type: AccessType::none(),
+                category: CodeCategory::none(),
                 data: Data::Empty,
                 error_flags: ErrorFlags::PROTO_ID | ErrorFlags::DATA_LENGTH,
             })))
@@ -1336,10 +1298,10 @@ mod tests {
                 length: 6,
                 unit_id: 3,
                 function: Function { raw: 8, code: FunctionCode::Diagnostic },
-                access_type: AccessType::NONE,
-                category: CodeCategory::PUBLIC_ASSIGNED,
+                access_type: AccessType::none(),
+                category: CodeCategory::PUBLIC_ASSIGNED.into(),
                 data: Data::Diagnostic { func: Diagnostic { raw: 4, code: DiagnosticSubfunction::ForceListenOnlyMode }, data: vec![0x00, 0x00] },
-                error_flags: ErrorFlags::NONE,
+                error_flags: ErrorFlags::none(),
             })))
         ),
         case::diagnostic_missing_subfunc(
@@ -1361,10 +1323,10 @@ mod tests {
                 length: 2,
                 unit_id: 3,
                 function: Function { raw: 8, code: FunctionCode::Diagnostic },
-                access_type: AccessType::NONE,
-                category: CodeCategory::NONE,
+                access_type: AccessType::none(),
+                category: CodeCategory::none(),
                 data: Data::Empty,
-                error_flags: ErrorFlags::DATA_LENGTH,
+                error_flags: ErrorFlags::DATA_LENGTH.into(),
             })))
         ),
         case::diagnostic_reserved_1(
@@ -1388,10 +1350,10 @@ mod tests {
                 length: 4,
                 unit_id: 3,
                 function: Function { raw: 8, code: FunctionCode::Diagnostic },
-                access_type: AccessType::NONE,
-                category: CodeCategory::RESERVED,
+                access_type: AccessType::none(),
+                category: CodeCategory::RESERVED.into(),
                 data: Data::Diagnostic { func: Diagnostic { raw: 22, code: DiagnosticSubfunction::Reserved }, data: vec![] },
-                error_flags: ErrorFlags::NONE,
+                error_flags: ErrorFlags::none(),
             })))
         ),
         case::diagnostic_reserved_2(
@@ -1415,10 +1377,10 @@ mod tests {
                 length: 4,
                 unit_id: 3,
                 function: Function { raw: 8, code: FunctionCode::Diagnostic },
-                access_type: AccessType::NONE,
-                category: CodeCategory::RESERVED,
+                access_type: AccessType::none(),
+                category: CodeCategory::RESERVED.into(),
                 data: Data::Diagnostic { func: Diagnostic { raw: 5, code: DiagnosticSubfunction::Reserved }, data: vec![] },
-                error_flags: ErrorFlags::NONE,
+                error_flags: ErrorFlags::none(),
             })))
         ),
         case::diagnostic_reserved_3(
@@ -1442,10 +1404,10 @@ mod tests {
                 length: 4,
                 unit_id: 3,
                 function: Function { raw: 8, code: FunctionCode::Diagnostic },
-                access_type: AccessType::NONE,
-                category: CodeCategory::RESERVED,
+                access_type: AccessType::none(),
+                category: CodeCategory::RESERVED.into(),
                 data: Data::Diagnostic { func: Diagnostic { raw: 9, code: DiagnosticSubfunction::Reserved }, data: vec![] },
-                error_flags: ErrorFlags::NONE,
+                error_flags: ErrorFlags::none(),
             })))
         ),
         case::gateway_exception(
@@ -1469,10 +1431,10 @@ mod tests {
                 length: 3,
                 unit_id: 8,
                 function: Function { raw: 136, code: FunctionCode::Diagnostic },
-                access_type: AccessType::NONE,
-                category: CodeCategory::NONE,
+                access_type: AccessType::none(),
+                category: CodeCategory::none(),
                 data: Data::Exception(Exception { raw: 11, code: ExceptionCode::GatewayTargetFailToResp }),
-                error_flags: ErrorFlags::NONE,
+                error_flags: ErrorFlags::none(),
             })))
         ),
         case::illegal_data_addr(
@@ -1497,9 +1459,9 @@ mod tests {
                 unit_id: 1,
                 function: Function { raw: 129, code: FunctionCode::RdCoils },
                 access_type: AccessType::READ | AccessType::COILS,
-                category: CodeCategory::PUBLIC_ASSIGNED,
+                category: CodeCategory::PUBLIC_ASSIGNED.into(),
                 data: Data::Exception(Exception { raw: 2, code: ExceptionCode::IllegalDataAddr }),
-                error_flags: ErrorFlags::NONE,
+                error_flags: ErrorFlags::none(),
             })))
         ),
         case::exception_unknown(
@@ -1523,10 +1485,10 @@ mod tests {
                 length: 3,
                 unit_id: 8,
                 function: Function { raw: 228, code: FunctionCode::Unknown },
-                access_type: AccessType::NONE,
-                category: CodeCategory::NONE,
+                access_type: AccessType::none(),
+                category: CodeCategory::none(),
                 data: Data::Exception(Exception { raw: 12, code: ExceptionCode::Unknown }),
-                error_flags: ErrorFlags::EXC_CODE,
+                error_flags: ErrorFlags::EXC_CODE.into(),
             })))
         ),
         case::exception_missing_code(
@@ -1548,10 +1510,10 @@ mod tests {
                 length: 2,
                 unit_id: 8,
                 function: Function { raw: 136, code: FunctionCode::Diagnostic },
-                access_type: AccessType::NONE,
-                category: CodeCategory::NONE,
+                access_type: AccessType::none(),
+                category: CodeCategory::none(),
                 data: Data::ByteVec(Vec::new()),
-                error_flags: ErrorFlags::DATA_LENGTH,
+                error_flags: ErrorFlags::DATA_LENGTH.into(),
             })))
         ),
         case::exception_with_extra(
@@ -1577,10 +1539,10 @@ mod tests {
                 length: 3,
                 unit_id: 8,
                 function: Function { raw: 136, code: FunctionCode::Diagnostic },
-                access_type: AccessType::NONE,
-                category: CodeCategory::NONE,
+                access_type: AccessType::none(),
+                category: CodeCategory::none(),
                 data: Data::Exception(Exception { raw: 11, code: ExceptionCode::GatewayTargetFailToResp }),
-                error_flags: ErrorFlags::NONE,
+                error_flags: ErrorFlags::none(),
             })))
         ),
         case::exception_invalid_length(
@@ -1604,8 +1566,8 @@ mod tests {
                 length: 2,
                 unit_id: 8,
                 function: Function { raw: 136, code: FunctionCode::Diagnostic },
-                access_type: AccessType::NONE,
-                category: CodeCategory::NONE,
+                access_type: AccessType::none(),
+                category: CodeCategory::none(),
                 data: Data::ByteVec([].to_vec()),
                 error_flags: ErrorFlags::PROTO_ID | ErrorFlags::DATA_LENGTH,
             })))
@@ -1629,10 +1591,10 @@ mod tests {
                 length: 2,
                 unit_id: 1,
                 function: Function { raw: 17, code: FunctionCode::ReportServerID },
-                access_type: AccessType::NONE,
-                category: CodeCategory::PUBLIC_ASSIGNED,
+                access_type: AccessType::none(),
+                category: CodeCategory::PUBLIC_ASSIGNED.into(),
                 data: Data::ByteVec(vec![]),
-                error_flags: ErrorFlags::NONE,
+                error_flags: ErrorFlags::none(),
             })))
         ),
         case::server_id_with_extra(
@@ -1656,10 +1618,10 @@ mod tests {
                 length: 2,
                 unit_id: 1,
                 function: Function { raw: 17, code: FunctionCode::ReportServerID },
-                access_type: AccessType::NONE,
-                category: CodeCategory::PUBLIC_ASSIGNED,
+                access_type: AccessType::none(),
+                category: CodeCategory::PUBLIC_ASSIGNED.into(),
                 data: Data::ByteVec(vec![]),
-                error_flags: ErrorFlags::NONE,
+                error_flags: ErrorFlags::none(),
             })))
         ),
         case::invalid_length(
@@ -1681,10 +1643,10 @@ mod tests {
                 length: 1,
                 unit_id: 0,
                 function: Function { raw: 0, code: FunctionCode::Unknown },
-                access_type: AccessType::NONE,
-                category: CodeCategory::NONE,
+                access_type: AccessType::none(),
+                category: CodeCategory::none(),
                 data: Data::Empty,
-                error_flags: ErrorFlags::DATA_LENGTH,
+                error_flags: ErrorFlags::DATA_LENGTH.into(),
             })))
         ),
         case::unknown_func(
@@ -1706,10 +1668,10 @@ mod tests {
                 length: 2,
                 unit_id: 1,
                 function: Function { raw: 100, code: FunctionCode::Unknown },
-                access_type: AccessType::NONE,
-                category: CodeCategory::USER_DEFINED,
+                access_type: AccessType::none(),
+                category: CodeCategory::USER_DEFINED.into(),
                 data: Data::ByteVec(vec![]),
-                error_flags: ErrorFlags::NONE,
+                error_flags: ErrorFlags::none(),
             })))
         ),
         case::unknown_func_with_extra(
@@ -1733,10 +1695,10 @@ mod tests {
                 length: 2,
                 unit_id: 1,
                 function: Function { raw: 100, code: FunctionCode::Unknown },
-                access_type: AccessType::NONE,
-                category: CodeCategory::USER_DEFINED,
+                access_type: AccessType::none(),
+                category: CodeCategory::USER_DEFINED.into(),
                 data: Data::ByteVec(vec![]),
-                error_flags: ErrorFlags::NONE,
+                error_flags: ErrorFlags::none(),
             })))
         ),
         case::mei_gen_ref(
@@ -1760,10 +1722,10 @@ mod tests {
                 length: 3,
                 unit_id: 1,
                 function: Function { raw: 43, code: FunctionCode::MEI },
-                access_type: AccessType::NONE,
-                category: CodeCategory::PUBLIC_ASSIGNED,
+                access_type: AccessType::none(),
+                category: CodeCategory::PUBLIC_ASSIGNED.into(),
                 data: Data::MEI{ mei_type: MEI { raw: 13, code: MEIType::CANOpenGenRefReqResp }, data: vec![] },
-                error_flags: ErrorFlags::NONE,
+                error_flags: ErrorFlags::none(),
             })))
         ),
         case::mei_gen_ref_with_extra(
@@ -1789,10 +1751,10 @@ mod tests {
                 length: 3,
                 unit_id: 1,
                 function: Function { raw: 43, code: FunctionCode::MEI },
-                access_type: AccessType::NONE,
-                category: CodeCategory::PUBLIC_ASSIGNED,
+                access_type: AccessType::none(),
+                category: CodeCategory::PUBLIC_ASSIGNED.into(),
                 data: Data::MEI{ mei_type: MEI { raw: 13, code: MEIType::CANOpenGenRefReqResp }, data: vec![] },
-                error_flags: ErrorFlags::NONE,
+                error_flags: ErrorFlags::none(),
             })))
         ),
         case::mei_gen_ref_with_data(
@@ -1818,10 +1780,10 @@ mod tests {
                 length: 4,
                 unit_id: 1,
                 function: Function { raw: 43, code: FunctionCode::MEI },
-                access_type: AccessType::NONE,
-                category: CodeCategory::PUBLIC_ASSIGNED,
+                access_type: AccessType::none(),
+                category: CodeCategory::PUBLIC_ASSIGNED.into(),
                 data: Data::MEI{ mei_type: MEI { raw: 13, code: MEIType::CANOpenGenRefReqResp }, data: vec![0x00] },
-                error_flags: ErrorFlags::NONE,
+                error_flags: ErrorFlags::none(),
             })))
         ),
         case::mei_invalid_length(
@@ -1847,10 +1809,10 @@ mod tests {
                 length: 2,
                 unit_id: 1,
                 function: Function { raw: 43, code: FunctionCode::MEI },
-                access_type: AccessType::NONE,
-                category: CodeCategory::NONE,
+                access_type: AccessType::none(),
+                category: CodeCategory::none(),
                 data: Data::Empty,
-                error_flags: ErrorFlags::DATA_LENGTH,
+                error_flags: ErrorFlags::DATA_LENGTH.into(),
             })))
         ),
         case::mei_missing_bytes(
@@ -1895,10 +1857,10 @@ mod tests {
                 length: 4,
                 unit_id: 1,
                 function: Function { raw: 43, code: FunctionCode::MEI },
-                access_type: AccessType::NONE,
-                category: CodeCategory::PUBLIC_ASSIGNED,
+                access_type: AccessType::none(),
+                category: CodeCategory::PUBLIC_ASSIGNED.into(),
                 data: Data::MEI{ mei_type: MEI { raw: 14, code: MEIType::RdDevId }, data: vec![0x00] },
-                error_flags: ErrorFlags::NONE,
+                error_flags: ErrorFlags::none(),
             })))
         ),
         case::mei_unknown(
@@ -1922,10 +1884,10 @@ mod tests {
                 length: 3,
                 unit_id: 1,
                 function: Function { raw: 43, code: FunctionCode::MEI },
-                access_type: AccessType::NONE,
-                category: CodeCategory::RESERVED,
+                access_type: AccessType::none(),
+                category: CodeCategory::RESERVED.into(),
                 data: Data::MEI{ mei_type: MEI { raw: 15, code: MEIType::Unknown }, data: vec![] },
-                error_flags: ErrorFlags::NONE,
+                error_flags: ErrorFlags::none(),
             })))
         ),
         case::zero_length(
@@ -1943,10 +1905,10 @@ mod tests {
                 length: 0,
                 unit_id: 0,
                 function: Function { raw: 0, code: FunctionCode::Unknown },
-                access_type: AccessType::NONE,
-                category: CodeCategory::NONE,
+                access_type: AccessType::none(),
+                category: CodeCategory::none(),
                 data: Data::Empty,
-                error_flags: ErrorFlags::DATA_LENGTH,
+                error_flags: ErrorFlags::DATA_LENGTH.into(),
             })))
         ),
         case::zero_length(
@@ -1966,10 +1928,10 @@ mod tests {
                 length: 0,
                 unit_id: 0,
                 function: Function { raw: 0, code: FunctionCode::Unknown },
-                access_type: AccessType::NONE,
-                category: CodeCategory::NONE,
+                access_type: AccessType::none(),
+                category: CodeCategory::none(),
                 data: Data::Empty,
-                error_flags: ErrorFlags::DATA_LENGTH,
+                error_flags: ErrorFlags::DATA_LENGTH.into(),
             })))
         ),
         case::missing_bytes(
@@ -2017,14 +1979,14 @@ mod tests {
                 unit_id: 1,
                 function: Function { raw: 1, code: FunctionCode::RdCoils },
                 access_type: AccessType::READ | AccessType::COILS,
-                category: CodeCategory::PUBLIC_ASSIGNED,
+                category: CodeCategory::PUBLIC_ASSIGNED.into(),
                 data: Data::Read (
                     Read::Request {
                         address: 0x0000,
                         quantity: 0x0001
                     }
                 ),
-                error_flags: ErrorFlags::NONE,
+                error_flags: ErrorFlags::none(),
             })))
         ),
         case::read_discrete_inputs(
@@ -2051,12 +2013,12 @@ mod tests {
                 unit_id: 1,
                 function: Function { raw: 2, code: FunctionCode::RdDiscreteInputs },
                 access_type: AccessType::READ | AccessType::DISCRETES,
-                category: CodeCategory::PUBLIC_ASSIGNED,
+                category: CodeCategory::PUBLIC_ASSIGNED.into(),
                 data: Data::Read(Read::Request {
                     address: 1,
                     quantity: 0
                 }),
-                error_flags: ErrorFlags::DATA_VALUE
+                error_flags: ErrorFlags::DATA_VALUE.into(),
             })))
         ),
         case::read_input_regs(
@@ -2083,12 +2045,12 @@ mod tests {
                 unit_id: 1,
                 function: Function { raw: 4, code: FunctionCode::RdInputRegs },
                 access_type: AccessType::READ | AccessType::INPUT,
-                category: CodeCategory::PUBLIC_ASSIGNED,
+                category: CodeCategory::PUBLIC_ASSIGNED.into(),
                 data: Data::Read(Read::Request {
                     address: 1,
                     quantity: 65535
                 }),
-                error_flags: ErrorFlags::DATA_VALUE
+                error_flags: ErrorFlags::DATA_VALUE.into(),
             })))
         ),
         case::read_exception_status(
@@ -2110,10 +2072,10 @@ mod tests {
                 length: 2,
                 unit_id: 1,
                 function: Function { raw: 7, code: FunctionCode::RdExcStatus },
-                access_type: AccessType::NONE,
-                category: CodeCategory::PUBLIC_ASSIGNED,
+                access_type: AccessType::none(),
+                category: CodeCategory::PUBLIC_ASSIGNED.into(),
                 data: Data::ByteVec(vec![]),
-                error_flags: ErrorFlags::NONE,
+                error_flags: ErrorFlags::none(),
             })))
         ),
         case::read_holding_regs(
@@ -2140,14 +2102,14 @@ mod tests {
                 unit_id: 1,
                 function: Function { raw: 3, code: FunctionCode::RdHoldRegs },
                 access_type: AccessType::READ | AccessType::HOLDING,
-                category: CodeCategory::PUBLIC_ASSIGNED,
+                category: CodeCategory::PUBLIC_ASSIGNED.into(),
                 data: Data::Read (
                     Read::Request {
                         address: 0x0005,
                         quantity: 0x0002
                     }
                 ),
-                error_flags: ErrorFlags::NONE,
+                error_flags: ErrorFlags::none(),
             })))
         ),
         case::write_single_coil(
@@ -2174,14 +2136,14 @@ mod tests {
                 unit_id: 1,
                 function: Function { raw: 5, code: FunctionCode::WrSingleCoil },
                 access_type: AccessType::WRITE_SINGLE | AccessType::COILS,
-                category: CodeCategory::PUBLIC_ASSIGNED,
+                category: CodeCategory::PUBLIC_ASSIGNED.into(),
                 data: Data::Write (
                     Write::Other {
                         address: 0x0002,
                         data: 0x0000
                     }
                 ),
-                error_flags: ErrorFlags::NONE,
+                error_flags: ErrorFlags::none(),
             })))
         ),
         case::write_mult_regs(
@@ -2213,7 +2175,7 @@ mod tests {
                 unit_id: 1,
                 function: Function { raw: 16, code: FunctionCode::WrMultRegs },
                 access_type: AccessType::HOLDING | AccessType::WRITE_MULTIPLE,
-                category: CodeCategory::PUBLIC_ASSIGNED,
+                category: CodeCategory::PUBLIC_ASSIGNED.into(),
                 data: Data::Write (
                     Write::MultReq {
                         address: 0x0003,
@@ -2221,7 +2183,7 @@ mod tests {
                         data: vec![0x0a, 0x0b, 0x00, 0x00]
                     }
                 ),
-                error_flags: ErrorFlags::NONE,
+                error_flags: ErrorFlags::none(),
             })))
         ),
         case::write_mult_regs_invalid_length(
@@ -2253,7 +2215,7 @@ mod tests {
                 unit_id: 1,
                 function: Function { raw: 16, code: FunctionCode::WrMultRegs },
                 access_type: AccessType::HOLDING | AccessType::WRITE_MULTIPLE,
-                category: CodeCategory::PUBLIC_ASSIGNED,
+                category: CodeCategory::PUBLIC_ASSIGNED.into(),
                 data: Data::Write (
                     Write::MultReq {
                         address: 0x0003,
@@ -2261,7 +2223,7 @@ mod tests {
                         data: vec![0x0a, 0x0b]
                     }
                 ),
-                error_flags: ErrorFlags::DATA_LENGTH,
+                error_flags: ErrorFlags::DATA_LENGTH.into(),
             })))
         ),
         case::read_write_mult_regs(
@@ -2296,7 +2258,7 @@ mod tests {
                 unit_id: 1,
                 function: Function { raw: 23, code: FunctionCode::RdWrMultRegs },
                 access_type: AccessType::READ | AccessType::WRITE_MULTIPLE | AccessType::HOLDING,
-                category: CodeCategory::PUBLIC_ASSIGNED,
+                category: CodeCategory::PUBLIC_ASSIGNED.into(),
                 data: Data::ReadWrite {
                     read: Read::Request {
                         address: 0x0001,
@@ -2308,7 +2270,7 @@ mod tests {
                         data: vec![0x05, 0x06]
                     }
                 },
-                error_flags: ErrorFlags::NONE,
+                error_flags: ErrorFlags::none(),
             })))
         ),
         case::mask_write_reg(
@@ -2337,7 +2299,7 @@ mod tests {
                 unit_id: 1,
                 function: Function { raw: 22, code: FunctionCode::MaskWrReg },
                 access_type: AccessType::WRITE | AccessType::HOLDING,
-                category: CodeCategory::PUBLIC_ASSIGNED,
+                category: CodeCategory::PUBLIC_ASSIGNED.into(),
                 data: Data::Write (
                     Write::Mask {
                         address: 0x0001,
@@ -2345,7 +2307,7 @@ mod tests {
                         or_mask: 0x0003
                     }
                 ),
-                error_flags: ErrorFlags::NONE,
+                error_flags: ErrorFlags::none(),
             })))
         ),
         case::mask_write_reg_invalid_length(
@@ -2372,9 +2334,9 @@ mod tests {
                 unit_id: 1,
                 function: Function { raw: 22, code: FunctionCode::MaskWrReg },
                 access_type: AccessType::WRITE | AccessType::HOLDING,
-                category: CodeCategory::PUBLIC_ASSIGNED,
+                category: CodeCategory::PUBLIC_ASSIGNED.into(),
                 data: Data::ByteVec ([0x00, 0x01, 0x00, 0x02].to_vec()),
-                error_flags: ErrorFlags::DATA_LENGTH,
+                error_flags: ErrorFlags::DATA_LENGTH.into(),
             })))
         ),
         case::mask_write_reg_invalid_length_complete(
@@ -2403,9 +2365,9 @@ mod tests {
                 unit_id: 1,
                 function: Function { raw: 22, code: FunctionCode::MaskWrReg },
                 access_type: AccessType::WRITE | AccessType::HOLDING,
-                category: CodeCategory::PUBLIC_ASSIGNED,
+                category: CodeCategory::PUBLIC_ASSIGNED.into(),
                 data: Data::ByteVec ([0x00, 0x01, 0x00, 0x02].to_vec()),
-                error_flags: ErrorFlags::DATA_LENGTH,
+                error_flags: ErrorFlags::DATA_LENGTH.into(),
             })))
         ),
         case::mei_gen_ref(
@@ -2429,10 +2391,10 @@ mod tests {
                 length: 3,
                 unit_id: 1,
                 function: Function { raw: 43, code: FunctionCode::MEI },
-                access_type: AccessType::NONE,
-                category: CodeCategory::PUBLIC_ASSIGNED,
+                access_type: AccessType::none(),
+                category: CodeCategory::PUBLIC_ASSIGNED.into(),
                 data: Data::MEI{ mei_type: MEI { raw: 13, code: MEIType::CANOpenGenRefReqResp }, data: vec![] },
-                error_flags: ErrorFlags::NONE,
+                error_flags: ErrorFlags::none(),
             })))
         ),
         case::diagnostic(
@@ -2458,10 +2420,10 @@ mod tests {
                 length: 6,
                 unit_id: 3,
                 function: Function { raw: 8, code: FunctionCode::Diagnostic },
-                access_type: AccessType::NONE,
-                category: CodeCategory::PUBLIC_ASSIGNED,
+                access_type: AccessType::none(),
+                category: CodeCategory::PUBLIC_ASSIGNED.into(),
                 data: Data::Diagnostic { func: Diagnostic { raw: 4, code: DiagnosticSubfunction::ForceListenOnlyMode }, data: vec![0x00, 0x00] },
-                error_flags: ErrorFlags::NONE,
+                error_flags: ErrorFlags::none(),
             })))
         ),
         case::diagnostic_invalid_value(
@@ -2487,10 +2449,10 @@ mod tests {
                 length: 6,
                 unit_id: 3,
                 function: Function { raw: 8, code: FunctionCode::Diagnostic },
-                access_type: AccessType::NONE,
-                category: CodeCategory::PUBLIC_ASSIGNED,
+                access_type: AccessType::none(),
+                category: CodeCategory::PUBLIC_ASSIGNED.into(),
                 data: Data::Diagnostic { func: Diagnostic { raw: 1, code: DiagnosticSubfunction::RestartCommOpt }, data: vec![0x01, 0x00] },
-                error_flags: ErrorFlags::DATA_VALUE,
+                error_flags: ErrorFlags::DATA_VALUE.into(),
             })))
         ),
         case::diagnostic_missing_subfunc(
@@ -2512,10 +2474,10 @@ mod tests {
                 length: 2,
                 unit_id: 3,
                 function: Function { raw: 8, code: FunctionCode::Diagnostic },
-                access_type: AccessType::NONE,
-                category: CodeCategory::NONE,
+                access_type: AccessType::none(),
+                category: CodeCategory::none(),
                 data: Data::Empty,
-                error_flags: ErrorFlags::DATA_LENGTH,
+                error_flags: ErrorFlags::DATA_LENGTH.into(),
             })))
         ),
         case::diagnostic_reserved(
@@ -2540,10 +2502,10 @@ mod tests {
                 length: 6,
                 unit_id: 3,
                 function: Function { raw: 8, code: FunctionCode::Diagnostic },
-                access_type: AccessType::NONE,
-                category: CodeCategory::RESERVED,
+                access_type: AccessType::none(),
+                category: CodeCategory::RESERVED.into(),
                 data: Data::Diagnostic { func: Diagnostic { raw: 22, code: DiagnosticSubfunction::Reserved }, data: vec![0x00, 0x00] },
-                error_flags: ErrorFlags::NONE,
+                error_flags: ErrorFlags::none(),
             })))
         ),
     )]
@@ -2587,9 +2549,9 @@ mod tests {
                 unit_id: 1,
                 function: Function { raw: 1, code: FunctionCode::RdCoils },
                 access_type: AccessType::READ | AccessType::COILS,
-                category: CodeCategory::PUBLIC_ASSIGNED,
+                category: CodeCategory::PUBLIC_ASSIGNED.into(),
                 data: Data::Read(Read::Response(vec![0x00])),
-                error_flags: ErrorFlags::NONE,
+                error_flags: ErrorFlags::none(),
             })))
         ),
         case::read_holding_regs(
@@ -2617,9 +2579,9 @@ mod tests {
                 unit_id: 1,
                 function: Function { raw: 3, code: FunctionCode::RdHoldRegs },
                 access_type: AccessType::READ | AccessType::HOLDING,
-                category: CodeCategory::PUBLIC_ASSIGNED,
+                category: CodeCategory::PUBLIC_ASSIGNED.into(),
                 data: Data::Read(Read::Response(vec![0x00, 0x09, 0x00, 0x18])),
-                error_flags: ErrorFlags::NONE,
+                error_flags: ErrorFlags::none(),
             })))
         ),
         case::read_write_mult_regs(
@@ -2646,9 +2608,9 @@ mod tests {
                 unit_id: 1,
                 function: Function { raw: 23, code: FunctionCode::RdWrMultRegs },
                 access_type: AccessType::READ | AccessType::WRITE_MULTIPLE | AccessType::HOLDING,
-                category: CodeCategory::PUBLIC_ASSIGNED,
+                category: CodeCategory::PUBLIC_ASSIGNED.into(),
                 data: Data::Read(Read::Response(vec![0x0e, 0x0f])),
-                error_flags: ErrorFlags::NONE,
+                error_flags: ErrorFlags::none(),
             })))
         ),
         case::invalid_read_exception_status(
@@ -2671,10 +2633,10 @@ mod tests {
                 length: 4,
                 unit_id: 1,
                 function: Function { raw: 7, code: FunctionCode::RdExcStatus },
-                access_type: AccessType::NONE,
-                category: CodeCategory::PUBLIC_ASSIGNED,
+                access_type: AccessType::none(),
+                category: CodeCategory::PUBLIC_ASSIGNED.into(),
                 data: Data::ByteVec(vec![0x00, 0x00]),
-                error_flags: ErrorFlags::DATA_LENGTH,
+                error_flags: ErrorFlags::DATA_LENGTH.into(),
             })))
         ),
         case::write_single_coil(
@@ -2701,14 +2663,14 @@ mod tests {
                 unit_id: 1,
                 function: Function { raw: 5, code: FunctionCode::WrSingleCoil },
                 access_type: AccessType::WRITE_SINGLE | AccessType::COILS,
-                category: CodeCategory::PUBLIC_ASSIGNED,
+                category: CodeCategory::PUBLIC_ASSIGNED.into(),
                 data: Data::Write(
                     Write::Other {
                         address: 0x0002,
                         data: 0x0000
                     }
                 ),
-                error_flags: ErrorFlags::NONE,
+                error_flags: ErrorFlags::none(),
             })))
         ),
         case::write_mult_regs(
@@ -2735,14 +2697,14 @@ mod tests {
                 unit_id: 1,
                 function: Function { raw: 16, code: FunctionCode::WrMultRegs },
                 access_type: AccessType::WRITE_MULTIPLE | AccessType::HOLDING,
-                category: CodeCategory::PUBLIC_ASSIGNED,
+                category: CodeCategory::PUBLIC_ASSIGNED.into(),
                 data: Data::Write(
                     Write::Other {
                         address: 0x0003,
                         data: 0x0004
                     }
                 ),
-                error_flags: ErrorFlags::NONE,
+                error_flags: ErrorFlags::none(),
             })))
         ),
         case::mask_write_reg(
@@ -2771,7 +2733,7 @@ mod tests {
                 unit_id: 1,
                 function: Function { raw: 22, code: FunctionCode::MaskWrReg },
                 access_type: AccessType::WRITE | AccessType::HOLDING,
-                category: CodeCategory::PUBLIC_ASSIGNED,
+                category: CodeCategory::PUBLIC_ASSIGNED.into(),
                 data: Data::Write (
                     Write::Mask {
                         address: 0x0001,
@@ -2779,7 +2741,7 @@ mod tests {
                         or_mask: 0x0003
                     }
                 ),
-                error_flags: ErrorFlags::NONE,
+                error_flags: ErrorFlags::none(),
             })))
         ),
         case::mei_gen_ref(
@@ -2803,10 +2765,10 @@ mod tests {
                 length: 3,
                 unit_id: 1,
                 function: Function { raw: 43, code: FunctionCode::MEI },
-                access_type: AccessType::NONE,
-                category: CodeCategory::PUBLIC_ASSIGNED,
+                access_type: AccessType::none(),
+                category: CodeCategory::PUBLIC_ASSIGNED.into(),
                 data: Data::MEI{ mei_type: MEI { raw: 13, code: MEIType::CANOpenGenRefReqResp }, data: vec![] },
-                error_flags: ErrorFlags::NONE,
+                error_flags: ErrorFlags::none(),
             })))
         ),
         case::diagnostic(
@@ -2832,10 +2794,10 @@ mod tests {
                 length: 6,
                 unit_id: 3,
                 function: Function { raw: 8, code: FunctionCode::Diagnostic },
-                access_type: AccessType::NONE,
-                category: CodeCategory::PUBLIC_ASSIGNED,
+                access_type: AccessType::none(),
+                category: CodeCategory::PUBLIC_ASSIGNED.into(),
                 data: Data::Diagnostic { func: Diagnostic { raw: 4, code: DiagnosticSubfunction::ForceListenOnlyMode }, data: vec![0x00, 0x00] },
-                error_flags: ErrorFlags::NONE,
+                error_flags: ErrorFlags::none(),
             })))
         ),
     )]
@@ -2864,14 +2826,14 @@ mod tests {
                 unit_id: 1,
                 function: Function { raw: 1, code: FunctionCode::RdCoils },
                 access_type: AccessType::READ | AccessType::COILS,
-                category: CodeCategory::PUBLIC_ASSIGNED,
+                category: CodeCategory::PUBLIC_ASSIGNED.into(),
                 data: Data::Read (
                     Read::Request {
                         address: 0x0000,
                         quantity: 0x0001
                     }
                 ),
-                error_flags: ErrorFlags::NONE,
+                error_flags: ErrorFlags::none(),
             },
             Message{
                 transaction_id: 1,
@@ -2880,9 +2842,9 @@ mod tests {
                 unit_id: 1,
                 function: Function { raw: 1, code: FunctionCode::RdCoils },
                 access_type: AccessType::READ | AccessType::COILS,
-                category: CodeCategory::PUBLIC_ASSIGNED,
+                category: CodeCategory::PUBLIC_ASSIGNED.into(),
                 data: Data::Read(Read::Response(vec![0x00])),
-                error_flags: ErrorFlags::NONE,
+                error_flags: ErrorFlags::none(),
             },
             true
         ),
@@ -2894,14 +2856,14 @@ mod tests {
                 unit_id: 1,
                 function: Function { raw: 5, code: FunctionCode::WrSingleCoil },
                 access_type: AccessType::WRITE_SINGLE | AccessType::COILS,
-                category: CodeCategory::PUBLIC_ASSIGNED,
+                category: CodeCategory::PUBLIC_ASSIGNED.into(),
                 data: Data::Write (
                     Write::Other {
                         address: 0x0002,
                         data: 0x0000
                     }
                 ),
-                error_flags: ErrorFlags::NONE,
+                error_flags: ErrorFlags::none(),
             },
             Message{
                 transaction_id: 1,
@@ -2910,14 +2872,14 @@ mod tests {
                 unit_id: 1,
                 function: Function { raw: 5, code: FunctionCode::WrSingleCoil },
                 access_type: AccessType::WRITE_SINGLE | AccessType::COILS,
-                category: CodeCategory::PUBLIC_ASSIGNED,
+                category: CodeCategory::PUBLIC_ASSIGNED.into(),
                 data: Data::Write(
                     Write::Other {
                         address: 0x0002,
                         data: 0x0000
                     }
                 ),
-                error_flags: ErrorFlags::NONE,
+                error_flags: ErrorFlags::none(),
             },
             true
         ),
@@ -2929,7 +2891,7 @@ mod tests {
                 unit_id: 1,
                 function: Function { raw: 16, code: FunctionCode::WrMultRegs },
                 access_type: AccessType::HOLDING | AccessType::WRITE_MULTIPLE,
-                category: CodeCategory::PUBLIC_ASSIGNED,
+                category: CodeCategory::PUBLIC_ASSIGNED.into(),
                 data: Data::Write (
                     Write::MultReq {
                         address: 0x0003,
@@ -2937,7 +2899,7 @@ mod tests {
                         data: vec![0x0a, 0x0b, 0x00, 0x00]
                     }
                 ),
-                error_flags: ErrorFlags::NONE,
+                error_flags: ErrorFlags::none(),
             },
             Message{
                 transaction_id: 1,
@@ -2946,14 +2908,14 @@ mod tests {
                 unit_id: 1,
                 function: Function { raw: 16, code: FunctionCode::WrMultRegs },
                 access_type: AccessType::WRITE_MULTIPLE | AccessType::HOLDING,
-                category: CodeCategory::PUBLIC_ASSIGNED,
+                category: CodeCategory::PUBLIC_ASSIGNED.into(),
                 data: Data::Write(
                     Write::Other {
                         address: 0x0003,
                         data: 0x0004
                     }
                 ),
-                error_flags: ErrorFlags::NONE,
+                error_flags: ErrorFlags::none(),
             },
             true
         ),
@@ -2964,10 +2926,10 @@ mod tests {
                 length: 10,
                 unit_id: 1,
                 function: Function { raw: 20, code: FunctionCode::RdFileRec },
-                access_type: AccessType::NONE,
-                category: CodeCategory::PUBLIC_ASSIGNED,
+                access_type: AccessType::none(),
+                category: CodeCategory::PUBLIC_ASSIGNED.into(),
                 data: Data::ByteVec(vec![0x07, 0x06, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00]),
-                error_flags: ErrorFlags::NONE,
+                error_flags: ErrorFlags::none(),
             },
             Message{
                 transaction_id: 1,
@@ -2975,10 +2937,10 @@ mod tests {
                 length: 10,
                 unit_id: 1,
                 function: Function { raw: 20, code: FunctionCode::RdFileRec },
-                access_type: AccessType::NONE,
-                category: CodeCategory::PUBLIC_ASSIGNED,
+                access_type: AccessType::none(),
+                category: CodeCategory::PUBLIC_ASSIGNED.into(),
                 data: Data::ByteVec(vec![0x07, 0x07, 0x06, 0x01, 0x00, 0x00, 0x00, 0x00]),
-                error_flags: ErrorFlags::NONE,
+                error_flags: ErrorFlags::none(),
             },
             true
         ),
@@ -2990,7 +2952,7 @@ mod tests {
                 unit_id: 1,
                 function: Function { raw: 22, code: FunctionCode::MaskWrReg },
                 access_type: AccessType::WRITE | AccessType::HOLDING,
-                category: CodeCategory::PUBLIC_ASSIGNED,
+                category: CodeCategory::PUBLIC_ASSIGNED.into(),
                 data: Data::Write (
                     Write::Mask {
                         address: 0x0001,
@@ -2998,7 +2960,7 @@ mod tests {
                         or_mask: 0x0003
                     }
                 ),
-                error_flags: ErrorFlags::NONE,
+                error_flags: ErrorFlags::none(),
             },
             Message {
                 transaction_id: 1,
@@ -3007,7 +2969,7 @@ mod tests {
                 unit_id: 1,
                 function: Function { raw: 22, code: FunctionCode::MaskWrReg },
                 access_type: AccessType::WRITE | AccessType::HOLDING,
-                category: CodeCategory::PUBLIC_ASSIGNED,
+                category: CodeCategory::PUBLIC_ASSIGNED.into(),
                 data: Data::Write (
                     Write::Mask {
                         address: 0x0002,
@@ -3015,7 +2977,7 @@ mod tests {
                         or_mask: 0x0003
                     }
                 ),
-                error_flags: ErrorFlags::NONE,
+                error_flags: ErrorFlags::none(),
             },
             true
         ),
@@ -3026,10 +2988,10 @@ mod tests {
                 length: 10,
                 unit_id: 2,
                 function: Function { raw: 20, code: FunctionCode::RdFileRec },
-                access_type: AccessType::NONE,
-                category: CodeCategory::PUBLIC_ASSIGNED,
+                access_type: AccessType::none(),
+                category: CodeCategory::PUBLIC_ASSIGNED.into(),
                 data: Data::ByteVec(vec![]),
-                error_flags: ErrorFlags::NONE,
+                error_flags: ErrorFlags::none(),
             },
             Message{
                 transaction_id: 1,
@@ -3037,10 +2999,10 @@ mod tests {
                 length: 10,
                 unit_id: 1,
                 function: Function { raw: 20, code: FunctionCode::RdFileRec },
-                access_type: AccessType::NONE,
-                category: CodeCategory::PUBLIC_ASSIGNED,
+                access_type: AccessType::none(),
+                category: CodeCategory::PUBLIC_ASSIGNED.into(),
                 data: Data::ByteVec(vec![]),
-                error_flags: ErrorFlags::NONE,
+                error_flags: ErrorFlags::none(),
             },
             false
         ),
@@ -3062,14 +3024,14 @@ mod tests {
                 unit_id: 1,
                 function: Function { raw: 5, code: FunctionCode::WrSingleCoil },
                 access_type: AccessType::WRITE_SINGLE | AccessType::COILS,
-                category: CodeCategory::PUBLIC_ASSIGNED,
+                category: CodeCategory::PUBLIC_ASSIGNED.into(),
                 data: Data::Write (
                     Write::Other {
                         address: 0x0002,
                         data: 0x0000
                     }
                 ),
-                error_flags: ErrorFlags::NONE,
+                error_flags: ErrorFlags::none(),
             },
             3,
             Some(0)
@@ -3082,7 +3044,7 @@ mod tests {
                 unit_id: 1,
                 function: Function { raw: 16, code: FunctionCode::WrMultRegs },
                 access_type: AccessType::HOLDING | AccessType::WRITE_MULTIPLE,
-                category: CodeCategory::PUBLIC_ASSIGNED,
+                category: CodeCategory::PUBLIC_ASSIGNED.into(),
                 data: Data::Write (
                     Write::MultReq {
                         address: 0x0003,
@@ -3090,7 +3052,7 @@ mod tests {
                         data: vec![0x0a, 0x0b, 0x00, 0x00]
                     }
                 ),
-                error_flags: ErrorFlags::NONE,
+                error_flags: ErrorFlags::none(),
             },
             4,
             Some(0x0a0b)
@@ -3102,10 +3064,10 @@ mod tests {
                 length: 10,
                 unit_id: 1,
                 function: Function { raw: 20, code: FunctionCode::RdFileRec },
-                access_type: AccessType::NONE,
-                category: CodeCategory::PUBLIC_ASSIGNED,
+                access_type: AccessType::none(),
+                category: CodeCategory::PUBLIC_ASSIGNED.into(),
                 data: Data::ByteVec(vec![0x07, 0x06, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00]),
-                error_flags: ErrorFlags::NONE,
+                error_flags: ErrorFlags::none(),
             },
             0,
             None
@@ -3126,14 +3088,14 @@ mod tests {
                 unit_id: 1,
                 function: Function { raw: 5, code: FunctionCode::WrSingleCoil },
                 access_type: AccessType::WRITE_SINGLE | AccessType::COILS,
-                category: CodeCategory::PUBLIC_ASSIGNED,
+                category: CodeCategory::PUBLIC_ASSIGNED.into(),
                 data: Data::Write (
                     Write::Other {
                         address: 0x0002,
                         data: 0x0000
                     }
                 ),
-                error_flags: ErrorFlags::NONE,
+                error_flags: ErrorFlags::none(),
             },
             Some(3..=3)
         ),
@@ -3145,7 +3107,7 @@ mod tests {
                 unit_id: 1,
                 function: Function { raw: 16, code: FunctionCode::WrMultRegs },
                 access_type: AccessType::HOLDING | AccessType::WRITE_MULTIPLE,
-                category: CodeCategory::PUBLIC_ASSIGNED,
+                category: CodeCategory::PUBLIC_ASSIGNED.into(),
                 data: Data::Write (
                     Write::MultReq {
                         address: 0x0003,
@@ -3153,7 +3115,7 @@ mod tests {
                         data: vec![0x0a, 0x0b, 0x00, 0x00]
                     }
                 ),
-                error_flags: ErrorFlags::NONE,
+                error_flags: ErrorFlags::none(),
             },
             Some(4..=5)
         ),
@@ -3165,7 +3127,7 @@ mod tests {
                 unit_id: 1,
                 function: Function { raw: 22, code: FunctionCode::MaskWrReg },
                 access_type: AccessType::WRITE | AccessType::HOLDING,
-                category: CodeCategory::PUBLIC_ASSIGNED,
+                category: CodeCategory::PUBLIC_ASSIGNED.into(),
                 data: Data::Write (
                     Write::Mask {
                         address: 0x0001,
@@ -3173,7 +3135,7 @@ mod tests {
                         or_mask: 0x0003
                     }
                 ),
-                error_flags: ErrorFlags::NONE,
+                error_flags: ErrorFlags::none(),
             },
             Some(2..=2)
         ),
@@ -3184,10 +3146,10 @@ mod tests {
                 length: 10,
                 unit_id: 1,
                 function: Function { raw: 20, code: FunctionCode::RdFileRec },
-                access_type: AccessType::NONE,
-                category: CodeCategory::PUBLIC_ASSIGNED,
+                access_type: AccessType::none(),
+                category: CodeCategory::PUBLIC_ASSIGNED.into(),
                 data: Data::ByteVec(vec![0x07, 0x06, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00]),
-                error_flags: ErrorFlags::NONE,
+                error_flags: ErrorFlags::none(),
             },
             None
         )
@@ -3243,9 +3205,9 @@ mod tests {
 
     #[test]
     fn test_categories() {
-        assert_eq!(CodeCategory::PUBLIC_UNASSIGNED, CodeCategory::from(99));
-        assert_eq!(CodeCategory::USER_DEFINED, CodeCategory::from(100));
-        assert_eq!(CodeCategory::RESERVED, CodeCategory::from(126));
+        assert_eq!(CodeCategory::PUBLIC_UNASSIGNED, CodeCategory::from_raw(99));
+        assert_eq!(CodeCategory::USER_DEFINED, CodeCategory::from_raw(100));
+        assert_eq!(CodeCategory::RESERVED, CodeCategory::from_raw(126));
     }
 
     #[test]
@@ -3254,7 +3216,7 @@ mod tests {
             "PUBLIC_ASSIGNED | RESERVED",
             (CodeCategory::PUBLIC_ASSIGNED | CodeCategory::RESERVED).to_string()
         );
-        assert_eq!("NONE", CodeCategory::NONE.to_string());
+        assert_eq!("NONE", CodeCategory::none().to_string());
         assert_eq!(
             "READ | COILS",
             (AccessType::READ | AccessType::COILS).to_string()

@@ -26,10 +26,10 @@ cbindgen = {version = "0.15", optional = true}
 
 [dependencies]
 sawp-ffi = { path = "../sawp-ffi", version = "^0.2.0", optional = true}
+sawp-flags = { path = "../sawp-flags", version = "^0.2.0"}
 sawp = { path = "..", version = "^0.2.0"}
 nom = "5.1.2"
 num_enum = "0.5.1"
-bitflags = "1.0.4"
 
 [lib]
 crate-type = ["staticlib", "rlib", "cdylib"]
