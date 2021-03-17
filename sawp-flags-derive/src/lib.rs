@@ -162,6 +162,10 @@ fn impl_enum_traits(name: &syn::Ident, repr: &Ident, data: &syn::DataEnum) -> To
     }
 }
 
+/// BitFlags derive macro tests
+///
+/// `#[derive(BitFlags)]` can't be used here and `impl_sawp_flags`
+/// is being called directly instead.
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -169,13 +173,39 @@ mod tests {
     #[test]
     fn test_macro_enum() {
         let input = r#"
-            #[derive(Bitflags)]
             #[repr(u8)]
             enum Test {
                 A = 0b0000,
                 B = 0b0001,
                 C = 0b0010,
                 D = 0b0100,
+            }
+        "#;
+        let parsed: syn::DeriveInput = syn::parse_str(input).unwrap();
+        impl_sawp_flags(&parsed);
+    }
+
+    #[test]
+    #[should_panic(expected = "BitFlags enum must have a `repr` attribute")]
+    fn test_macro_repr_panic() {
+        let input = r#"
+            enum Test {
+                A = 0b0000,
+                B = 0b0001,
+                C = 0b0010,
+                D = 0b0100,
+            }
+        "#;
+        let parsed: syn::DeriveInput = syn::parse_str(input).unwrap();
+        impl_sawp_flags(&parsed);
+    }
+
+    #[test]
+    #[should_panic(expected = "Bitflags is only supported on enums")]
+    fn test_macro_not_enum_panic() {
+        let input = r#"
+            #[repr(u8)]
+            struct Test {
             }
         "#;
         let parsed: syn::DeriveInput = syn::parse_str(input).unwrap();
