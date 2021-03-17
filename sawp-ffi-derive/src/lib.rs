@@ -691,7 +691,6 @@ mod tests {
     #[test]
     fn test_macro_struct() {
         let input = r#"
-            #[derive(GenerateFFI)]
             #[sawp_ffi(prefix = "sawp")]
             pub struct MyStruct {
                 pub num: usize,
@@ -712,7 +711,6 @@ mod tests {
     #[test]
     fn test_macro_enum() {
         let input = r#"
-            #[derive(GenerateFFI)]
             pub enum MyEnum {
                  UnnamedSingle(u8),
                  UnnamedMultiple(u8, u16),
@@ -723,6 +721,29 @@ mod tests {
                     file_type: FileType,
                  },
                  Empty,
+            }
+        "#;
+        let parsed: syn::DeriveInput = syn::parse_str(input).unwrap();
+        impl_sawp_ffi(&parsed);
+    }
+
+    #[test]
+    #[should_panic(expected = "expects string literal")]
+    fn test_macro_prefix_panic() {
+        let input = r#"
+            #[sawp_ffi(prefix = 0)]
+            pub struct MyStruct {
+            }
+        "#;
+        let parsed: syn::DeriveInput = syn::parse_str(input).unwrap();
+        impl_sawp_ffi(&parsed);
+    }
+
+    #[test]
+    #[should_panic(expected = "Union not supported")]
+    fn test_macro_union_panic() {
+        let input = r#"
+            pub union MyUnion {
             }
         "#;
         let parsed: syn::DeriveInput = syn::parse_str(input).unwrap();
