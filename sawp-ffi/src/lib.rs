@@ -6,7 +6,7 @@ macro_rules! nullcheck {
     ( $($ptr:expr),*) => {
         $(
         if $ptr.is_null() {
-            panic!(format!("{} is NULL in {}", stringify!($ptr), line!()));
+            panic!("{} is NULL in {}", stringify!($ptr), line!());
         }
         )*
     }

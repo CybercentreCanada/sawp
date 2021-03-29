@@ -297,7 +297,7 @@ fn has_ffi_type_only_meta(metas: &[syn::NestedMeta]) -> bool {
 fn deref(field_name: &syn::Ident) -> TokenStream {
     quote! {
         let #field_name = if #field_name.is_null() {
-            panic!(format!("{} is NULL in {}", stringify!(#field_name), line!()));
+            panic!("{} is NULL in {}", stringify!(#field_name), line!());
         } else {
             &*#field_name
         };
