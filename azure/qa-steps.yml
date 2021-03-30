@@ -89,6 +89,11 @@ steps:
   - script: make memcheck
     displayName: memcheck
 
+  # Run the doc tests
+  # Needed until this issue is fixed: https://github.com/rust-lang/cargo/issues/6669
+  - script: cargo test --workspace --doc --all-features
+    displayName: run doc tests
+
   # Build fuzz
   - script: cargo +nightly fuzz build
     displayName: build fuzz
