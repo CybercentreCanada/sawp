@@ -1,23 +1,49 @@
 steps:
-  # Check dependencies
+  # Dependencies
+  # ============
+  # Install or update dependencies
+  #
+
+  # System packages
+  # valgrind 3.17 is required and should be install from source
+  - script: valgrind --version || sudo yum install -y valgrind
+    displayName: install valgrind
+
+  # Use local cargo install path
   - script: echo "##vso[task.setvariable variable=PATH;]$PATH:$HOME/.cargo/bin"
     displayName: set path
+
+  # Installs cargo and rust stable
   - script: cargo --version || curl https://sh.rustup.rs -sSf | sh -s -- -y
     displayName: install rust
-  - script: rustup install 1.41.1
+
+  # - STABLE
+  - script: rustup update stable
+    displayName: install rust (stable)
+  - script: cargo install cargo-valgrind cargo-tarpaulin cbindgen
+    displayName: update packages (stable)
+
+  # - MSRV
+  - script: rustup update 1.41.1
     displayName: install rust (msrv)
-  - script: cargo tarpaulin --version || cargo install cargo-tarpaulin
-    displayName: install cargo-tarpaulin
-  - script: cbindgen --version || cargo install + cbindgen
-    displayName: install cbindgen
-  - script: cargo +nightly --version || rustup install nightly
-    displayName: install rust nightly
-  - script: cargo +nightly fuzz --version || cargo +nightly install cargo-fuzz
-    displayName: install cargo-fuzz
+  
+  # - NIGHTLY
+  - script: rustup update nightly
+    displayName: install rust (nightly)
+  
+  - script: rustup +nightly component add rust-src
+    displayName: install rust-src (nightly)
+
+  - script: cargo +nightly install cargo-fuzz
+    displayName: update packages (nightly)
 
   # Get the package version
   - script: echo "##vso[task.setvariable variable=version]$((test -f Cargo.lock || cargo generate-lockfile) && cargo pkgid | cut -d# -f 2)"
     displayName: package version
+
+  # QA Steps
+  # ========
+  #
 
   # Check code formatting differences
   - script: cargo fmt --all -- --check
@@ -27,9 +53,10 @@ steps:
   # First, with the minimum supported rust version
   - script: cargo +1.41.1 build --workspace --all-targets --all-features --release
     displayName: build (msrv)
+  
   # Then, with stable
   - script: cargo build --workspace --all-targets --all-features --release
-    displayName: build
+    displayName: build (stable)
   
   # Check linting warnings
   - script: cargo clippy --workspace --all-targets --all-features -- -D warnings
@@ -57,6 +84,10 @@ steps:
   # Run the unit tests
   - script: cargo test --workspace --all-targets --all-features
     displayName: run tests
+  
+  # Run the memory checks
+  - script: make memcheck
+    displayName: memcheck
 
   # Build fuzz
   - script: cargo +nightly fuzz build

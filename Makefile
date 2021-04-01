@@ -152,3 +152,33 @@ publish:
 	sleep 5
 	cd sawp-file && cargo publish
 	sleep 5
+
+.PHONY: valgrind 
+valgrind:
+	cargo valgrind test --workspace --all-targets --all-features
+
+.PHONY: asan-address
+asan-address: export RUSTFLAGS = -Zsanitizer=address
+asan-address: export RUSTDOCFLAGS = -Zsanitizer=address
+asan-address:
+	cargo +nightly test -Zbuild-std --target x86_64-unknown-linux-gnu --workspace --all-targets --all-features
+
+.PHONY: asan-memory
+asan-memory: export RUSTFLAGS = -Zsanitizer=memory -Zsanitizer-memory-track-origins
+asan-memory: export RUSTDOCFLAGS = -Zsanitizer=memory -Zsanitizer-memory-track-origins
+asan-memory:
+	cargo +nightly test -Zbuild-std --target x86_64-unknown-linux-gnu --workspace --all-targets --all-features
+
+.PHONY: asan-leak
+asan-leak: export RUSTFLAGS = -Zsanitizer=leak
+asan-leak: export RUSTDOCFLAGS = -Zsanitizer=leak
+asan-leak:
+	cargo +nightly test -Zbuild-std --target x86_64-unknown-linux-gnu --workspace --all-targets --all-features
+
+.PHONY: asan
+asan: asan-address asan-memory asan-leak
+
+# asan-address currently fails with `SIGILL` on functions with `extern "C"`
+# so it is not included in memcheck until a solution is found
+.PHONY: memcheck
+memcheck: valgrind
