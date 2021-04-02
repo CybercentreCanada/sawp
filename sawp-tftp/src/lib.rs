@@ -39,6 +39,8 @@
 //! }
 //! ```
 
+#![allow(clippy::upper_case_acronyms)]
+
 use sawp::error::{Error, Result};
 use sawp::parser::{Direction, Parse};
 use sawp::probe::Probe;

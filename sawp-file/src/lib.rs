@@ -3,6 +3,8 @@
 //! This module defines structs to serialize and deserialize arguments to SAWP
 //! calls in order to replay them into a parser.
 
+#![allow(clippy::upper_case_acronyms)]
+
 extern crate serde;
 
 #[macro_use]

@@ -1,6 +1,8 @@
 //! Protocol References:
 //!     https://tools.ietf.org/html/rfc6733
 
+#![allow(clippy::upper_case_acronyms)]
+
 use sawp::error::Result;
 use sawp::parser::{Direction, Parse};
 use sawp::probe::Probe;

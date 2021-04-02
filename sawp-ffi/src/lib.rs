@@ -1,3 +1,5 @@
+#![allow(clippy::upper_case_acronyms)]
+
 extern crate sawp_ffi_derive;
 pub use sawp_ffi_derive::GenerateFFI;
 
