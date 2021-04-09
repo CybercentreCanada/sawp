@@ -45,12 +45,16 @@
 
 #![allow(clippy::upper_case_acronyms)]
 
+/// Re-export of the `Flags` struct that is used to represent bit flags
+/// in this crate.
+pub use sawp_flags::{Flag, Flags};
+
 use sawp::error::{Error, ErrorKind, Result};
 use sawp::parser::{Direction, Parse};
 use sawp::probe::{Probe, Status};
 use sawp::protocol::Protocol;
 
-use sawp_flags::{BitFlags, Flag, Flags};
+use sawp_flags::BitFlags;
 
 use nom::bytes::streaming::take;
 use nom::number::streaming::{be_u16, be_u8};
