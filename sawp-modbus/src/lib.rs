@@ -83,18 +83,22 @@ const MAX_LENGTH: u16 = 254;
 #[repr(u8)]
 #[derive(Copy, Clone, Debug, PartialEq, BitFlags)]
 pub enum AccessType {
-    READ = 0b00000001,
-    WRITE = 0b00000010,
-    DISCRETES = 0b00000100,
-    COILS = 0b00001000,
-    INPUT = 0b00010000,
-    HOLDING = 0b00100000,
-    SINGLE = 0b01000000,
-    MULTIPLE = 0b10000000,
-    BIT_ACCESS_MASK = Self::DISCRETES as u8 | Self::COILS as u8,
-    FUNC_MASK = Self::DISCRETES as u8 | Self::COILS as u8 | Self::INPUT as u8 | Self::HOLDING as u8,
-    WRITE_SINGLE = Self::WRITE as u8 | Self::SINGLE as u8,
-    WRITE_MULTIPLE = Self::WRITE as u8 | Self::MULTIPLE as u8,
+    READ = 0b0000_0001,
+    WRITE = 0b0000_0010,
+    DISCRETES = 0b0000_0100,
+    COILS = 0b0000_1000,
+    INPUT = 0b0001_0000,
+    HOLDING = 0b0010_0000,
+    SINGLE = 0b0100_0000,
+    MULTIPLE = 0b1000_0000,
+    /// DISCRETES | COILS
+    BIT_ACCESS_MASK = 0b0000_1100,
+    /// DISCRETES | COILS | INPUT | HOLDING
+    FUNC_MASK = 0b0011_1100,
+    /// WRITE | SINGLE
+    WRITE_SINGLE = 0b0100_0010,
+    /// WRITE | MULTIPLE
+    WRITE_MULTIPLE = 0b1000_0010,
 }
 
 impl From<FunctionCode> for Flags<AccessType> {
@@ -467,9 +471,12 @@ pub struct Message {
     length: u16,
     pub unit_id: u8,
     pub function: Function,
+    #[cfg_attr(feature = "ffi", sawp_ffi(flag = "u8"))]
     pub access_type: Flags<AccessType>,
+    #[cfg_attr(feature = "ffi", sawp_ffi(flag = "u8"))]
     pub category: Flags<CodeCategory>,
     pub data: Data,
+    #[cfg_attr(feature = "ffi", sawp_ffi(flag = "u8"))]
     pub error_flags: Flags<ErrorFlags>,
 }
 
@@ -3208,6 +3215,27 @@ mod tests {
         assert_eq!(CodeCategory::PUBLIC_UNASSIGNED, CodeCategory::from_raw(99));
         assert_eq!(CodeCategory::USER_DEFINED, CodeCategory::from_raw(100));
         assert_eq!(CodeCategory::RESERVED, CodeCategory::from_raw(126));
+    }
+
+    #[test]
+    fn test_access_type() {
+        // make sure complex access types didn't get typoed
+        assert_eq!(
+            AccessType::DISCRETES | AccessType::COILS,
+            AccessType::BIT_ACCESS_MASK
+        );
+        assert_eq!(
+            AccessType::DISCRETES | AccessType::COILS | AccessType::INPUT | AccessType::HOLDING,
+            AccessType::FUNC_MASK
+        );
+        assert_eq!(
+            AccessType::WRITE | AccessType::SINGLE,
+            AccessType::WRITE_SINGLE
+        );
+        assert_eq!(
+            AccessType::WRITE | AccessType::MULTIPLE,
+            AccessType::WRITE_MULTIPLE
+        );
     }
 
     #[test]

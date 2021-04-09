@@ -79,33 +79,3 @@ pub unsafe extern "C" fn sawp_modbus_message_destroy(d: *mut Message) {
         Box::from_raw(d);
     }
 }
-
-/* ---- AccessType Flags ---- */
-pub const ACCESSTYPE_NONE: u8 = 0b0000_0000;
-pub const ACCESSTYPE_READ: u8 = 0b0000_0001;
-pub const ACCESSTYPE_WRITE: u8 = 0b0000_0010;
-pub const ACCESSTYPE_DISCRETES: u8 = 0b0000_0100;
-pub const ACCESSTYPE_COILS: u8 = 0b0000_1000;
-pub const ACCESSTYPE_INPUT: u8 = 0b0001_0000;
-pub const ACCESSTYPE_HOLDING: u8 = 0b0010_0000;
-pub const ACCESSTYPE_SINGLE: u8 = 0b0100_0000;
-pub const ACCESSTYPE_MULTIPLE: u8 = 0b1000_0000;
-pub const ACCESSTYPE_BIT_ACCESS_MASK: u8 = 0b0000_1100;
-pub const ACCESSTYPE_FUNC_MASK: u8 = 0b0011_1100;
-pub const ACCESSTYPE_WRITE_SINGLE: u8 = 0b0100_0010;
-pub const ACCESSTYPE_WRITE_MULTIPLE: u8 = 0b1000_0010;
-
-/* ---- CodeCategory Flags ---- */
-pub const CODECATEGORY_NONE: u8 = 0b0000_0000;
-pub const CODECATEGORY_PUBLIC_ASSIGNED: u8 = 0b0000_0001;
-pub const CODECATEGORY_PUBLIC_UNASSIGNED: u8 = 0b0000_0010;
-pub const CODECATEGORY_USER_DEFINED: u8 = 0b0000_0100;
-pub const CODECATEGORY_RESERVED: u8 = 0b0000_1000;
-
-/* ---- ErrorFlags Flags ---- */
-pub const ERRORFLAGS_NONE: u8 = 0b0000_0000;
-pub const ERRORFLAGS_DATA_VALUE: u8 = 0b0000_0001;
-pub const ERRORFLAGS_DATA_LENGTH: u8 = 0b0000_0010;
-pub const ERRORFLAGS_EXC_CODE: u8 = 0b0000_0100;
-pub const ERRORFLAGS_FUNC_CODE: u8 = 0b0000_1000;
-pub const ERRORFLAGS_PROTO_ID: u8 = 0b0001_0000;

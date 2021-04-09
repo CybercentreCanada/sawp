@@ -7,11 +7,12 @@
 //!           Useful for enums with `repr(Integer)`
 //! - `skip`: Don't generate accessor for member.
 //!           Note: only public members will have accessors.
-//! - `u8_flag`: Return `u8` instead of `*const Type`.
-//!            Requires member type to be using bitflags macro.
+//! - `flag` = `flag_repr`: Return `flag_repr` instead of `*const Type`
+//!           `flag_repr` should be the `repr` type of `Flag`.
+//!           Requires member type to be sawp_flags::Flags
 //! - `type_only`: Only generate enum `Type` and `<enum>_get_type`.
 //!             Won't generate accessors for variant fields
-//! - `prefix`: Prefix for all functions.
+//! - `prefix` = `prefix`: Prefix for all functions.
 //!             eg: `<prefix>_<struct_name>_get_<field>`
 //!
 //! Note: accessors are functions so they will be in snake_case.
@@ -35,8 +36,7 @@
 //!
 //! ### Example
 //! ```
-//! extern crate bitflags;
-//! use bitflags::bitflags;
+//! use sawp_flags::{BitFlags, Flags, Flag};
 //! use sawp_ffi_derive::GenerateFFI;
 //!
 //! #[repr(u16)]
@@ -47,11 +47,11 @@
 //!     Version2 = 0x0200,
 //! }
 //!
-//! bitflags! {
-//!     pub struct FileType: u8 {
-//!         const READ = 0b0000_0000;
-//!         const WRITE = 0b0000_0001;
-//!     }
+//! #[repr(u8)]
+//! #[derive(Copy, Clone, Debug, BitFlags)]
+//! pub enum FileType {
+//!     READ = 0b0000_0001,
+//!     WRITE = 0b0000_0010,
 //! }
 //!
 //! #[derive(GenerateFFI)]
@@ -60,7 +60,7 @@
 //!     pub num: usize,
 //!     #[sawp_ffi(copy)]
 //!     pub version: Version,
-//!     #[sawp_ffi(u8_flag)]
+//!     #[sawp_ffi(flag=u8)]
 //!     pub file_type: FileType,
 //!     private: usize,
 //!     #[sawp_ffi(skip)]
@@ -126,8 +126,8 @@
 //!
 //! ### Example
 //! ```
-//! extern crate bitflags;
-//! use bitflags::bitflags;
+//! extern crate sawp_flags;
+//! use sawp_flags::{BitFlags, Flags, Flag};
 //! use sawp_ffi_derive::GenerateFFI;
 //!
 //! #[repr(u16)]
@@ -138,11 +138,11 @@
 //!     Version2 = 0x0200,
 //! }
 //!
-//! bitflags! {
-//!     pub struct FileType: u8 {
-//!         const READ = 0b0000_0000;
-//!         const WRITE = 0b0000_0001;
-//!     }
+//! #[repr(u8)]
+//! #[derive(Copy, Clone, Debug, BitFlags)]
+//! pub enum FileType {
+//!     READ = 0b0000_0001,
+//!     WRITE = 0b0000_0010,
 //! }
 //!
 //! #[derive(GenerateFFI)]
@@ -152,7 +152,7 @@
 //!      Named {
 //!         a: u8,
 //!         b: Vec<u8>,
-//!         #[sawp_ffi(u8_flag)]
+//!         #[sawp_ffi(flag=u8)]
 //!         file_type: FileType,
 //!      },
 //!      Empty,
@@ -187,8 +187,37 @@
 //! #[no_mangle]
 //! pub unsafe extern "C" fn my_enum_get_named_file_type(my_enum: *const MyEnum) -> *const u8;
 //! ```
+//! ## Special type handling
+//!
+//! ### Strings
+//!
+//! If the field type is a String, accessors to get the pointer
+//! and length will be generated as well. They will be the field
+//! accessor appended with _ptr/_len respectively.
+//!
+//! Note: Strings will not be null terminated
+//!
+//! ### Vector
+//!
+//! If the field type is a Vector, accessors to get the pointer
+//! and length will be generated as well. They will be the field
+//! accessor appended with _ptr/_len respectively.
+//!
+//! ### Options
+//!
+//! If the field type is an Option, the accessor will return a pointer.
+//! If the Option has a value, the pointer will contain that value,
+//! otherwise the pointer will be null
+//!
+//! ### sawp_flags::Flags
+//!
+//! If the field type is a sawp_flags::Flags, the accessor will return
+//! the primative value, ie. the returned value by `.bits()`.
 
 extern crate proc_macro;
+
+mod attrs;
+use crate::attrs::*;
 
 use heck::SnakeCase;
 use proc_macro2::TokenStream;
@@ -232,65 +261,38 @@ fn is_cpp_type(ty: &syn::Type) -> bool {
     false
 }
 
-/// Get sawp_ffi meta tags
-fn get_ffi_meta(attr: &syn::Attribute) -> Vec<syn::NestedMeta> {
-    if !attr.path.is_ident("sawp_ffi") {
-        return Vec::new();
-    }
-
-    if let Ok(syn::Meta::List(meta)) = attr.parse_meta() {
-        meta.nested.into_iter().collect()
-    } else {
-        Vec::new()
-    }
-}
-
-fn get_ffi_prefix(metas: &[syn::NestedMeta]) -> Option<String> {
-    for meta in metas {
-        match meta {
-            syn::NestedMeta::Meta(syn::Meta::NameValue(value)) if value.path.is_ident("prefix") => {
-                match &value.lit {
-                    syn::Lit::Str(s) => return Some(s.value()),
-                    _ => panic!("sawp_ffi(prefix) expects string literal"),
-                }
-            }
-            _ => (),
-        }
-    }
-    None
-}
-
-/// Has given sawp_ffi attribute
-fn has_ffi_meta(attribute: &str, metas: &[syn::NestedMeta]) -> bool {
-    for meta in metas {
-        match meta {
-            syn::NestedMeta::Meta(syn::Meta::Path(word)) if word.is_ident(attribute) => {
-                return true;
-            }
-            _ => (),
+/// If type is String or str
+fn is_string_type(ty: &syn::Type) -> bool {
+    if let syn::Type::Path(ty) = ty {
+        if let Some(ident) = ty.path.get_ident() {
+            return ident.to_string().as_str() == "String" || ident.to_string().as_str() == "str";
         }
     }
     false
 }
 
-/// Has sawp_ffi(copy) attribute
-fn has_ffi_copy_meta(metas: &[syn::NestedMeta]) -> bool {
-    has_ffi_meta("copy", metas)
-}
-
-/// Has sawp_ffi(skip) attribute
-fn has_ffi_skip_meta(metas: &[syn::NestedMeta]) -> bool {
-    has_ffi_meta("skip", metas)
-}
-
-/// Has sawp_ffi(u8_flag) attribute
-fn has_ffi_u8_flag_meta(metas: &[syn::NestedMeta]) -> bool {
-    has_ffi_meta("u8_flag", metas)
-}
-
-/// Has sawp_ffi(type_only) attribute
-fn has_ffi_type_only_meta(metas: &[syn::NestedMeta]) -> bool {
-    has_ffi_meta("type_only", metas)
+/// Get outer and inner types of a generic data type
+/// Returns `None` if there isn't exactly 1 generic
+///
+/// # Example
+/// ```ignore
+/// Vec<u8> -> Some(Vec, u8)
+/// Option<String> -> Some(Option, String)
+/// ```
+fn split_generic(ty: &syn::Type) -> Option<(syn::Ident, syn::Ident)> {
+    if let syn::Type::Path(ty) = ty {
+        let segment = &ty.path.segments.first().expect("Path with no segments");
+        if let syn::PathArguments::AngleBracketed(arguments) = &segment.arguments {
+            if arguments.args.len() == 1 {
+                if let syn::GenericArgument::Type(syn::Type::Path(arg)) = &arguments.args[0] {
+                    if let Some(inner_ident) = arg.path.get_ident() {
+                        return Some((segment.ident.clone(), (*inner_ident).clone()));
+                    }
+                }
+            }
+        }
+    }
+    None
 }
 
 /// Assign ptr to *ptr after checking it is not null
@@ -301,6 +303,70 @@ fn deref(field_name: &syn::Ident) -> TokenStream {
         } else {
             &*#field_name
         };
+    }
+}
+
+/// Alias representing return type information
+/// 0: return Type
+/// 1: return Value
+///      eg: has pointer transformation or `.bits()` applied
+type ReturnType = (TokenStream, TokenStream);
+
+/// Determine return type and how to return field
+/// always_ptr means type will never be returned as a Copy
+/// Figure out what the return type should be
+/// sawp_ffi(copy) || is_cpp_type -> Type
+/// Option<Type> -> *const Type
+/// sawp_flag::Flags<FlagType> -> FlagType::Primitive
+/// _ -> *const Type
+fn return_type(
+    field: &TokenStream,
+    ty: &syn::Type,
+    metas: &[syn::NestedMeta],
+    always_ptr: bool,
+) -> ReturnType {
+    get_ffi_flag(&metas);
+    if !always_ptr && (is_cpp_type(&ty) || has_ffi_copy_meta(&metas)) {
+        (quote! {#ty}, quote! {#field})
+    } else if let Some(flag_repr) = get_ffi_flag(&metas) {
+        let (outer, _) = split_generic(ty).unwrap_or_else(|| {
+            panic!(
+                "sawp_ffi(flag) must be used on sawp_flags::Flags type: {}",
+                field
+            )
+        });
+        if outer.to_string().as_str() != "Flags" {
+            panic!(
+                "sawp_ffi(flag) must be used on sawp_flags::Flags type: {}",
+                field
+            );
+        }
+        if always_ptr {
+            (quote! {*const #flag_repr}, quote! { #field.bits_ref()})
+        } else {
+            (quote! {#flag_repr}, quote! {#field.bits()})
+        }
+    } else if let Some((outer, inner)) = split_generic(ty) {
+        if outer.to_string().as_str() == "Option" {
+            (
+                quote! {*const #inner},
+                quote! {
+                    match #field.as_ref() {
+                        Some(value) => value,
+                        None => std::ptr::null(),
+                    }
+                },
+            )
+        } else if always_ptr {
+            (quote! {*const #ty}, quote! {#field})
+        } else {
+            (quote! {*const #ty}, quote! {&#field})
+        }
+    } else if always_ptr {
+        // Enum field already a ref
+        (quote! {*const #ty}, quote! {#field})
+    } else {
+        (quote! {*const #ty}, quote! {&#field})
     }
 }
 
@@ -360,37 +426,70 @@ fn gen_field_accessor(
         None => format_ident!("{}_get_{}", struct_variable, field),
     };
     let deref_variable = deref(&struct_variable);
-    if is_cpp_type(&ty) || has_ffi_copy_meta(&metas) {
-        quote! {
-            /// # Safety
-            /// function will panic if called with null
-            #[no_mangle]
-            pub unsafe extern "C" fn #func_name(#struct_variable: *const #struct_name) -> #ty {
-                #deref_variable
-                #struct_variable.#field
-            }
+    let (ret_type, ret_var) = return_type(&quote! {#struct_variable.#field}, ty, metas, false);
+    let mut accessors = quote! {
+        /// # Safety
+        /// function will panic if called with null
+        #[no_mangle]
+        pub unsafe extern "C" fn #func_name(#struct_variable: *const #struct_name) -> #ret_type {
+            #deref_variable
+            #ret_var
         }
-    } else if has_ffi_u8_flag_meta(&metas) {
-        quote! {
-            /// # Safety
-            /// function will panic if called with null
-            #[no_mangle]
-            pub unsafe extern "C" fn #func_name(#struct_variable: *const #struct_name) -> u8 {
-                #deref_variable
-                #struct_variable.#field.bits()
-            }
+    };
+
+    if is_string_type(ty) {
+        let ptr_name = format_ident!("{}_ptr", func_name);
+        let len_name = format_ident!("{}_len", func_name);
+        // Making assumption that ret_var is simple
+        accessors.extend(quote! {
+        /// Get ptr to data of `#struct_variable.#field`
+        ///
+        /// Note: String is not null terminated
+        ///
+        /// # Safety
+        /// function will panic if called with null
+        #[no_mangle]
+        pub unsafe extern "C" fn #ptr_name(#struct_variable: *const #struct_name) -> *const u8 {
+            #deref_variable
+            (#ret_var).as_ptr()
         }
-    } else {
-        quote! {
-            /// # Safety
-            /// function will panic if called with null
-            #[no_mangle]
-            pub unsafe extern "C" fn #func_name(#struct_variable: *const #struct_name) -> *const #ty {
-                #deref_variable
-                &#struct_variable.#field
-            }
+
+        /// Get length of `#struct_variable.#field`
+        /// # Safety
+        /// function will panic if called with null
+        #[no_mangle]
+        pub unsafe extern "C" fn #len_name(#struct_variable: *const #struct_name) -> usize {
+            #deref_variable
+            (#ret_var).len()
+        }
+        });
+    } else if let Some((outer, inner)) = split_generic(ty) {
+        if outer.to_string().as_str() == "Vec" {
+            let ptr_name = format_ident!("{}_ptr", func_name);
+            let len_name = format_ident!("{}_len", func_name);
+            // Making assumption that ret_var is simple
+            accessors.extend(quote! {
+                /// Get ptr to data of `#struct_variable.#field`
+                /// # Safety
+                /// function will panic if called with null
+                #[no_mangle]
+                pub unsafe extern "C" fn #ptr_name(#struct_variable: *const #struct_name) -> *const #inner {
+                    #deref_variable
+                    (#ret_var).as_ptr()
+                }
+
+                /// Get length of `#struct_variable.#field`
+                /// # Safety
+                /// function will panic if called with null
+                #[no_mangle]
+                pub unsafe extern "C" fn #len_name(#struct_variable: *const #struct_name) -> usize {
+                    #deref_variable
+                    (#ret_var).len()
+                }
+            });
         }
     }
+    accessors
 }
 
 /// Generate match branch for enum variant
@@ -585,35 +684,97 @@ fn gen_enum_named_accessor(
     let match_branch = gen_enum_named_match_branch(enum_name, variant, Some(field));
 
     let deref_variable = deref(&enum_variable);
-    if has_ffi_u8_flag_meta(&metas) {
-        quote! {
-            /// # Safety
-            /// function will panic if called with null
-            #[no_mangle]
-            pub unsafe extern "C" fn #func_name(#enum_variable: *const #enum_name) -> *const u8 {
-                #deref_variable
-                if let #match_branch = #enum_variable {
-                    &#field.bits()
-                } else {
-                    std::ptr::null()
-                }
+    let (ret_type, ret_var) = return_type(&quote! {#field}, ty, metas, true);
+    let mut accessors = quote! {
+        /// Get `#variant_name.#field`
+        /// returns null if called on incorrect variant
+        /// # Safety
+        /// function will panic if called with null
+        #[no_mangle]
+        pub unsafe extern "C" fn #func_name(#enum_variable: *const #enum_name) -> #ret_type {
+            #deref_variable
+            if let #match_branch = #enum_variable {
+                #ret_var
+            } else {
+                std::ptr::null()
             }
         }
-    } else {
-        quote! {
+    };
+
+    if is_string_type(ty) {
+        let ptr_name = format_ident!("{}_ptr", func_name);
+        let len_name = format_ident!("{}_len", func_name);
+        // Making assumption that ret_var is simple
+        accessors.extend(quote! {
+            /// Get ptr to data of `#field`
+            /// returns null if called on incorrect variant
+            ///
+            /// Note: String is not null terminated
+            ///
             /// # Safety
             /// function will panic if called with null
             #[no_mangle]
-            pub unsafe extern "C" fn #func_name(#enum_variable: *const #enum_name) -> *const #ty {
+            pub unsafe extern "C" fn #ptr_name(#enum_variable: *const #enum_name) -> *const u8 {
                 #deref_variable
                 if let #match_branch = #enum_variable {
-                    #field
+                    #ret_var.as_ptr()
                 } else {
                     std::ptr::null()
                 }
             }
+
+            /// Get length of `#field`
+            /// returns 0 if called on incorrect variant
+            /// # Safety
+            /// function will panic if called with null
+            #[no_mangle]
+            pub unsafe extern "C" fn #len_name(#enum_variable: *const #enum_name) -> usize {
+                #deref_variable
+                if let #match_branch = #enum_variable {
+                    (#ret_var).len()
+                } else {
+                    0
+                }
+            }
+        });
+    } else if let Some((outer, inner)) = split_generic(ty) {
+        if outer.to_string().as_str() == "Vec" {
+            let ptr_name = format_ident!("{}_ptr", func_name);
+            let len_name = format_ident!("{}_len", func_name);
+            // Making assumption that ret_var is simple
+            accessors.extend(quote! {
+                /// Get ptr to data of `#field`
+                /// returns null if called on incorrect variant
+                /// # Safety
+                /// function will panic if called with null
+                #[no_mangle]
+                pub unsafe extern "C" fn #ptr_name(#enum_variable: *const #enum_name) -> *const #inner {
+                    #deref_variable
+                    if let #match_branch = #enum_variable {
+                        #ret_var.as_ptr()
+                    } else {
+                        std::ptr::null()
+                    }
+                }
+
+                /// Get length of `#field`
+                /// returns 0 if called on incorrect variant
+                /// # Safety
+                /// function will panic if called with null
+                #[no_mangle]
+                pub unsafe extern "C" fn #len_name(#enum_variable: *const #enum_name) -> usize {
+                    #deref_variable
+                    if let #match_branch = #enum_variable {
+                        (#ret_var).len()
+                    } else {
+                        0
+                    }
+                }
+            });
         }
     }
+
+    accessors
 }
 
 /// Generate accessor for unnamed enum
@@ -653,35 +814,97 @@ fn gen_enum_unnamed_accessor(
 
     let match_branch = gen_enum_unnamed_match_branch(enum_name, variant, Some(field));
     let deref_variable = deref(&enum_variable);
-    if has_ffi_u8_flag_meta(&metas) {
-        quote! {
-            /// # Safety
-            /// function will panic if called with null
-            #[no_mangle]
-            pub unsafe extern "C" fn #func_name(#enum_variable: *const #enum_name) -> *const u8 {
-                #deref_variable
-                if let #match_branch = #enum_variable {
-                    &var.bits()
-                } else {
-                    std::ptr::null()
-                }
+    let (ret_type, ret_var) = return_type(&quote! {var}, ty, metas, true);
+    let mut accessors = quote! {
+        /// Get `#variant_name.#field`
+        /// returns null if called on incorrect variant
+        /// # Safety
+        /// function will panic if called with null
+        #[no_mangle]
+        pub unsafe extern "C" fn #func_name(#enum_variable: *const #enum_name) -> #ret_type {
+            #deref_variable
+            if let #match_branch = #enum_variable {
+                #ret_var
+            } else {
+                std::ptr::null()
             }
         }
-    } else {
-        quote! {
+    };
+
+    if is_string_type(ty) {
+        let ptr_name = format_ident!("{}_ptr", func_name);
+        let len_name = format_ident!("{}_len", func_name);
+        // Making assumption that ret_var is simple
+        accessors.extend(quote! {
+            /// Get ptr to data of `#variant_name.#field`
+            /// returns null if called on incorrect variant
+            ///
+            /// Note: String is not null terminated
+            ///
             /// # Safety
             /// function will panic if called with null
             #[no_mangle]
-            pub unsafe extern "C" fn #func_name(#enum_variable: *const #enum_name) -> *const #ty {
+            pub unsafe extern "C" fn #ptr_name(#enum_variable: *const #enum_name) -> *const u8 {
                 #deref_variable
                 if let #match_branch = #enum_variable {
-                    var
+                    #ret_var.as_ptr()
                 } else {
                     std::ptr::null()
                 }
             }
+
+            /// Get length of `#variant_name.#field`
+            /// returns 0 if called on incorrect variant
+            /// # Safety
+            /// function will panic if called with null
+            #[no_mangle]
+            pub unsafe extern "C" fn #len_name(#enum_variable: *const #enum_name) -> usize {
+                #deref_variable
+                if let #match_branch = #enum_variable {
+                    (#ret_var).len()
+                } else {
+                    0
+                }
+            }
+        });
+    } else if let Some((outer, inner)) = split_generic(ty) {
+        if outer.to_string().as_str() == "Vec" {
+            let ptr_name = format_ident!("{}_ptr", func_name);
+            let len_name = format_ident!("{}_len", func_name);
+            // Making assumption that ret_var is simple
+            accessors.extend(quote! {
+                /// Get ptr to data of `#variant_name.#field`
+                /// returns null if called on incorrect variant
+                /// # Safety
+                /// function will panic if called with null
+                #[no_mangle]
+                pub unsafe extern "C" fn #ptr_name(#enum_variable: *const #enum_name) -> *const #inner {
+                    #deref_variable
+                    if let #match_branch = #enum_variable {
+                        #ret_var.as_ptr()
+                    } else {
+                        std::ptr::null()
+                    }
+                }
+
+                /// Get length of `#variant_name.#field`
+                /// returns 0 if called on incorrect variant
+                /// # Safety
+                /// function will panic if called with null
+                #[no_mangle]
+                pub unsafe extern "C" fn #len_name(#enum_variable: *const #enum_name) -> usize {
+                    #deref_variable
+                    if let #match_branch = #enum_variable {
+                        (#ret_var).len()
+                    } else {
+                        0
+                    }
+                }
+            });
         }
     }
+
+    accessors
 }
 
 #[cfg(test)]
@@ -696,12 +919,14 @@ mod tests {
                 pub num: usize,
                 #[sawp_ffi(copy)]
                 pub version: Version,
-                #[sawp_ffi(u8_flag)]
-                pub file_type: FileType,
+                #[sawp_ffi(flag = "u8")]
+                pub file_type: Flags<FileType>,
                 private: usize,
                 #[sawp_ffi(skip)]
                 skipped: usize,
                 pub complex: Vec<u8>,
+                pub string: String,
+                pub option: Option<u8>,
             }
         "#;
         let parsed: syn::DeriveInput = syn::parse_str(input).unwrap();
@@ -712,15 +937,17 @@ mod tests {
     fn test_macro_enum() {
         let input = r#"
             pub enum MyEnum {
-                 UnnamedSingle(u8),
-                 UnnamedMultiple(u8, u16),
-                 Named {
+                UnnamedSingle(u8),
+                UnnamedMultiple(String, Vec<u8>),
+                Named {
                     a: u8,
                     b: Vec<u8>,
-                    #[sawp_ffi(u8_flag)]
-                    file_type: FileType,
-                 },
-                 Empty,
+                    c: String,
+                    d: Option<u8>,
+                    #[sawp_ffi(flag = "u8")]
+                    file_type: Flags<FileType>,
+                },
+                Empty,
             }
         "#;
         let parsed: syn::DeriveInput = syn::parse_str(input).unwrap();
@@ -733,6 +960,22 @@ mod tests {
         let input = r#"
             #[sawp_ffi(prefix = 0)]
             pub struct MyStruct {
+            }
+        "#;
+        let parsed: syn::DeriveInput = syn::parse_str(input).unwrap();
+        impl_sawp_ffi(&parsed);
+    }
+
+    #[test]
+    #[should_panic(
+        expected = "sawp_ffi(flag) must be used on sawp_flags::Flags type: my_struct . file_type"
+    )]
+    fn test_macro_flag_panic() {
+        let input = r#"
+            #[sawp_ffi(prefix = "sawp")]
+            pub struct MyStruct {
+                #[sawp_ffi(flag = "u8")]
+                pub file_type: FileType,
             }
         "#;
         let parsed: syn::DeriveInput = syn::parse_str(input).unwrap();

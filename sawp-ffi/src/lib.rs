@@ -57,13 +57,13 @@ impl<T> IntoFFIPtr<T> for T {
 }
 
 #[cfg(test)]
-extern crate bitflags;
+extern crate sawp_flags;
 
 #[cfg(test)]
 #[allow(dead_code)]
 mod tests {
     use super::*;
-    use bitflags::bitflags;
+    use sawp_flags::{BitFlags, Flag, Flags};
 
     #[test]
     #[should_panic]
@@ -104,11 +104,11 @@ mod tests {
             Version2 = 0x0200,
         }
 
-        bitflags! {
-            pub struct FileType: u8 {
-                const READ = 0b0000_0000;
-                const WRITE = 0b0000_0001;
-            }
+        #[repr(u8)]
+        #[derive(Debug, Clone, Copy, PartialEq, BitFlags)]
+        pub enum FileType {
+            Read = 0b0000_0001,
+            Write = 0b0000_0010,
         }
 
         #[derive(GenerateFFI)]
@@ -117,28 +117,40 @@ mod tests {
             pub num: usize,
             #[sawp_ffi(copy)]
             pub version: Version,
-            #[sawp_ffi(u8_flag)]
-            pub file_type: FileType,
+            #[sawp_ffi(flag = "u8")]
+            pub file_type: Flags<FileType>,
             private: usize,
             #[sawp_ffi(skip)]
             pub skipped: usize,
             pub complex: Vec<u8>,
+            pub string: String,
+            pub option: Option<u8>,
         }
 
         let my_struct = MyStruct {
             num: 12,
             version: Version::Version1,
-            file_type: FileType::WRITE,
+            file_type: FileType::Write.into(),
             private: 0,
             skipped: 128,
             complex: vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+            string: String::from("test"),
+            option: Some(41),
         };
         unsafe {
             assert_eq!(sawp_my_struct_get_num(&my_struct), 12);
             assert_eq!(sawp_my_struct_get_version(&my_struct), Version::Version1);
-            assert_eq!(sawp_my_struct_get_file_type(&my_struct), 0b0000_0001);
+            assert_eq!(sawp_my_struct_get_file_type(&my_struct), 0b0000_0010);
             assert_ne!(sawp_my_struct_get_complex(&my_struct), std::ptr::null());
             assert_eq!((*sawp_my_struct_get_complex(&my_struct)).len(), 10);
+            assert_ne!(sawp_my_struct_get_complex_ptr(&my_struct), std::ptr::null());
+            assert_eq!(sawp_my_struct_get_complex_len(&my_struct), 10);
+            assert_ne!(sawp_my_struct_get_string(&my_struct), std::ptr::null());
+            assert_ne!(sawp_my_struct_get_string_ptr(&my_struct), std::ptr::null());
+            assert_eq!(sawp_my_struct_get_string_len(&my_struct), 4);
+
+            assert_ne!(sawp_my_struct_get_option(&my_struct), std::ptr::null());
+            assert_eq!(*sawp_my_struct_get_option(&my_struct), 41);
         }
     }
 
@@ -152,32 +164,36 @@ mod tests {
             Version2 = 0x0200,
         }
 
-        bitflags! {
-            pub struct FileType: u8 {
-                const READ = 0b0000_0000;
-                const WRITE = 0b0000_0001;
-            }
+        #[repr(u8)]
+        #[derive(Debug, Clone, Copy, PartialEq, BitFlags)]
+        pub enum FileType {
+            Read = 0b0000_0001,
+            Write = 0b0000_0010,
         }
 
         #[derive(GenerateFFI)]
         pub enum MyEnum {
             UnnamedSingle(u8),
-            UnnamedMultiple(u8, u16),
+            UnnamedMultiple(String, Vec<u8>),
             Named {
                 a: u8,
                 b: Vec<u8>,
-                #[sawp_ffi(u8_flag)]
-                file_type: FileType,
+                c: String,
+                d: Option<u8>,
+                #[sawp_ffi(flag = "u8")]
+                file_type: Flags<FileType>,
             },
             Empty,
         }
 
         let single = MyEnum::UnnamedSingle(12);
-        let multiple = MyEnum::UnnamedMultiple(12, 34);
+        let multiple = MyEnum::UnnamedMultiple(String::from("test"), vec![34]);
         let named = MyEnum::Named {
             a: 2,
             b: vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
-            file_type: FileType::WRITE,
+            c: String::from("test"),
+            d: Some(41),
+            file_type: FileType::Write.into(),
         };
         let empty = MyEnum::Empty;
 
@@ -191,16 +207,31 @@ mod tests {
             assert_eq!(*my_enum_get_unnamed_single(&single), 12);
 
             assert_ne!(my_enum_get_unnamed_multiple_0(&multiple), std::ptr::null());
-            assert_eq!(*my_enum_get_unnamed_multiple_0(&multiple), 12);
+            assert_eq!(
+                *my_enum_get_unnamed_multiple_0(&multiple),
+                String::from("test")
+            );
+            assert_eq!(my_enum_get_unnamed_multiple_0_len(&multiple), 4);
             assert_ne!(my_enum_get_unnamed_multiple_1(&multiple), std::ptr::null());
-            assert_eq!(*my_enum_get_unnamed_multiple_1(&multiple), 34);
+            assert_eq!(*my_enum_get_unnamed_multiple_1(&multiple), vec![34]);
+            assert_eq!(my_enum_get_unnamed_multiple_1_len(&multiple), 1);
 
             assert_ne!(my_enum_get_named_a(&named), std::ptr::null());
             assert_eq!(*my_enum_get_named_a(&named), 2);
             assert_ne!(my_enum_get_named_b(&named), std::ptr::null());
             assert_eq!((*my_enum_get_named_b(&named)).len(), 10);
+            assert_ne!(my_enum_get_named_b_ptr(&named), std::ptr::null());
+            assert_eq!(my_enum_get_named_b_len(&named), 10);
+
+            assert_ne!(my_enum_get_named_c(&named), std::ptr::null());
+            assert_ne!(my_enum_get_named_c_ptr(&named), std::ptr::null());
+            assert_eq!(my_enum_get_named_c_len(&named), 4);
+
+            assert_ne!(my_enum_get_named_d(&named), std::ptr::null());
+            assert_eq!(*my_enum_get_named_d(&named), 41);
+
             assert_ne!(my_enum_get_named_file_type(&named), std::ptr::null());
-            assert_eq!(*my_enum_get_named_file_type(&named), 0b0000_0001);
+            assert_eq!(*my_enum_get_named_file_type(&named), 0b0000_0010);
 
             assert_eq!(my_enum_get_unnamed_single(&multiple), std::ptr::null());
         }
@@ -214,13 +245,17 @@ mod tests {
 
         let option_ffi: *mut u8 = option.into_ffi_ptr();
         let null_option_ffi: *mut u8 = null_option.into_ffi_ptr();
+        let non_option_ffi: *mut u8 = non_option.into_ffi_ptr();
 
         unsafe {
             assert_ne!(option_ffi, std::ptr::null_mut());
             assert_eq!(*option_ffi, 41);
             assert_eq!(null_option_ffi, std::ptr::null_mut());
-            assert_ne!(non_option.into_ffi_ptr(), std::ptr::null_mut());
-            assert_eq!(*non_option.into_ffi_ptr(), 42);
+            assert_ne!(non_option_ffi, std::ptr::null_mut());
+            assert_eq!(*non_option_ffi, 42);
+
+            Box::from_raw(option_ffi);
+            Box::from_raw(non_option_ffi);
         }
     }
 }
