@@ -176,6 +176,14 @@ where
         let rhs = rhs.into();
         (self & rhs).bits() == rhs.bits()
     }
+
+    pub fn is_empty(&self) -> bool {
+        self.bits() == <Enum as Flag>::none().bits()
+    }
+
+    pub fn is_all(&self) -> bool {
+        self.bits() == <Enum as Flag>::all().bits()
+    }
 }
 
 impl<Enum: Flag> From<Enum> for Flags<Enum> {
@@ -454,5 +462,15 @@ mod test {
     #[test]
     fn test_all() {
         assert_eq!(Test::E, Test::all());
+        assert!(!Flags::from_flag(Test::A).is_all());
+        assert!(Flags::from_flag(Test::E).is_all());
+    }
+
+    #[test]
+    fn test_none() {
+        assert_eq!(Flags::from_bits(0), Test::none());
+        assert!(Flags::<Test>::from_bits(0).is_empty());
+        assert!(!Flags::from_flag(Test::A).is_empty());
+        assert!(!Flags::from_flag(Test::E).is_empty());
     }
 }
