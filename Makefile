@@ -35,6 +35,21 @@ FFI_OBJECTS_DEBUG := target/debug/libsawp.so $(patsubst %, target/debug/libsawp_
 # Any source file change in the workspace should trigger a rebuild.
 SOURCES := $(shell find . sawp-* -type f \( -name "*.rs" -or -name "cbindgen.toml" -or -name "Cargo.toml" \) )
 
+# Package publication order.
+# List of directories that contain a Cargo.toml file to publish.
+# This is required because some packages are dependant on others.
+PUBLISH := \
+	sawp-flags-derive \
+	sawp-flags \
+	sawp-ffi-derive \
+	sawp-ffi \
+	. \
+	sawp-modbus \
+	sawp-diameter \
+	sawp-tftp \
+	sawp-json \
+	sawp-file
+
 .PHONY: env
 env:
 	@echo CRATE_VERSION: ${CRATE_VERSION}
@@ -139,19 +154,9 @@ package: headers release_objects
 # that doesn't seem to work.
 .PHONY: publish
 publish:
-	cd sawp-ffi-derive && cargo publish
-	sleep 5
-	cd sawp-ffi && cargo publish
-	sleep 5
-	cargo publish
-	cd sawp-modbus && cargo publish
-	sleep 5
-	cd sawp-diameter && cargo publish
-	sleep 5
-	cd sawp-json && cargo publish
-	sleep 5
-	cd sawp-file && cargo publish
-	sleep 5
+	for pub in $(PUBLISH); do \
+		(cd $$pub && cargo publish && sleep 20); \
+	done
 
 .PHONY: valgrind 
 valgrind:
