@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+
+## [0.3.0] - 2021-04-09
 ### Fixed
 - various pipeline improvements for rpm deployment, publishing packages,
   doc tests, memory checks, build and clippy warnings.
@@ -48,6 +50,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - sawp-modbus: FFI support.
 
 <!-- next-url -->
-[Unreleased]: https://github.com/CybercentreCanada/sawp/compare/sawp-0.2.0...HEAD
+[Unreleased]: https://github.com/CybercentreCanada/sawp/compare/sawp-0.3.0...HEAD
+[0.3.0]: https://github.com/CybercentreCanada/sawp/releases/tag/sawp-0.3.0
 [0.2.0]: https://github.com/CybercentreCanada/sawp/releases/tag/sawp-0.2.0
 [0.1.1]: https://github.com/CybercentreCanada/sawp/releases/tag/sawp-0.1.1

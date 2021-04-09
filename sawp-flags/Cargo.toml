@@ -1,6 +1,6 @@
 [package]
 name = "sawp-flags"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["Canadian Centre for Cyber Security <sa-sawp@cyber.gc.ca>"]
 description = "SAWP BitFlags Handling and Storage"
 readme = "../README.md"
@@ -17,7 +17,7 @@ include = [
 ]
 
 [dependencies]
-sawp-flags-derive = { path = "../sawp-flags-derive", version = "0.2.0" }
+sawp-flags-derive = { path = "../sawp-flags-derive", version = "^0.3.0"}
 
 # Override default replacements
 [package.metadata.release]
