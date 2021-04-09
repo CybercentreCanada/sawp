@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+### Fixed
+- various pipeline improvements for rpm deployment, publishing packages,
+  doc tests, memory checks, build and clippy warnings.
+
+### Added
+- sawp-ffi: added support for option, string, vec and flags.
+- sawp-flags-derive: initial release of bitflags handling and storage
+  derive macros.
+- sawp-flags: initial release of bitflags handling and storage crate.
+- sawp-modbus: added ffi support for error flags.
+- sawp-modbus: use new sawp-flags crate.
+- sawp-diameter: added parsing of avp data types.
+- sawp-tftp: initial release of protocol parser.
 
 ## [0.2.0] - 2021-02-22
 ### Fixed
