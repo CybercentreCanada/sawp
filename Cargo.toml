@@ -1,6 +1,6 @@
 [package]
 name = "sawp"
-version = "0.3.0"
+version = "0.4.0"
 authors = ["Canadian Centre for Cyber Security <sa-sawp@cyber.gc.ca>"]
 description = "Security Aware Wire Protocol parsing library"
 readme = "README.md"
@@ -48,7 +48,7 @@ cdylib-link-lines = {version = "0.1.1", optional = true}
 criterion = "0.3"
 
 [dependencies]
-sawp-ffi = { path = "sawp-ffi", version = "^0.3.0", optional = true}
+sawp-ffi = { path = "sawp-ffi", version = "^0.4.0", optional = true}
 nom = "5.1.2"
 
 [[bench]]
