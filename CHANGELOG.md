@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+### Added
+- sawp-modbus: re-export `sawp_flags::Flags` so sawp-flags doesn't need
+  to be added to Cargo.toml.
+- sawp-flags: add `is_empty()` and `is_all()` helper functions.
 
 ## [0.3.0] - 2021-04-09
 ### Fixed
