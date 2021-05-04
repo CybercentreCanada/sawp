@@ -487,6 +487,19 @@ fn gen_field_accessor(
                     (#ret_var).len()
                 }
             });
+            if inner.to_string().as_str() != "u8" {
+                let idx_name = format_ident!("{}_ptr_to_idx", func_name);
+                accessors.extend(quote! {
+                    /// Get ptr to member of `#struct_variable.#field` at index
+                    /// # Safety
+                    /// function will panic if called with null or an index outside bounds
+                    #[no_mangle]
+                    pub unsafe extern "C" fn #idx_name(#struct_variable: *const #struct_name, n: usize) -> *const #inner {
+                        #deref_variable
+                        (#ret_var[n])
+                    }
+                });
+            }
         }
     }
     accessors

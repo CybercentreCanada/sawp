@@ -260,4 +260,52 @@ mod tests {
             Box::from_raw(non_option_ffi);
         }
     }
+
+    #[test]
+    fn test_get_vec_at_index() {
+        #[derive(GenerateFFI)]
+        #[sawp_ffi(prefix = "sawp")]
+        pub struct MyStructTwo {
+            pub num: usize,
+            pub string: String,
+        }
+
+        #[derive(GenerateFFI)]
+        #[sawp_ffi(prefix = "sawp")]
+        pub struct SuperStruct {
+            pub v: Vec<MyStructTwo>,
+        }
+
+        let s = SuperStruct {
+            v: vec![
+                MyStructTwo {
+                    num: 1,
+                    string: String::from("first"),
+                },
+                MyStructTwo {
+                    num: 2,
+                    string: String::from("second"),
+                },
+            ],
+        };
+
+        unsafe {
+            assert_eq!(
+                sawp_my_struct_two_get_num(sawp_super_struct_get_v_ptr_to_idx(&s, 0)),
+                1
+            );
+            assert_eq!(
+                sawp_my_struct_two_get_num(sawp_super_struct_get_v_ptr_to_idx(&s, 1)),
+                2
+            );
+            assert_ne!(
+                sawp_my_struct_two_get_string(sawp_super_struct_get_v_ptr_to_idx(&s, 0)),
+                std::ptr::null()
+            );
+            assert_ne!(
+                sawp_my_struct_two_get_string(sawp_super_struct_get_v_ptr_to_idx(&s, 1)),
+                std::ptr::null()
+            );
+        }
+    }
 }
