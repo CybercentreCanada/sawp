@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+
+## [0.5.0] - 2021-05-07
 ### Added
 - sawp-ffi: added getter by index for vecs.
 
@@ -61,7 +63,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - sawp-modbus: FFI support.
 
 <!-- next-url -->
-[Unreleased]: https://github.com/CybercentreCanada/sawp/compare/sawp-0.4.0...HEAD
+[Unreleased]: https://github.com/CybercentreCanada/sawp/compare/sawp-0.5.0...HEAD
+[0.5.0]: https://github.com/CybercentreCanada/sawp/releases/tag/sawp-0.5.0
 [0.4.0]: https://github.com/CybercentreCanada/sawp/releases/tag/sawp-0.4.0
 [0.3.0]: https://github.com/CybercentreCanada/sawp/releases/tag/sawp-0.3.0
 [0.2.0]: https://github.com/CybercentreCanada/sawp/releases/tag/sawp-0.2.0
