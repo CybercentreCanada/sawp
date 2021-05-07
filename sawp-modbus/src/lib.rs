@@ -669,9 +669,9 @@ impl Message {
                 self.error_flags |= ErrorFlags::DATA_LENGTH;
             }
 
-            if self.access_type.contains(AccessType::BIT_ACCESS_MASK) {
+            if self.access_type.intersects(AccessType::BIT_ACCESS_MASK) {
                 if quantity > MAX_QUANTITY_BIT_ACCESS
-                    || quantity != u16::from(count / 8) + u16::from((count % 8) != 0)
+                    || u16::from(count) != (quantity / 8) + u16::from(quantity % 8 != 0)
                 {
                     self.error_flags |= ErrorFlags::DATA_VALUE;
                 }
@@ -2154,6 +2154,45 @@ mod tests {
                     Write::Other {
                         address: 0x0002,
                         data: 0x0000
+                    }
+                ),
+                error_flags: ErrorFlags::none(),
+            })))
+        ),
+        case::write_mult_coils(
+            &[
+                // Transaction ID: 0
+                0x00, 0x00,
+                // Protocol ID: 0
+                0x00, 0x00,
+                // Length: 11
+                0x00, 0x09,
+                // Unit ID: 1
+                0x01,
+                // Function Code: Write Multiple Coils (15)
+                0x0f,
+                // Start Address: 19
+                0x00, 0x13,
+                // Quantity: 15
+                0x00, 0x0a,
+                // Byte Count: 2
+                0x02,
+                // Value
+                0xcd, 0x01
+            ],
+            Ok((0, Some(Message{
+                transaction_id: 0,
+                protocol_id: 0,
+                length: 9,
+                unit_id: 1,
+                function: Function { raw: 15, code: FunctionCode::WrMultCoils },
+                access_type: AccessType::COILS | AccessType::WRITE_MULTIPLE,
+                category: CodeCategory::PUBLIC_ASSIGNED.into(),
+                data: Data::Write (
+                    Write::MultReq {
+                        address: 0x0013,
+                        quantity: 0x000a,
+                        data: vec![0xcd, 0x01]
                     }
                 ),
                 error_flags: ErrorFlags::none(),
