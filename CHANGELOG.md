@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+### Added
+- sawp-ffi: added getter by index for vecs.
+
+### Fixed
+- sawp-modbus: `WriteMultipleCoils` parsing divided the request's count by 8 instead of the quantity.
 
 ## [0.4.0] - 2021-04-12
 ### Added
