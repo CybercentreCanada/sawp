@@ -19,6 +19,7 @@ include = [
 
 [workspace]
 members = [
+    "sawp-dns",
     "sawp-ffi",
     "sawp-ffi-derive",
     "sawp-modbus",
