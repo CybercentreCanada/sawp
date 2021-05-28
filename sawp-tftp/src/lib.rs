@@ -55,6 +55,13 @@ use nom::error::ErrorKind;
 use nom::number::streaming::be_u16;
 use nom::sequence::terminated;
 
+/// FFI structs and Accessors
+#[cfg(feature = "ffi")]
+mod ffi;
+
+#[cfg(feature = "ffi")]
+use sawp_ffi::GenerateFFI;
+
 /// The TFTP header of a packet contains the  opcode  associated  with
 /// that packet. TFTP supports five types of packets
 #[derive(Clone, Copy, Debug, PartialEq, TryFromPrimitive)]
@@ -67,6 +74,7 @@ pub enum OpCode {
     Error = 5,
 }
 
+#[cfg_attr(feature = "ffi", derive(GenerateFFI), sawp_ffi(prefix = "sawp_tftp"))]
 #[derive(Debug, PartialEq)]
 pub enum Mode {
     NetASCII,
@@ -91,6 +99,7 @@ pub enum ErrorCode {
 }
 
 /// Represents the various types of TFTP Packets
+#[cfg_attr(feature = "ffi", derive(GenerateFFI), sawp_ffi(prefix = "sawp_tftp"))]
 #[derive(Debug, PartialEq)]
 pub enum Packet {
     ReadWriteRequest {
@@ -110,8 +119,10 @@ pub enum Packet {
 }
 
 /// Breakdown of the parsed TFTP bytes
+#[cfg_attr(feature = "ffi", derive(GenerateFFI), sawp_ffi(prefix = "sawp_tftp"))]
 #[derive(Debug, PartialEq)]
 pub struct Message {
+    #[cfg_attr(feature = "ffi", sawp_ffi(copy))]
     pub op_code: OpCode,
     pub packet: Packet,
 }
