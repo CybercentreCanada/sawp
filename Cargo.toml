@@ -29,6 +29,7 @@ members = [
     "sawp-diameter",
     "sawp-flags",
     "sawp-flags-derive",
+    "sawp-gre",
 ]
 
 [features]
