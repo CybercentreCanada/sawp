@@ -10,7 +10,7 @@ use byteorder::{BigEndian, ByteOrder};
 use crate::edns::EdnsOption;
 use crate::enums::{RecordType, SshfpAlgorithm, SshfpFingerprint, TSigResponseCode, TkeyMode};
 
-use crate::{error_flags, IResult, Name};
+use crate::{ErrorFlags, IResult, Name};
 use nom::combinator::rest;
 #[cfg(feature = "ffi")]
 use sawp_ffi::GenerateFFI;
@@ -146,31 +146,31 @@ impl RDataType {
         input: &'a [u8],
         reference_bytes: &'a [u8],
         rtype: RecordType,
-    ) -> IResult<'a, (RDataType, Flags<error_flags>)> {
+    ) -> IResult<'a, (RDataType, Flags<ErrorFlags>)> {
         match rtype {
             RecordType::A => RDataType::parse_rdata_a(input)
-                .map(|(input, rdata)| (input, (rdata, error_flags::none()))),
+                .map(|(input, rdata)| (input, (rdata, ErrorFlags::none()))),
             RecordType::AAAA => RDataType::parse_rdata_aaaa(input)
-                .map(|(input, rdata)| (input, (rdata, error_flags::none()))),
+                .map(|(input, rdata)| (input, (rdata, ErrorFlags::none()))),
             RecordType::CAA => RDataType::parse_rdata_caa(input)
-                .map(|(input, rdata)| (input, (rdata, error_flags::none()))),
+                .map(|(input, rdata)| (input, (rdata, ErrorFlags::none()))),
             RecordType::CNAME => RDataType::parse_rdata_cname(input, reference_bytes),
             RecordType::MX => RDataType::parse_rdata_mx(input, reference_bytes),
             RecordType::NS => RDataType::parse_rdata_ns(input, reference_bytes),
             RecordType::NUL => RDataType::parse_rdata_null(input)
-                .map(|(input, rdata)| (input, (rdata, error_flags::none()))),
+                .map(|(input, rdata)| (input, (rdata, ErrorFlags::none()))),
             RecordType::OPT => RDataType::parse_rdata_opt(input),
             RecordType::PTR => RDataType::parse_rdata_ptr(input, reference_bytes),
             RecordType::SOA => RDataType::parse_rdata_soa(input, reference_bytes),
             RecordType::SRV => RDataType::parse_rdata_srv(input, reference_bytes),
             RecordType::SSHFP => RDataType::parse_rdata_sshfp(input)
-                .map(|(input, rdata)| (input, (rdata, error_flags::none()))),
+                .map(|(input, rdata)| (input, (rdata, ErrorFlags::none()))),
             RecordType::TKEY => RDataType::parse_rdata_tkey(input, reference_bytes),
             RecordType::TSIG => RDataType::parse_rdata_tsig(input, reference_bytes),
             RecordType::TXT => RDataType::parse_rdata_txt(input)
-                .map(|(input, rdata)| (input, (rdata, error_flags::none()))),
+                .map(|(input, rdata)| (input, (rdata, ErrorFlags::none()))),
             _ => RDataType::parse_rdata_unknown(input)
-                .map(|(input, rdata)| (input, (rdata, error_flags::none()))),
+                .map(|(input, rdata)| (input, (rdata, ErrorFlags::none()))),
         }
     }
 
@@ -203,7 +203,7 @@ impl RDataType {
     fn parse_rdata_cname<'a>(
         input: &'a [u8],
         reference_bytes: &'a [u8],
-    ) -> IResult<'a, (RDataType, Flags<error_flags>)> {
+    ) -> IResult<'a, (RDataType, Flags<ErrorFlags>)> {
         let (input, (name, error_flags)) = Name::parse(reference_bytes)(input)?;
         Ok((input, (RDataType::CNAME(name), error_flags)))
     }
@@ -211,7 +211,7 @@ impl RDataType {
     fn parse_rdata_ns<'a>(
         input: &'a [u8],
         reference_bytes: &'a [u8],
-    ) -> IResult<'a, (RDataType, Flags<error_flags>)> {
+    ) -> IResult<'a, (RDataType, Flags<ErrorFlags>)> {
         let (input, (name, error_flags)) = Name::parse(reference_bytes)(input)?;
         Ok((input, (RDataType::NS(name), error_flags)))
     }
@@ -219,12 +219,12 @@ impl RDataType {
     fn parse_rdata_ptr<'a>(
         input: &'a [u8],
         reference_bytes: &'a [u8],
-    ) -> IResult<'a, (RDataType, Flags<error_flags>)> {
+    ) -> IResult<'a, (RDataType, Flags<ErrorFlags>)> {
         let (input, (name, error_flags)) = Name::parse(reference_bytes)(input)?;
         Ok((input, (RDataType::PTR(name), error_flags)))
     }
 
-    pub fn parse_rdata_opt(input: &[u8]) -> IResult<(RDataType, Flags<error_flags>)> {
+    pub fn parse_rdata_opt(input: &[u8]) -> IResult<(RDataType, Flags<ErrorFlags>)> {
         let (input, udp_payload_size) = be_u16(input)?;
         let (input, extended_rcode) = be_u8(input)?;
         let (input, version) = be_u8(input)?;
@@ -250,7 +250,7 @@ impl RDataType {
     fn parse_rdata_soa<'a>(
         input: &'a [u8],
         reference_bytes: &'a [u8],
-    ) -> IResult<'a, (RDataType, Flags<error_flags>)> {
+    ) -> IResult<'a, (RDataType, Flags<ErrorFlags>)> {
         let (input, (mname, mut error_flags)) = Name::parse(reference_bytes)(input)?;
         let (input, (rname, inner_error_flags)) = Name::parse(reference_bytes)(input)?;
 
@@ -282,7 +282,7 @@ impl RDataType {
     fn parse_rdata_tkey<'a>(
         input: &'a [u8],
         reference_bytes: &'a [u8],
-    ) -> IResult<'a, (RDataType, Flags<error_flags>)> {
+    ) -> IResult<'a, (RDataType, Flags<ErrorFlags>)> {
         let (input, (algorithm, error_flags)) = Name::parse(reference_bytes)(input)?;
         let (input, inception) = be_u32(input)?;
         let (input, expiration) = be_u32(input)?;
@@ -313,7 +313,7 @@ impl RDataType {
     fn parse_rdata_tsig<'a>(
         input: &'a [u8],
         reference_bytes: &'a [u8],
-    ) -> IResult<'a, (RDataType, Flags<error_flags>)> {
+    ) -> IResult<'a, (RDataType, Flags<ErrorFlags>)> {
         let (input, (algorithm_name, error_flags)) = Name::parse(reference_bytes)(input)?;
         let (input, time_signed_raw) = take(6_usize)(input)?;
         let (input, fudge) = be_u16(input)?;
@@ -344,7 +344,7 @@ impl RDataType {
     fn parse_rdata_mx<'a>(
         input: &'a [u8],
         reference_bytes: &'a [u8],
-    ) -> IResult<'a, (RDataType, Flags<error_flags>)> {
+    ) -> IResult<'a, (RDataType, Flags<ErrorFlags>)> {
         // Skip the preference field
         let (input, _) = be_u16(input)?;
         let (input, (name, error_flags)) = Name::parse(reference_bytes)(input)?;
@@ -354,7 +354,7 @@ impl RDataType {
     fn parse_rdata_srv<'a>(
         input: &'a [u8],
         reference_bytes: &'a [u8],
-    ) -> IResult<'a, (RDataType, Flags<error_flags>)> {
+    ) -> IResult<'a, (RDataType, Flags<ErrorFlags>)> {
         let (input, priority) = be_u16(input)?;
         let (input, weight) = be_u16(input)?;
         let (input, port) = be_u16(input)?;

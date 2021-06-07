@@ -6,7 +6,7 @@ use sawp_flags::{Flag, Flags};
 
 use crate::enums::{RecordClass, RecordType};
 use crate::rdata::RDataType;
-use crate::{custom_count, error_flags, IResult, Name};
+use crate::{custom_count, ErrorFlags, IResult, Name};
 
 #[cfg(feature = "ffi")]
 use sawp_ffi::GenerateFFI;
@@ -37,19 +37,19 @@ impl Answer {
     fn parse<'a>(
         input: &'a [u8],
         reference_bytes: &'a [u8],
-    ) -> IResult<'a, (Answer, Flags<error_flags>)> {
+    ) -> IResult<'a, (Answer, Flags<ErrorFlags>)> {
         let (input, (name, mut error_flags)) = Name::parse(reference_bytes)(input)?;
 
         let (input, working_rtype) = be_u16(input)?;
         let rtype = RecordType::from_raw(working_rtype);
         if rtype == RecordType::UNKNOWN {
-            error_flags |= error_flags::UNKNOWN_RTYPE;
+            error_flags |= ErrorFlags::UnknownRtype;
         }
 
         let (input, working_rclass) = be_u16(input)?;
         let rclass = RecordClass::from_raw(working_rclass);
         if rclass == RecordClass::UNKNOWN {
-            error_flags |= error_flags::UNKNOWN_RCLASS;
+            error_flags |= ErrorFlags::UnknownRclass;
         }
 
         let (input, ttl) = be_u32(input)?;
@@ -96,7 +96,7 @@ impl Answer {
     fn parse_additional<'a>(
         input: &'a [u8],
         reference_bytes: &'a [u8],
-    ) -> IResult<'a, (Answer, Flags<error_flags>, bool)> {
+    ) -> IResult<'a, (Answer, Flags<ErrorFlags>, bool)> {
         let mut opt_rr_present = false;
         if input.len() >= 3 && input[0..3] == OPT_RR_START[0..3] {
             let (input, (data, inner_error_flags)) = RDataType::parse_rdata_opt(&input[3..])?;
@@ -127,16 +127,16 @@ impl Answer {
         input: &'a [u8],
         reference_bytes: &'a [u8],
         acnt: usize,
-    ) -> IResult<'a, (Vec<Answer>, Flags<error_flags>)> {
+    ) -> IResult<'a, (Vec<Answer>, Flags<ErrorFlags>)> {
         let mut opt_rr_present = false;
-        let mut error_flags = error_flags::none();
+        let mut error_flags = ErrorFlags::none();
         let (input, answers) = custom_count(
             |input, reference_bytes| {
                 let (input, (answer, inner_error_flags, inner_opt_rr_present)) =
                     Answer::parse_additional(input, reference_bytes)?;
                 if inner_opt_rr_present {
                     if opt_rr_present {
-                        error_flags |= error_flags::EXTRA_OPT_RR;
+                        error_flags |= ErrorFlags::ExtraOptRr;
                     } else {
                         opt_rr_present = true;
                     }
@@ -154,8 +154,8 @@ impl Answer {
         input: &'a [u8],
         reference_bytes: &'a [u8],
         acnt: usize,
-    ) -> IResult<'a, (Vec<Answer>, Flags<error_flags>)> {
-        let mut error_flags = error_flags::none();
+    ) -> IResult<'a, (Vec<Answer>, Flags<ErrorFlags>)> {
+        let mut error_flags = ErrorFlags::none();
         let (input, answers) = custom_count(
             |input, reference_bytes| {
                 let (input, (answer, inner_error_flags)) = Answer::parse(input, reference_bytes)?;

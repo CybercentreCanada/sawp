@@ -1,5 +1,5 @@
-use crate::error_flags::DNS_NAME_INVALID_COMPRESSION;
-use crate::{error_flags, IResult};
+use crate::ErrorFlags::DnsNameInvalidCompression;
+use crate::{ErrorFlags, IResult};
 use nom::multi::length_data;
 use nom::number::streaming::{be_u16, be_u8};
 use sawp_flags::{Flag, Flags};
@@ -17,13 +17,13 @@ const MSG_COMPRESSION_OFFSET_MASK: u16 = 0b0011_1111_1111_1111;
 pub struct Name {}
 
 impl Name {
-    fn parse_label(input: &[u8]) -> IResult<(&[u8], Flags<error_flags>)> {
+    fn parse_label(input: &[u8]) -> IResult<(&[u8], Flags<ErrorFlags>)> {
         let (rem, label) = length_data::<_, _, sawp::error::NomError<&[u8]>, _>(be_u8)(input)?;
 
         let error_flags = if label.len() > DNS_MAX_LABEL_LEN {
-            error_flags::DNS_LABEL_EXCEEDS_MAX_LEN.into()
+            ErrorFlags::DnsLabelExceedsMaxLen.into()
         } else {
-            error_flags::none()
+            ErrorFlags::none()
         };
 
         Ok((rem, (label, error_flags)))
@@ -49,11 +49,11 @@ impl Name {
 
     pub fn parse<'b: 'i + 'r, 'i: 'r, 'r>(
         reference_bytes: &'b [u8],
-    ) -> impl FnMut(&'i [u8]) -> IResult<(Vec<u8>, Flags<error_flags>)> + 'r {
+    ) -> impl FnMut(&'i [u8]) -> IResult<(Vec<u8>, Flags<ErrorFlags>)> + 'r {
         move |mut input| {
             let mut current_position = input;
             let mut current_position_is_base = true;
-            let mut error_flags = error_flags::none();
+            let mut error_flags = ErrorFlags::none();
             let mut name: Vec<u8> = Vec::new();
 
             for _ in 0..MAX_LABEL_PARSES {
@@ -66,7 +66,7 @@ impl Name {
                         Ok((rem, offset)) => {
                             if offset == current_position {
                                 // If the pointer points to itself, bail out and flag to avoid using MAX_LABEL_PARSES cycles
-                                error_flags |= DNS_NAME_INVALID_COMPRESSION;
+                                error_flags |= DnsNameInvalidCompression;
                                 return Ok((rem, (name, error_flags)));
                             }
 
@@ -77,7 +77,7 @@ impl Name {
                             current_position = offset;
                         }
                         Err(nom::Err::Error((pos, nom::error::ErrorKind::Verify))) => {
-                            error_flags |= error_flags::DNS_NAME_INVALID_COMPRESSION;
+                            error_flags |= ErrorFlags::DnsNameInvalidCompression;
                             return Ok((pos, (name, error_flags)));
                         }
                         Err(e) => {
@@ -95,7 +95,7 @@ impl Name {
                             std::cmp::min(label.len(), (DNS_MAX_DOMAIN_LEN - 1) - name.len());
                         // Check if we truncated
                         if name.len() + label.len() + 1 > DNS_MAX_DOMAIN_LEN {
-                            error_flags |= error_flags::DNS_NAME_EXCEEDS_MAX_LEN;
+                            error_flags |= ErrorFlags::DnsNameExceedsMaxLen;
                         };
                         // always extend
                         if !name.is_empty() {
@@ -125,7 +125,7 @@ mod test {
     #![allow(clippy::type_complexity)]
 
     use crate::name::Name;
-    use crate::{error_flags, IResult};
+    use crate::{ErrorFlags, IResult};
     use rstest::rstest;
     use sawp_flags::{Flag, Flags};
 
@@ -161,7 +161,7 @@ mod test {
             b"".as_ref(),
             (
                 "sterling.freenode.net".as_bytes().to_vec(),
-                error_flags::none()
+                ErrorFlags::none()
             )
         ))
     ),
@@ -192,7 +192,7 @@ mod test {
             b"".as_ref(),
             (
                 "sterling.freenode.net".as_bytes().to_vec(),
-                error_flags::none()
+                ErrorFlags::none()
             )
         ))
     ),
@@ -234,7 +234,7 @@ mod test {
             ].as_ref(),
             (
                 vec![],
-                error_flags::DNS_NAME_INVALID_COMPRESSION.into()
+                ErrorFlags::DnsNameInvalidCompression.into()
             )
         ))
     ),
@@ -313,7 +313,7 @@ mod test {
                     0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41,
                     0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41,
                 ],
-                error_flags::DNS_LABEL_EXCEEDS_MAX_LEN.into()
+                ErrorFlags::DnsLabelExceedsMaxLen.into()
             )
         ))
     ),
@@ -420,7 +420,7 @@ mod test {
                 .sterling.freenode.net\
                 .sterling.freenode.net\
                 .sterling.free".as_bytes().to_vec(),
-                error_flags::DNS_NAME_EXCEEDS_MAX_LEN.into()
+                ErrorFlags::DnsNameExceedsMaxLen.into()
             )
         ))
     ),
@@ -462,16 +462,12 @@ mod test {
             ].as_ref(),
             (
                 vec![],
-                error_flags::DNS_NAME_INVALID_COMPRESSION.into()
+                ErrorFlags::DnsNameInvalidCompression.into()
             )
         ))
     ),
     )]
-    fn name(
-        input: &[u8],
-        reference_bytes: &[u8],
-        expected: IResult<(Vec<u8>, Flags<error_flags>)>,
-    ) {
+    fn name(input: &[u8], reference_bytes: &[u8], expected: IResult<(Vec<u8>, Flags<ErrorFlags>)>) {
         assert_eq!(Name::parse(reference_bytes)(input), expected);
     }
 }

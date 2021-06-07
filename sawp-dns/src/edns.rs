@@ -19,7 +19,7 @@ use sawp_flags::{Flag, Flags};
 
 use std::convert::TryFrom;
 
-use crate::{custom_many0, error_flags, IResult};
+use crate::{custom_many0, ErrorFlags, IResult};
 #[cfg(feature = "ffi")]
 use sawp_ffi::GenerateFFI;
 
@@ -79,7 +79,7 @@ pub struct EdnsOption {
 }
 
 impl EdnsOption {
-    pub fn parse(input: &[u8]) -> IResult<(EdnsOption, Flags<error_flags>)> {
+    pub fn parse(input: &[u8]) -> IResult<(EdnsOption, Flags<ErrorFlags>)> {
         let (input, (code, inner_error_flags)) = EdnsOption::parse_option_code(input)?;
         let (input, option_length) = be_u16(input)?;
         let (input, data) = take(option_length)(input)?;
@@ -96,13 +96,13 @@ impl EdnsOption {
         ))
     }
 
-    fn parse_option_code(input: &[u8]) -> IResult<(OptionCode, Flags<error_flags>)> {
-        let mut error_flags = error_flags::none();
+    fn parse_option_code(input: &[u8]) -> IResult<(OptionCode, Flags<ErrorFlags>)> {
+        let mut error_flags = ErrorFlags::none();
 
         let (input, raw_option_code) = be_u16(input)?;
         let code = OptionCode::from_raw(raw_option_code);
         if code == OptionCode::UNKNOWN {
-            error_flags |= error_flags::EDNS_PARSE_FAIL;
+            error_flags |= ErrorFlags::EdnsParseFail;
         }
         Ok((input, (code, error_flags)))
     }
@@ -110,8 +110,8 @@ impl EdnsOption {
     pub fn parse_options(
         input: &[u8],
         data_len: u16,
-    ) -> IResult<(Vec<EdnsOption>, Flags<error_flags>)> {
-        let mut error_flags = error_flags::none();
+    ) -> IResult<(Vec<EdnsOption>, Flags<ErrorFlags>)> {
+        let mut error_flags = ErrorFlags::none();
         if data_len < 4 {
             return Ok((input, (vec![], error_flags)));
         }

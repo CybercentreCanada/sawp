@@ -8,7 +8,7 @@ use sawp_flags::{BitFlags, Flag, Flags};
 
 use crate::enums::{OpCode, QueryResponse, ResponseCode};
 
-use crate::error_flags;
+use crate::ErrorFlags;
 #[cfg(feature = "ffi")]
 use sawp_ffi::GenerateFFI;
 
@@ -74,8 +74,8 @@ pub struct Header {
 
 impl Header {
     #[allow(clippy::type_complexity)]
-    pub fn parse(input: &[u8]) -> Result<(&[u8], (Header, Flags<error_flags>))> {
-        let mut error_flags = error_flags::none();
+    pub fn parse(input: &[u8]) -> Result<(&[u8], (Header, Flags<ErrorFlags>))> {
+        let mut error_flags = ErrorFlags::none();
 
         let (input, txid) = be_u16(input)?;
         let (input, flags) = be_u16(input)?;
@@ -87,12 +87,12 @@ impl Header {
         };
         let opcode: OpCode = OpCode::from_raw((wrapped_flags & header_masks::OPCODE).bits() >> 10);
         if opcode == OpCode::UNKNOWN {
-            error_flags |= error_flags::UNKNOWN_OPCODE;
+            error_flags |= ErrorFlags::UnknownOpcode;
         }
         let rcode: ResponseCode =
             ResponseCode::from_raw((wrapped_flags & header_masks::RCODE).bits());
         if rcode == ResponseCode::UNKNOWN {
-            error_flags |= error_flags::UNKNOWN_RCODE;
+            error_flags |= ErrorFlags::UnknownRcode;
         }
         let (input, qcnt) = be_u16(input)?;
         let (input, acnt) = be_u16(input)?;
@@ -130,7 +130,7 @@ impl Header {
 mod test {
     #![allow(clippy::type_complexity)]
 
-    use crate::{error_flags, Header, OpCode, QueryResponse, ResponseCode};
+    use crate::{ErrorFlags, Header, OpCode, QueryResponse, ResponseCode};
     use rstest::rstest;
     use sawp::error::{Error, Result};
     use sawp_flags::{Flag, Flags};
@@ -167,7 +167,7 @@ mod test {
                     nscount: 0,
                     arcount: 0,
                 },
-                error_flags::none())
+                ErrorFlags::none())
             ))
         ),
         case::parse_too_short_header(
@@ -209,7 +209,7 @@ mod test {
                     nscount: 0,
                     arcount: 0,
                 },
-                error_flags::UNKNOWN_OPCODE.into())
+                ErrorFlags::UnknownOpcode.into())
             ))
         ),
         case::parse_header_bad_rcode(
@@ -241,11 +241,11 @@ mod test {
                 nscount: 0,
                 arcount: 0,
             },
-            error_flags::UNKNOWN_RCODE.into())
+            ErrorFlags::UnknownRcode.into())
             ))
         ),
     )]
-    fn header(input: &[u8], expected: Result<(&[u8], (Header, Flags<error_flags>))>) {
+    fn header(input: &[u8], expected: Result<(&[u8], (Header, Flags<ErrorFlags>))>) {
         assert_eq!(Header::parse(input), expected);
     }
 }

@@ -171,32 +171,28 @@ where
 }
 
 /// Error flags raised while parsing DNS - to be used in the returned Message
-#[allow(non_camel_case_types, clippy::upper_case_acronyms)]
-#[derive(Debug, Clone, Copy, PartialEq, BitFlags)]
+#[allow(clippy::upper_case_acronyms)]
 #[repr(u16)]
-pub enum error_flags {
-    /// encountered a problem parsing a question
-    QUERY_PARSE_FAIL = 0b0000_0000_0000_0001,
-    /// encountered a problem parsing an answer
-    ANSWER_PARSE_FAIL = 0b0000_0000_0000_0010,
+#[derive(Clone, Copy, Debug, PartialEq, BitFlags)]
+pub enum ErrorFlags {
     /// more than one pseudo-RR exists - EDNS specs limit OPT RRs to <=1
-    EXTRA_OPT_RR = 0b0000_0000_0000_0100,
+    ExtraOptRr = 0b0000_0000_0000_0001,
     /// invalid opcode
-    UNKNOWN_OPCODE = 0b0000_0000_0000_1000,
+    UnknownOpcode = 0b0000_0000_0000_0010,
     /// invalid response code
-    UNKNOWN_RCODE = 0b0000_0000_0001_0000,
+    UnknownRcode = 0b0000_0000_0000_0100,
     /// invalid record class
-    UNKNOWN_RCLASS = 0b0000_0000_0010_0000,
+    UnknownRclass = 0b0000_0000_0000_1000,
     /// invalid record type
-    UNKNOWN_RTYPE = 0b0000_0000_0100_0000,
+    UnknownRtype = 0b0000_0000_0001_0000,
     /// an option code used in a pseudo-RR is invalid
-    EDNS_PARSE_FAIL = 0b0000_0000_1000_0000,
+    EdnsParseFail = 0b0000_0000_0010_0000,
     /// some label exceeds the maximum length of 63
-    DNS_LABEL_EXCEEDS_MAX_LEN = 0b0000_0001_0000_0000,
+    DnsLabelExceedsMaxLen = 0b0000_0000_0100_0000,
     /// name len > 255 - name will be truncated to max_domain_len
-    DNS_NAME_EXCEEDS_MAX_LEN = 0b0000_0010_0000_0000,
+    DnsNameExceedsMaxLen = 0b0000_0000_1000_0000,
     /// a ptr either points to an invalid location or is self-referential
-    DNS_NAME_INVALID_COMPRESSION = 0b0000_0100_0000_0000,
+    DnsNameInvalidCompression = 0b0000_0001_0000_0000,
 }
 
 /// Breakdown of the parsed dns bytes
@@ -209,7 +205,8 @@ pub struct Message {
     pub answers: Vec<Answer>,
     pub nameservers: Vec<Answer>,
     pub additional: Vec<Answer>,
-    pub error_flags: Flags<error_flags>,
+    #[cfg_attr(feature = "ffi", sawp_ffi(flag = "u16"))]
+    pub error_flags: Flags<ErrorFlags>,
 }
 
 impl Message {}
@@ -260,7 +257,7 @@ impl<'a> Parse<'a> for Dns {
             answers: vec![],
             nameservers: vec![],
             additional: vec![],
-            error_flags: error_flags::none(),
+            error_flags: ErrorFlags::none(),
         };
 
         let (input, (header, error_flags)) = Header::parse(input)?;
@@ -297,7 +294,7 @@ mod test {
     use crate::enums::*;
     use crate::rdata::*;
     use crate::{
-        error_flags, Answer, Dns, Header, Message, OpCode, Parse, QueryResponse, Question,
+        Answer, Dns, ErrorFlags, Header, Message, OpCode, Parse, QueryResponse, Question,
         RecordClass, RecordType, ResponseCode,
     };
     use rstest::rstest;
@@ -419,7 +416,7 @@ mod test {
                         }
                     ],
                     additional: vec ! [],
-                    error_flags: error_flags::DNS_NAME_EXCEEDS_MAX_LEN.into(),
+                    error_flags: ErrorFlags::DnsNameExceedsMaxLen.into(),
                 }
         )))
     ),
@@ -518,7 +515,7 @@ mod test {
             ],
             nameservers: vec![],
             additional: vec![],
-            error_flags: error_flags::DNS_LABEL_EXCEEDS_MAX_LEN.into(),
+            error_flags: ErrorFlags::DnsLabelExceedsMaxLen.into(),
         })))
     ),
     case::parse_name_invalid_ptr(
@@ -585,7 +582,7 @@ mod test {
                 }
             ],
             additional: vec![],
-            error_flags: error_flags::DNS_NAME_INVALID_COMPRESSION.into(),
+            error_flags: ErrorFlags::DnsNameInvalidCompression.into(),
     }
     )))
     ),
@@ -653,7 +650,7 @@ mod test {
                 }
             ],
             additional: vec![],
-            error_flags: error_flags::UNKNOWN_RTYPE.into(),
+            error_flags: ErrorFlags::UnknownRtype.into(),
             }
     )))
     ),
@@ -721,7 +718,7 @@ mod test {
                 }
             ],
             additional: vec![],
-            error_flags: error_flags::UNKNOWN_RCLASS.into(),
+            error_flags: ErrorFlags::UnknownRclass.into(),
             }
         )))
     ),
@@ -789,7 +786,7 @@ mod test {
                     }
                 ],
                 additional: vec![],
-                error_flags: error_flags::none(),
+                error_flags: ErrorFlags::none(),
             }
         )))
     ),
@@ -857,7 +854,7 @@ mod test {
                 ],
                 nameservers: vec![],
                 additional: vec![],
-                error_flags: error_flags::none(),
+                error_flags: ErrorFlags::none(),
             }
         )))
     ),
@@ -1096,7 +1093,7 @@ mod test {
                         data: (RDataType::A(vec![216, 239, 57, 26])),
                     },
                 ],
-                error_flags: error_flags::none(),
+                error_flags: ErrorFlags::none(),
             }
         )))
     ),
@@ -1147,7 +1144,7 @@ mod test {
                     answers: vec![],
                     nameservers: vec![],
                     additional: vec![],
-                    error_flags: error_flags::none(),
+                    error_flags: ErrorFlags::none(),
                 }
         )))
     ),
@@ -1217,7 +1214,7 @@ mod test {
                 ],
                 nameservers: vec![],
                 additional: vec![],
-                error_flags: error_flags::none(),
+                error_flags: ErrorFlags::none(),
             }
         )))
     ),
@@ -1286,7 +1283,7 @@ mod test {
                 }],
                 nameservers: vec![],
                 additional: vec![],
-                error_flags: error_flags::none(),
+                error_flags: ErrorFlags::none(),
             }
         )))
     ),
@@ -1352,7 +1349,7 @@ mod test {
                 ],
                 nameservers: vec![],
                 additional: vec![],
-                error_flags: error_flags::none(),
+                error_flags: ErrorFlags::none(),
             }
         )))
     ),
@@ -1404,7 +1401,7 @@ mod test {
                 answers: vec![],
                 nameservers: vec![],
                 additional: vec![],
-                error_flags: error_flags::none(),
+                error_flags: ErrorFlags::none(),
             }
         )))
     ),
@@ -1490,7 +1487,7 @@ mod test {
                 ],
                 nameservers: vec![],
                 additional: vec![],
-                error_flags: error_flags::none(),
+                error_flags: ErrorFlags::none(),
             }
         )))
     ),
@@ -1604,7 +1601,7 @@ mod test {
                 ],
                 nameservers: vec![],
                 additional: vec![],
-                error_flags: error_flags::none(),
+                error_flags: ErrorFlags::none(),
             }
         )))
     ),
@@ -1776,7 +1773,7 @@ mod test {
                 ],
                 nameservers: vec![],
                 additional: vec![],
-                error_flags: error_flags::none(),
+                error_flags: ErrorFlags::none(),
             }
         )))
     ),
@@ -1883,7 +1880,7 @@ mod test {
                     })),
                 }
             ],
-            error_flags: error_flags::none(),
+            error_flags: ErrorFlags::none(),
             }
         )))
     ),
@@ -1979,7 +1976,7 @@ mod test {
                         })),
                     },
                 ],
-                error_flags: error_flags::EXTRA_OPT_RR.into(),
+                error_flags: ErrorFlags::ExtraOptRr.into(),
             }
         )))
     ),
@@ -2094,7 +2091,7 @@ mod test {
                 ],
                 nameservers: vec![],
                 additional: vec![],
-                error_flags: error_flags::none()
+                error_flags: ErrorFlags::none()
             }
         )))
     ),
@@ -2384,7 +2381,7 @@ mod test {
             data: vec![]
             })
             }],
-            error_flags: error_flags::none()
+            error_flags: ErrorFlags::none()
             }
         )))
     ),
@@ -2557,7 +2554,7 @@ mod test {
                 })
             }
         ],
-        error_flags: error_flags::none()
+        error_flags: ErrorFlags::none()
         }
     )))
     ),
@@ -2630,7 +2627,7 @@ mod test {
                 }],
                 nameservers: vec![],
                 additional: vec![],
-                error_flags: error_flags::none()
+                error_flags: ErrorFlags::none()
             }
         )))
     ),

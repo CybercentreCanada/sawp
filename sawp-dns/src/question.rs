@@ -3,7 +3,7 @@ use nom::number::streaming::be_u16;
 use sawp_flags::{Flag, Flags};
 
 use crate::enums::{RecordClass, RecordType};
-use crate::{custom_count, error_flags, IResult, Name};
+use crate::{custom_count, ErrorFlags, IResult, Name};
 
 #[cfg(feature = "ffi")]
 use sawp_ffi::GenerateFFI;
@@ -26,18 +26,18 @@ impl Question {
     fn parse<'a>(
         input: &'a [u8],
         reference_bytes: &'a [u8],
-    ) -> IResult<'a, (Question, Flags<error_flags>)> {
+    ) -> IResult<'a, (Question, Flags<ErrorFlags>)> {
         let (input, (name, mut error_flags)) = Name::parse(reference_bytes)(input)?;
         let (input, working_qtype) = be_u16(input)?;
         let qtype: RecordType = RecordType::from_raw(working_qtype);
         if qtype == RecordType::UNKNOWN {
-            error_flags |= error_flags::UNKNOWN_RTYPE;
+            error_flags |= ErrorFlags::UnknownRtype;
         }
 
         let (input, working_qclass) = be_u16(input)?;
         let qclass: RecordClass = RecordClass::from_raw(working_qclass);
         if qclass == RecordClass::UNKNOWN {
-            error_flags |= error_flags::UNKNOWN_RCLASS;
+            error_flags |= ErrorFlags::UnknownRclass;
         }
 
         Ok((
@@ -59,8 +59,8 @@ impl Question {
         input: &'a [u8],
         reference_bytes: &'a [u8],
         qdcnt: usize,
-    ) -> IResult<'a, (Vec<Question>, Flags<error_flags>)> {
-        let mut error_flags = error_flags::none();
+    ) -> IResult<'a, (Vec<Question>, Flags<ErrorFlags>)> {
+        let mut error_flags = ErrorFlags::none();
 
         let (input, questions) = custom_count(
             |input, reference_bytes| {
