@@ -21,14 +21,13 @@
 # make
 # ```
 
-$(eval CRATE_VERSION=$(shell (test -f Cargo.lock || cargo generate-lockfile) && cargo pkgid | cut -d# -f 2))
+$(eval CRATE_VERSION=$(shell (test -f Cargo.lock || cargo generate-lockfile) && cargo pkgid | cut -d# -f 2 | cut -d: -f 2))
 $(eval CRATE_VERSION_MINOR=$(shell echo ${CRATE_VERSION} | cut -d. -f 1-2))
 $(eval CRATE_VERSION_MAJOR=$(shell echo ${CRATE_VERSION} | cut -d. -f 1))
 
 FFI_PACKAGES := $(patsubst sawp-%/cbindgen.toml, %, $(wildcard sawp-*/cbindgen.toml))
 FFI_HEADERS := target/sawp/sawp.h $(patsubst %, target/sawp/%.h, ${FFI_PACKAGES})
-FFI_OBJECTS_RELEASE := $(patsubst %.so, %.so.${CRATE_VERSION}, \
-	target/release/libsawp.so $(patsubst %, target/release/libsawp_%.so, ${FFI_PACKAGES}))
+FFI_OBJECTS_RELEASE := target/release/libsawp.so $(patsubst %, target/release/libsawp_%.so, ${FFI_PACKAGES})
 FFI_OBJECTS_DEBUG := target/debug/libsawp.so $(patsubst %, target/debug/libsawp_%.so, ${FFI_PACKAGES})
 
 # Source pattern to detect file changes and cache the build.
@@ -115,16 +114,13 @@ target/debug/libsawp_%.so: ${SOURCES}
 
 target/release/libsawp_%.so: ${SOURCES}
 	cd sawp-$(*F) && \
-	cargo build --features ffi --release
+	RUSTFLAGS="-C link-arg=-Wl,-soname,$(@F).${CRATE_VERSION_MAJOR}" cargo build --features ffi --release
 
 target/debug/libsawp.so: ${SOURCES}
 	cargo build --features ffi --features verbose
 
 target/release/libsawp.so: ${SOURCES}
-	cargo build --features ffi --release
-
-target/release/%.so.${CRATE_VERSION}: target/release/%.so
-	cp $^ $^.${CRATE_VERSION}
+	RUSTFLAGS="-C link-arg=-Wl,-soname,$(@F).${CRATE_VERSION_MAJOR}" cargo build --features ffi --release
 
 # rpm
 # ===
@@ -139,8 +135,10 @@ package: headers release_objects
 	mkdir -p target/_temp/include/sawp
 	mkdir -p target/rpmbuild/
 	mkdir -p target/rpmbuild/SOURCES
+	for obj in libsawp.so $(patsubst %, libsawp_%.so, ${FFI_PACKAGES}); do \
+		cp target/release/$$obj target/_temp/lib64/$$obj.${CRATE_VERSION}; \
+	done
 	cp target/sawp/*.h target/_temp/include/sawp
-	cp -d target/release/*.so.* target/_temp/lib64
 	tar -czvf target/rpmbuild/SOURCES/sawp-${CRATE_VERSION}.tar.gz target/_temp --transform 'flags=r;s#^target/_temp#sawp-${CRATE_VERSION}#'
 
 # cargo publish

@@ -33,7 +33,7 @@ members = [
 ]
 
 [features]
-ffi = ["cbindgen", "cdylib-link-lines", "sawp-ffi"]
+ffi = ["cbindgen", "sawp-ffi"]
 # Makes error messages more descriptive and verbose at the cost of allocating
 # more strings
 verbose = []
@@ -44,7 +44,6 @@ bench = false
 
 [build-dependencies]
 cbindgen = {version = "0.15", optional = true}
-cdylib-link-lines = {version = "0.1.1", optional = true}
 
 [dev-dependencies]
 criterion = "0.3"
