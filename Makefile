@@ -46,6 +46,8 @@ PUBLISH := \
 	sawp-modbus \
 	sawp-diameter \
 	sawp-tftp \
+	sawp-gre \
+	sawp-dns \
 	sawp-json \
 	sawp-file
 
