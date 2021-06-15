@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+### Added
+- sawp-gre: initial release of protocol parser.
+- sawp-dns: initial release of protocol parser.
+- sawp-tftp: add ffi support.
+
+### Fixed / Changed
+- sawp-ffi: use size_t instead of uintptr_t for size types across all ffi modules.
+- sawp-ffi: set soname in ffi shared object libraries.
 
 ## [0.5.0] - 2021-05-07
 ### Added
