@@ -1,6 +1,6 @@
 [package]
 name = "sawp-json"
-version = "0.5.0"
+version = "0.6.0"
 authors = ["Canadian Centre for Cyber Security <sa-sawp@cyber.gc.ca>"]
 description = "SAWP Protocol Parser for Json"
 readme = "../README.md"
@@ -21,7 +21,7 @@ include = [
 verbose = ["sawp/verbose"]
 
 [dependencies]
-sawp = { path = "..", version = "^0.5.0"}
+sawp = { path = "..", version = "^0.6.0"}
 serde = "1.0"
 serde_json = "1.0"
 
