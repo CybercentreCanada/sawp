@@ -23,6 +23,7 @@ members = [
     "sawp-ffi",
     "sawp-ffi-derive",
     "sawp-modbus",
+    "sawp-resp",
     "sawp-tftp",
     "sawp-file",
     "sawp-json",

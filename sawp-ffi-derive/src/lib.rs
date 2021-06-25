@@ -754,6 +754,8 @@ fn gen_enum_named_accessor(
         if outer.to_string().as_str() == "Vec" {
             let ptr_name = format_ident!("{}_ptr", func_name);
             let len_name = format_ident!("{}_len", func_name);
+            let idx_name = format_ident!("{}_ptr_to_idx", func_name);
+
             // Making assumption that ret_var is simple
             accessors.extend(quote! {
                 /// Get ptr to data of `#field`
@@ -781,6 +783,19 @@ fn gen_enum_named_accessor(
                         (#ret_var).len()
                     } else {
                         0
+                    }
+                }
+
+                /// Get ptr to member of `#struct_variable.#field` at index
+                /// # Safety
+                /// function will panic if called with null or an index outside bounds
+                #[no_mangle]
+                pub unsafe extern "C" fn #idx_name(#enum_variable: *const Vec<#inner>, n: usize) -> *const #inner {
+                    if !#enum_variable.is_null() {
+                        &(*#enum_variable)[n]
+                    }
+                    else {
+                        panic!("{} is NULL ", stringify!(#enum_variable));
                     }
                 }
             });
@@ -884,6 +899,8 @@ fn gen_enum_unnamed_accessor(
         if outer.to_string().as_str() == "Vec" {
             let ptr_name = format_ident!("{}_ptr", func_name);
             let len_name = format_ident!("{}_len", func_name);
+            let idx_name = format_ident!("{}_ptr_to_idx", func_name);
+
             // Making assumption that ret_var is simple
             accessors.extend(quote! {
                 /// Get ptr to data of `#variant_name.#field`
@@ -911,6 +928,19 @@ fn gen_enum_unnamed_accessor(
                         (#ret_var).len()
                     } else {
                         0
+                    }
+                }
+
+                /// Get ptr to member of `#struct_variable.#field` at index
+                /// # Safety
+                /// function will panic if called with null or an index outside bounds
+                #[no_mangle]
+                pub unsafe extern "C" fn #idx_name(#enum_variable: *const Vec<#inner>, n: usize) -> *const #inner {
+                    if !#enum_variable.is_null() {
+                        &(*#enum_variable)[n]
+                    }
+                    else {
+                        panic!("{} is NULL ", stringify!(#enum_variable));
                     }
                 }
             });

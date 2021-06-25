@@ -66,6 +66,7 @@ extern crate sawp_flags;
 mod tests {
     use super::*;
     use sawp_flags::{BitFlags, Flag, Flags};
+    use std::ptr::null;
 
     #[test]
     #[should_panic]
@@ -276,6 +277,13 @@ mod tests {
             pub v: Vec<MyStructTwo>,
         }
 
+        #[derive(GenerateFFI)]
+        #[sawp_ffi(prefix = "sawp")]
+        pub enum MyEnum {
+            A(Vec<MyEnum>),
+            B(usize),
+        }
+
         let s = SuperStruct {
             v: vec![
                 MyStructTwo {
@@ -289,6 +297,9 @@ mod tests {
             ],
         };
 
+        let e = MyEnum::A(vec![MyEnum::B(1)]);
+
+        // struct accessors
         unsafe {
             assert_eq!(
                 sawp_my_struct_two_get_num(sawp_super_struct_get_v_ptr_to_idx(&s, 0)),
@@ -306,6 +317,29 @@ mod tests {
                 sawp_my_struct_two_get_string(sawp_super_struct_get_v_ptr_to_idx(&s, 1)),
                 std::ptr::null()
             );
+        }
+
+        // enum accessors
+        unsafe {
+            assert_eq!(
+                *sawp_my_enum_get_b(sawp_my_enum_get_a_ptr_to_idx(sawp_my_enum_get_a(&e), 0)),
+                1
+            );
+        }
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_get_vec_at_index_panics_called_with_null() {
+        #[derive(GenerateFFI)]
+        #[sawp_ffi(prefix = "sawp")]
+        pub enum MyEnumThree {
+            A(Vec<MyEnumThree>),
+            B(usize),
+        }
+
+        unsafe {
+            sawp_my_enum_three_get_a(null());
         }
     }
 }
