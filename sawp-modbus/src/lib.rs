@@ -644,6 +644,10 @@ impl Message {
     //     Quantity of Regs:       2               (2,3)
     //     Byte Count:             1               (4)
     //     Data:                   Count           (5 to (Count + 5))
+    //
+    // Clippy wants us to factor out the first be_u16 call but we would lose
+    // meaning in the variable name.
+    #[allow(clippy::branches_sharing_code)]
     fn parse_write_request<'a>(&mut self, input: &'a [u8]) -> Result<&'a [u8]> {
         let (input, address) = be_u16(input)?;
 
@@ -723,6 +727,10 @@ impl Message {
     // Multiple writes:
     //     Starting Address:       2           (0,1)
     //     Quantity of Regs:       2           (2,3)
+    //
+    // Clippy wants us to factor out the first be_u16 call but we would lose
+    // meaning in the variable name.
+    #[allow(clippy::branches_sharing_code)]
     fn parse_write_response<'a>(&mut self, input: &'a [u8]) -> Result<&'a [u8]> {
         let (input, address) = be_u16(input)?;
 
