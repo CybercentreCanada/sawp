@@ -21,7 +21,21 @@
 # make
 # ```
 
-$(eval CRATE_VERSION=$(shell (test -f Cargo.lock || cargo generate-lockfile) && cargo pkgid | cut -d# -f 2 | cut -d: -f 2))
+CARGO ?= cargo
+DESTDIR ?= 
+PREFIX ?= /usr
+LIBDIR ?= $(DESTDIR)/$(PREFIX)/lib64
+INCLUDEDIR ?= $(DESTDIR)/$(PREFIX)/include
+
+# Use cargo to get the version or fallback to sed
+$(eval CRATE_VERSION=$(shell \
+	( \
+		(${CARGO} 1> /dev/null 2> /dev/null) \
+		&& (test -f Cargo.lock || ${CARGO} generate-lockfile) \
+		&& (${CARGO} pkgid | cut -d# -f 2 | cut -d: -f 2) \
+	) \
+	|| (sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml) \
+))
 $(eval CRATE_VERSION_MINOR=$(shell echo ${CRATE_VERSION} | cut -d. -f 1-2))
 $(eval CRATE_VERSION_MAJOR=$(shell echo ${CRATE_VERSION} | cut -d. -f 1))
 
@@ -32,7 +46,8 @@ FFI_OBJECTS_DEBUG := target/debug/libsawp.so $(patsubst %, target/debug/libsawp_
 
 # Source pattern to detect file changes and cache the build.
 # Any source file change in the workspace should trigger a rebuild.
-SOURCES := $(shell find . sawp-* -type f \( -name "*.rs" -or -name "cbindgen.toml" -or -name "Cargo.toml" \) )
+SOURCES := $(shell find . -path ./target -prune -false -o -type f \( -name "*.rs" -or -name "cbindgen.toml" -or -name "Cargo.toml" \) ) \
+	Makefile
 
 # Package publication order.
 # List of directories that contain a Cargo.toml file to publish.
@@ -54,6 +69,7 @@ PUBLISH := \
 
 .PHONY: env
 env:
+	@echo CARGO: ${CARGO}
 	@echo CRATE_VERSION: ${CRATE_VERSION}
 	@echo CRATE_VERSION_MINOR: ${CRATE_VERSION_MINOR}
 	@echo CRATE_VERSION_MAJOR: ${CRATE_VERSION_MAJOR}
@@ -62,6 +78,9 @@ env:
 	@echo FFI_OBJECTS_RELEASE: ${FFI_OBJECTS_RELEASE}
 	@echo FFI_OBJECTS_DEBUG: ${FFI_OBJECTS_DEBUG}
 	@echo SOURCES: ${SOURCES}
+	@echo DESTDIR: ${DESTDIR}
+	@echo LIBDIR: $(LIBDIR)
+	@echo INCLUDEDIR: ${INCLUDEDIR}
 
 # prevents intermediate targets from getting removed
 .SECONDARY: 
@@ -74,7 +93,7 @@ all: headers shared_objects
 
 .PHONY: clean
 clean:
-	cargo clean
+	${CARGO} clean
 
 # Headers
 # =======
@@ -113,36 +132,48 @@ release_objects: ${FFI_OBJECTS_RELEASE}
 
 target/debug/libsawp_%.so: ${SOURCES} 
 	cd sawp-$(*F) && \
-	cargo build --features ffi --features verbose
+	${CARGO} build --features ffi --features verbose
 
 target/release/libsawp_%.so: ${SOURCES}
 	cd sawp-$(*F) && \
-	RUSTFLAGS="-C link-arg=-Wl,-soname,$(@F).${CRATE_VERSION_MAJOR}" cargo build --features ffi --release
+	RUSTFLAGS="-C link-arg=-Wl,-soname,$(@F).${CRATE_VERSION_MAJOR}" ${CARGO} build --features ffi --release
 
 target/debug/libsawp.so: ${SOURCES}
-	cargo build --features ffi --features verbose
+	${CARGO} build --features ffi --features verbose
 
 target/release/libsawp.so: ${SOURCES}
-	RUSTFLAGS="-C link-arg=-Wl,-soname,$(@F).${CRATE_VERSION_MAJOR}" cargo build --features ffi --release
+	RUSTFLAGS="-C link-arg=-Wl,-soname,$(@F).${CRATE_VERSION_MAJOR}" ${CARGO} build --features ffi --release
 
 # rpm
 # ===
 .PHONY: rpm
 rpm: package
-	rpmbuild -vvv -bb --define "version ${CRATE_VERSION}" --define "_topdir ${PWD}/target/rpmbuild" .rpm/sawp.spec
+	rpmbuild -vvv -bb \
+		--define "version ${CRATE_VERSION}" \
+		--define "_topdir ${PWD}/target/rpmbuild" \
+		--define "_prefix $(PREFIX)" \
+		.rpm/sawp.spec
 
 .PHONY: package
-package: headers release_objects
+package:
 	rm -rf target/rpmbuild target/_temp
-	mkdir -p target/_temp/lib64
-	mkdir -p target/_temp/include/sawp
-	mkdir -p target/rpmbuild/
-	mkdir -p target/rpmbuild/SOURCES
-	for obj in libsawp.so $(patsubst %, libsawp_%.so, ${FFI_PACKAGES}); do \
-		cp target/release/$$obj target/_temp/lib64/$$obj.${CRATE_VERSION}; \
-	done
-	cp target/sawp/*.h target/_temp/include/sawp
+	mkdir -p target/rpmbuild/SOURCES target/_temp
+	cp ${SOURCES} --parents target/_temp
 	tar -czvf target/rpmbuild/SOURCES/sawp-${CRATE_VERSION}.tar.gz target/_temp --transform 'flags=r;s#^target/_temp#sawp-${CRATE_VERSION}#'
+
+.PHONY: install
+install:
+	install -d $(LIBDIR)
+	install -d $(INCLUDEDIR)/sawp
+	for obj in libsawp.so $(patsubst %, libsawp_%.so, ${FFI_PACKAGES}); do \
+		install -m 0755 target/release/$$obj $(LIBDIR)/$$obj.${CRATE_VERSION}; \
+	done
+	install -m 644 target/sawp/*.h $(INCLUDEDIR)/sawp
+
+.PHONY: uninstall
+uninstall:
+	rm -f $(LIBDIR)/libsawp*.so*
+	rm -rf $(INCLUDEDIR)/sawp
 
 # cargo publish
 # =============
@@ -156,30 +187,30 @@ package: headers release_objects
 .PHONY: publish
 publish:
 	for pub in $(PUBLISH); do \
-		(cd $$pub && cargo publish && sleep 20); \
+		(cd $$pub && ${CARGO} publish && sleep 20); \
 	done
 
 .PHONY: valgrind 
 valgrind:
-	cargo valgrind test --workspace --all-targets --all-features
+	${CARGO} valgrind test --workspace --all-targets --all-features
 
 .PHONY: asan-address
 asan-address: export RUSTFLAGS = -Zsanitizer=address
 asan-address: export RUSTDOCFLAGS = -Zsanitizer=address
 asan-address:
-	cargo +nightly test -Zbuild-std --target x86_64-unknown-linux-gnu --workspace --all-targets --all-features
+	${CARGO} +nightly test -Zbuild-std --target x86_64-unknown-linux-gnu --workspace --all-targets --all-features
 
 .PHONY: asan-memory
 asan-memory: export RUSTFLAGS = -Zsanitizer=memory -Zsanitizer-memory-track-origins
 asan-memory: export RUSTDOCFLAGS = -Zsanitizer=memory -Zsanitizer-memory-track-origins
 asan-memory:
-	cargo +nightly test -Zbuild-std --target x86_64-unknown-linux-gnu --workspace --all-targets --all-features
+	${CARGO} +nightly test -Zbuild-std --target x86_64-unknown-linux-gnu --workspace --all-targets --all-features
 
 .PHONY: asan-leak
 asan-leak: export RUSTFLAGS = -Zsanitizer=leak
 asan-leak: export RUSTDOCFLAGS = -Zsanitizer=leak
 asan-leak:
-	cargo +nightly test -Zbuild-std --target x86_64-unknown-linux-gnu --workspace --all-targets --all-features
+	${CARGO} +nightly test -Zbuild-std --target x86_64-unknown-linux-gnu --workspace --all-targets --all-features
 
 .PHONY: asan
 asan: asan-address asan-memory asan-leak

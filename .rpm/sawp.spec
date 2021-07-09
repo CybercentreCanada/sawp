@@ -11,11 +11,11 @@ Source0: %{name}-%{version}.tar.gz
 %prep
 %setup -q
 
+%build
+make %{?_smp_mflags}
+
 %install
-mkdir -p %{buildroot}/%{_libdir}
-mkdir -p %{buildroot}/%{_includedir}/sawp
-install -m 0755 lib64/libsawp*.so* %{buildroot}/%{_libdir}
-install -m 0644 include/sawp/*.h %{buildroot}/%{_includedir}/sawp
+%make_install
 
 %post
 for file in %{_libdir}/libsawp*.so*; do
