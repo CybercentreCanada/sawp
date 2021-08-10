@@ -240,8 +240,8 @@ fn impl_sawp_ffi(ast: &syn::DeriveInput) -> TokenStream {
         .collect();
     let prefix = get_ffi_prefix(&ffi_metas);
     match &ast.data {
-        syn::Data::Struct(data) => gen_struct_accessors(&prefix, &name, &data),
-        syn::Data::Enum(data) => gen_enum_accessors(&prefix, &name, &data, &ffi_metas),
+        syn::Data::Struct(data) => gen_struct_accessors(&prefix, name, data),
+        syn::Data::Enum(data) => gen_enum_accessors(&prefix, name, data, &ffi_metas),
         syn::Data::Union(_) => panic!("syn::Data::Union not supported"),
     }
 }
@@ -325,10 +325,10 @@ fn return_type(
     metas: &[syn::NestedMeta],
     always_ptr: bool,
 ) -> ReturnType {
-    get_ffi_flag(&metas);
-    if !always_ptr && (is_cpp_type(&ty) || has_ffi_copy_meta(&metas)) {
+    get_ffi_flag(metas);
+    if !always_ptr && (is_cpp_type(ty) || has_ffi_copy_meta(metas)) {
         (quote! {#ty}, quote! {#field})
-    } else if let Some(flag_repr) = get_ffi_flag(&metas) {
+    } else if let Some(flag_repr) = get_ffi_flag(metas) {
         let (outer, _) = split_generic(ty).unwrap_or_else(|| {
             panic!(
                 "sawp_ffi(flag) must be used on sawp_flags::Flags type: {}",
@@ -396,7 +396,7 @@ fn gen_struct_accessors(
             }
 
             stream.extend(gen_field_accessor(
-                &prefix,
+                prefix,
                 &ffi_metas,
                 name,
                 field.ident.as_ref().unwrap(),
@@ -622,7 +622,7 @@ fn gen_enum_accessors(
     let variants: Vec<&syn::Variant> = data.variants.iter().collect();
     let mut stream = gen_enum_type(prefix, name, &variants);
 
-    if !has_ffi_type_only_meta(&top_level_metas) {
+    if !has_ffi_type_only_meta(top_level_metas) {
         for variant in variants {
             match &variant.fields {
                 syn::Fields::Named(fields) => {
@@ -681,7 +681,7 @@ fn gen_enum_named_accessor(
     let enum_variable = enum_name.to_string().to_snake_case();
     let enum_variable = syn::Ident::new(&enum_variable, proc_macro2::Span::call_site());
     let variant_name = &variant.ident.to_string().to_snake_case();
-    let variant_name = syn::Ident::new(&variant_name, proc_macro2::Span::call_site());
+    let variant_name = syn::Ident::new(variant_name, proc_macro2::Span::call_site());
 
     let func_name = match prefix {
         Some(prefix) => format_ident!(
@@ -806,7 +806,7 @@ fn gen_enum_unnamed_accessor(
     let enum_variable = enum_name.to_string().to_snake_case();
     let enum_variable = syn::Ident::new(&enum_variable, proc_macro2::Span::call_site());
     let variant_name = &variant.ident.to_string().to_snake_case();
-    let variant_name = syn::Ident::new(&variant_name, proc_macro2::Span::call_site());
+    let variant_name = syn::Ident::new(variant_name, proc_macro2::Span::call_site());
 
     let func_name = match &variant.fields {
         syn::Fields::Unnamed(fields) if fields.unnamed.len() == 1 => match prefix {

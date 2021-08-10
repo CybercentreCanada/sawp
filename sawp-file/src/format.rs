@@ -178,9 +178,8 @@ mod tests {
         // Process everything but the last byte.
         let buffer = std::io::Cursor::new(&buffer[..buffer.len() - 1]);
         let reader = Reader::new(buffer).expect("failed to create reader");
-        let calls: Vec<Call> = reader.collect();
 
         // Errors are ignored and the iterator will end prematurely
-        assert_eq!(calls.len(), 1);
+        assert_eq!(reader.count(), 1);
     }
 }

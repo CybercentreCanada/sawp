@@ -101,9 +101,9 @@ mod tests {
         #[repr(u16)]
         #[derive(Debug, PartialEq, Copy, Clone)]
         pub enum Version {
-            Version1 = 0x0100,
-            Version1_1 = 0x0101,
-            Version2 = 0x0200,
+            Ver1 = 0x0100,
+            Ver1_1 = 0x0101,
+            Ver2 = 0x0200,
         }
 
         #[repr(u8)]
@@ -131,7 +131,7 @@ mod tests {
 
         let my_struct = MyStruct {
             num: 12,
-            version: Version::Version1,
+            version: Version::Ver1,
             file_type: FileType::Write.into(),
             private: 0,
             skipped: 128,
@@ -141,7 +141,7 @@ mod tests {
         };
         unsafe {
             assert_eq!(sawp_my_struct_get_num(&my_struct), 12);
-            assert_eq!(sawp_my_struct_get_version(&my_struct), Version::Version1);
+            assert_eq!(sawp_my_struct_get_version(&my_struct), Version::Ver1);
             assert_eq!(sawp_my_struct_get_file_type(&my_struct), 0b0000_0010);
             assert_ne!(sawp_my_struct_get_complex(&my_struct), std::ptr::null());
             assert_eq!((*sawp_my_struct_get_complex(&my_struct)).len(), 10);
@@ -161,9 +161,9 @@ mod tests {
         #[repr(u16)]
         #[derive(Copy, Clone)]
         pub enum Version {
-            Version1 = 0x0100,
-            Version1_1 = 0x0101,
-            Version2 = 0x0200,
+            Ver1 = 0x0100,
+            Ver1_1 = 0x0101,
+            Ver2 = 0x0200,
         }
 
         #[repr(u8)]

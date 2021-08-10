@@ -16,7 +16,7 @@ fn impl_sawp_flags(ast: &syn::DeriveInput) -> TokenStream {
         panic!("BitFlags enum must have a `repr` attribute with numeric argument");
     };
     match &ast.data {
-        syn::Data::Enum(data) => impl_enum_traits(&name, &repr, &data),
+        syn::Data::Enum(data) => impl_enum_traits(name, &repr, data),
         _ => panic!("Bitflags is only supported on enums"),
     }
 }
