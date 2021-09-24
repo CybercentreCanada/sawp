@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+### Added
+- sawp-resp: initial release of protocol parser.
+
+### Fixed / Changed
+- sawp: updated style guide in CONTRIBUTING.md.
+- sawp: specified compatible criterion version.
+- sawp-diameter: specified compatible bitflags version.
 
 ## [0.6.0] - 2021-06-15
 ### Added
