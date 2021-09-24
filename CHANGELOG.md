@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+
+## [0.7.0] - 2021-09-24
 ### Added
 - sawp-resp: initial release of protocol parser.
 
@@ -80,7 +82,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - sawp-modbus: FFI support.
 
 <!-- next-url -->
-[Unreleased]: https://github.com/CybercentreCanada/sawp/compare/sawp-0.6.0...HEAD
+[Unreleased]: https://github.com/CybercentreCanada/sawp/compare/sawp-0.7.0...HEAD
+[0.7.0]: https://github.com/CybercentreCanada/sawp/releases/tag/sawp-0.7.0
 [0.6.0]: https://github.com/CybercentreCanada/sawp/releases/tag/sawp-0.6.0
 [0.5.0]: https://github.com/CybercentreCanada/sawp/releases/tag/sawp-0.5.0
 [0.4.0]: https://github.com/CybercentreCanada/sawp/releases/tag/sawp-0.4.0

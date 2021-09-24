@@ -1,6 +1,6 @@
 [package]
 name = "sawp-ffi"
-version = "0.6.0"
+version = "0.7.0"
 authors = ["Canadian Centre for Cyber Security <sa-sawp@cyber.gc.ca>"]
 description = "FFI helper macros and traits"
 readme = "../README.md"
@@ -17,8 +17,8 @@ include = [
 ]
 
 [dependencies]
-sawp-ffi-derive = { path = "../sawp-ffi-derive", version = "^0.6.0"}
-sawp-flags = { path = "../sawp-flags", version = "^0.6.0"}
+sawp-ffi-derive = { path = "../sawp-ffi-derive", version = "^0.7.0"}
+sawp-flags = { path = "../sawp-flags", version = "^0.7.0"}
 
 # Override default replacements
 [package.metadata.release]
