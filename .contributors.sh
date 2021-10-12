@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 dryrun="--dry-run"
 name="sa-sawp"
 email="sa-sawp@cyber.gc.ca"
