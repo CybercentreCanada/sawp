@@ -72,6 +72,7 @@ pub enum OpCode {
     Data = 3,
     Acknowledgement = 4,
     Error = 5,
+    OptionAcknowledgement = 6,
 }
 
 #[cfg_attr(feature = "ffi", derive(GenerateFFI), sawp_ffi(prefix = "sawp_tftp"))]
@@ -95,7 +96,16 @@ pub enum ErrorCode {
     UnknownTransferId = 5,
     FileAlreadyExists = 6,
     NoSuchUser = 7,
+    OptionRejected = 8,
     Unknown = 65535,
+}
+
+#[cfg_attr(feature = "ffi", derive(GenerateFFI))]
+#[cfg_attr(feature = "ffi", sawp_ffi(prefix = "sawp_tftp"))]
+#[derive(Debug, PartialEq)]
+pub struct OptionExtension {
+    pub name: String,
+    pub value: String,
 }
 
 /// Represents the various types of TFTP Packets
@@ -105,6 +115,7 @@ pub enum Packet {
     ReadWriteRequest {
         filename: String,
         mode: Mode,
+        options: Vec<OptionExtension>,
     },
     Data {
         block_number: u16,
@@ -116,6 +127,7 @@ pub enum Packet {
         code: ErrorCode,
         message: String,
     },
+    OptAck(Vec<OptionExtension>),
 }
 
 /// Breakdown of the parsed TFTP bytes
@@ -138,6 +150,28 @@ impl Protocol<'_> for TFTP {
     fn name() -> &'static str {
         "tftp"
     }
+}
+
+fn parse_options(input: &'_ [u8]) -> Result<(&'_ [u8], Vec<OptionExtension>)> {
+    let mut bytes = input;
+    let mut options: Vec<OptionExtension> = Vec::new();
+    while !bytes.is_empty() {
+        let (rest, name) = map_res(
+            terminated(take_while(|c| c != 0), tag(&[0])),
+            std::str::from_utf8,
+        )(bytes)?;
+        let (rest, value) = map_res(
+            terminated(take_while(|c| c != 0), tag(&[0])),
+            std::str::from_utf8,
+        )(rest)?;
+        options.push(OptionExtension {
+            name: name.into(),
+            value: value.into(),
+        });
+        bytes = rest;
+    }
+
+    Ok((bytes, options))
 }
 
 impl<'a> Parse<'a> for TFTP {
@@ -164,11 +198,18 @@ impl<'a> Parse<'a> for TFTP {
                         "mail" => Mode::Mail,
                         _ => Mode::Unknown(mode.into()),
                     };
+
+                    let (input, options) = match parse_options(input) {
+                        Ok((input, options)) => (input, options),
+                        _ => (input, Vec::new()),
+                    };
+
                     (
                         input,
                         Packet::ReadWriteRequest {
                             filename: filename.into(),
                             mode,
+                            options,
                         },
                     )
                 }
@@ -203,6 +244,10 @@ impl<'a> Parse<'a> for TFTP {
                         },
                     )
                 }
+                OpCode::OptionAcknowledgement => match parse_options(input) {
+                    Ok((input, options)) => (input, Packet::OptAck(options)),
+                    _ => (input, Packet::OptAck(Vec::new())),
+                },
             };
             Ok((input, Some(Message { op_code, packet })))
         } else {
@@ -244,6 +289,36 @@ mod tests {
                     packet: Packet::ReadWriteRequest {
                         filename: String::from("log.txt"),
                         mode: Mode::NetASCII,
+                        options: vec![],
+                    },
+                })))),
+        case::opt_read(
+            &[
+                // OpCode: 1 (Read)
+                0x00, 0x01,
+                // Read
+                // Filename: log.txt
+                0x6c, 0x6f, 0x67, 0x2e, 0x74, 0x78, 0x74, 0x00,
+                // Mode: netascii
+                0x6e, 0x65, 0x74, 0x61, 0x73, 0x63, 0x69, 0x69, 0x00,
+                // Options
+                // Option name: tsize
+                0x74, 0x73, 0x69, 0x7a, 0x65, 0x00,
+                // Option value: 0
+                0x30, 0x00,
+            ],
+            Ok((&[] as &[u8],
+                Some(Message {
+                    op_code: OpCode::ReadRequest,
+                    packet: Packet::ReadWriteRequest {
+                        filename: String::from("log.txt"),
+                        mode: Mode::NetASCII,
+                        options: vec![
+                            OptionExtension {
+                                name: String::from("tsize"),
+                                value: String::from("0"),
+                            }
+                        ],
                     },
                 })))),
         case::write(
@@ -262,6 +337,44 @@ mod tests {
                     packet: Packet::ReadWriteRequest {
                         filename: String::from("log.txt"),
                         mode: Mode::Octet,
+                        options: vec![],
+                    },
+                })))),
+        case::opt_write(
+            &[
+                // OpCode: 2 (Write)
+                0x00, 0x02,
+                // Write
+                // Filename: log.txt
+                0x6c, 0x6f, 0x67, 0x2e, 0x74, 0x78, 0x74, 0x00,
+                // Mode: octet
+                0x4f, 0x63, 0x54, 0x65, 0x54, 0x00,
+                // Options
+                // Option name: tsize
+                0x74, 0x73, 0x69, 0x7a, 0x65, 0x00,
+                // Option value: 0
+                0x30, 0x00,
+                // Option name: blksize
+                0x62, 0x6c, 0x6b, 0x73, 0x69, 0x7a, 0x65, 0x00,
+                // Option value: 1432
+                0x31, 0x34, 0x33, 0x32, 0x00,
+            ],
+            Ok((&[] as &[u8],
+                Some(Message {
+                    op_code: OpCode::WriteRequest,
+                    packet: Packet::ReadWriteRequest {
+                        filename: String::from("log.txt"),
+                        mode: Mode::Octet,
+                        options: vec![
+                            OptionExtension {
+                                name: String::from("tsize"),
+                                value: String::from("0"),
+                            },
+                            OptionExtension {
+                                name: String::from("blksize"),
+                                value: String::from("1432"),
+                            }
+                        ],
                     },
                 })))),
         case::unknown_mode(
@@ -280,6 +393,7 @@ mod tests {
                     packet: Packet::ReadWriteRequest {
                         filename: String::from("log.txt"),
                         mode: Mode::Unknown("StRaNgEr".into()),
+                        options: vec![],
                     },
                 })))),
         case::no_null(
@@ -322,6 +436,26 @@ mod tests {
                 Some(Message {
                    op_code: OpCode::Acknowledgement,
                    packet: Packet::Ack(16),
+                })))),
+        case::opt_ack(
+            &[
+                // OpCode: 6 (OptionAcknowledgement)
+                0x00, 0x06,
+                // Options
+                // Option name: tsize
+                0x74, 0x73, 0x69, 0x7a, 0x65, 0x00,
+                // Option value: 0
+                0x30, 0x00,
+            ],
+            Ok((&[] as &[u8],
+                Some(Message {
+                    op_code: OpCode::OptionAcknowledgement,
+                    packet: Packet::OptAck(
+                        vec![OptionExtension {
+                            name: String::from("tsize"),
+                            value: String::from("0"),
+                        }],
+                    )
                 })))),
         case::error(
             &[
