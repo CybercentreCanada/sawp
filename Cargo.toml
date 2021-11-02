@@ -53,6 +53,10 @@ criterion = "=0.3.4"
 sawp-ffi = { path = "sawp-ffi", version = "^0.7.0", optional = true}
 nom = "5.1.2"
 
+# TODO: fails to build with half 1.8 on our MSRV of 1.41.1
+# remove this when we bump up our MSRV
+half = "~1.7"
+
 [[bench]]
 name = "modbus"
 path = "benches/modbus.rs"
