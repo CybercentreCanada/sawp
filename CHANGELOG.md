@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+### Added
+- makefile: install target
+- sawp-tftp: option extension parsing
+
+### Fixed / Changed
+- cargo: force dependency to half 1.7
 
 ## [0.7.0] - 2021-09-24
 ### Added

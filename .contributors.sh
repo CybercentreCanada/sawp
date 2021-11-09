@@ -121,7 +121,7 @@ function mailmap() {
 }
 
 # exit with the return value of this command
-validate_contributors
+validate_contributors || :
 
 echo "Changes"
 echo "======="
