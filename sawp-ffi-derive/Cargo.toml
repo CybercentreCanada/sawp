@@ -1,6 +1,6 @@
 [package]
 name = "sawp-ffi-derive"
-version = "0.7.0"
+version = "0.8.0"
 authors = ["Canadian Centre for Cyber Security <sa-sawp@cyber.gc.ca>"]
 description = "Generate cbindgen compatible member accessors for structs and enums"
 readme = "../README.md"
@@ -24,7 +24,7 @@ proc-macro2 = "1.0"
 heck = "0.3"
 
 [dev-dependencies]
-sawp-flags = { path = "../sawp-flags", version = "^0.7.0"}
+sawp-flags = { path = "../sawp-flags", version = "^0.8.0"}
 
 [lib]
 proc-macro = true

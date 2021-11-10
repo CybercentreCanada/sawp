@@ -1,6 +1,6 @@
 [package]
 name = "sawp-dns"
-version = "0.7.0"
+version = "0.8.0"
 authors = ["Canadian Centre for Cyber Security <sa-sawp@cyber.gc.ca>"]
 description = "SAWP Protocol Parser for DNS"
 readme = "../README.md"
@@ -25,9 +25,9 @@ verbose = ["sawp/verbose"]
 cbindgen = {version = "0.15", optional = true}
 
 [dependencies]
-sawp-ffi = {path = "../sawp-ffi", version = "^0.7.0", optional = true}
-sawp-flags = { path = "../sawp-flags", version = "^0.7.0"}
-sawp = {path = "..", version = "^0.7.0"}
+sawp-ffi = {path = "../sawp-ffi", version = "^0.8.0", optional = true}
+sawp-flags = { path = "../sawp-flags", version = "^0.8.0"}
+sawp = {path = "..", version = "^0.8.0"}
 nom = "5.1.2"
 num_enum = "0.5.1"
 byteorder = "1.4.3"
