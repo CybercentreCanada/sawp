@@ -161,12 +161,14 @@ package:
 	cp ${SOURCES} --parents target/_temp
 	tar -czvf target/rpmbuild/SOURCES/sawp-${CRATE_VERSION}.tar.gz target/_temp --transform 'flags=r;s#^target/_temp#sawp-${CRATE_VERSION}#'
 
+# note: symlinks must be relative to work with rpmbuild
 .PHONY: install
 install:
 	install -d $(LIBDIR)
 	install -d $(INCLUDEDIR)/sawp
 	for obj in libsawp.so $(patsubst %, libsawp_%.so, ${FFI_PACKAGES}); do \
 		install -m 0755 target/release/$$obj $(LIBDIR)/$$obj.${CRATE_VERSION}; \
+		(cd $(LIBDIR) && ln -s ./$$obj.${CRATE_VERSION_MAJOR} ./$$obj); \
 	done
 	install -m 644 target/sawp/*.h $(INCLUDEDIR)/sawp
 
