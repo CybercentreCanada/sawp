@@ -1,3 +1,5 @@
+# [Français](README.fr.md)
+
 # Security Aware Wire Protocol parsing library.
 
 This library contains parsers for various wire protocols,

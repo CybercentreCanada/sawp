@@ -1,3 +1,5 @@
+# [Français](CONTRIBUTING.fr.md)
+
 # Contributing
 
 This project is actively maintained and accepting open source contributions.
