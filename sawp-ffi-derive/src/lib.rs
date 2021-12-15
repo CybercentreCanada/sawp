@@ -233,11 +233,7 @@ pub fn derive_sawp_ffi(input: proc_macro::TokenStream) -> proc_macro::TokenStrea
 
 fn impl_sawp_ffi(ast: &syn::DeriveInput) -> TokenStream {
     let name = &ast.ident;
-    let ffi_metas: Vec<syn::NestedMeta> = ast
-        .attrs
-        .iter()
-        .flat_map(|attr| get_ffi_meta(attr))
-        .collect();
+    let ffi_metas: Vec<syn::NestedMeta> = ast.attrs.iter().flat_map(get_ffi_meta).collect();
     let prefix = get_ffi_prefix(&ffi_metas);
     match &ast.data {
         syn::Data::Struct(data) => gen_struct_accessors(&prefix, name, data),
@@ -386,11 +382,8 @@ fn gen_struct_accessors(
                 _ => continue,
             }
 
-            let ffi_metas: Vec<syn::NestedMeta> = field
-                .attrs
-                .iter()
-                .flat_map(|attr| get_ffi_meta(attr))
-                .collect();
+            let ffi_metas: Vec<syn::NestedMeta> =
+                field.attrs.iter().flat_map(get_ffi_meta).collect();
             if has_ffi_skip_meta(&ffi_metas) {
                 continue;
             }
@@ -627,11 +620,8 @@ fn gen_enum_accessors(
             match &variant.fields {
                 syn::Fields::Named(fields) => {
                     for field in &fields.named {
-                        let ffi_metas: Vec<syn::NestedMeta> = field
-                            .attrs
-                            .iter()
-                            .flat_map(|attr| get_ffi_meta(attr))
-                            .collect();
+                        let ffi_metas: Vec<syn::NestedMeta> =
+                            field.attrs.iter().flat_map(get_ffi_meta).collect();
                         if has_ffi_skip_meta(&ffi_metas) {
                             continue;
                         }
@@ -648,11 +638,8 @@ fn gen_enum_accessors(
                 }
                 syn::Fields::Unnamed(fields) => {
                     for (i, field) in (&fields.unnamed).into_iter().enumerate() {
-                        let ffi_metas: Vec<syn::NestedMeta> = field
-                            .attrs
-                            .iter()
-                            .flat_map(|attr| get_ffi_meta(attr))
-                            .collect();
+                        let ffi_metas: Vec<syn::NestedMeta> =
+                            field.attrs.iter().flat_map(get_ffi_meta).collect();
                         if has_ffi_skip_meta(&ffi_metas) {
                             continue;
                         }
