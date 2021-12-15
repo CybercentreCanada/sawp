@@ -5,6 +5,7 @@ authors = ["Canadian Centre for Cyber Security <sa-sawp@cyber.gc.ca>"]
 description = "SAWP Protocol Parser for GRE"
 readme = "../README.md"
 edition = "2018"
+license = "MIT"
 license-file = "../LICENSE"
 repository = "https://github.com/CyberCentreCanada/sawp"
 homepage = "https://github.com/CyberCentreCanada/sawp"
