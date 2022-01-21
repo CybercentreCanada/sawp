@@ -1,11 +1,11 @@
 # These settings are shared across all workspace packages
 # Use Cargo.toml to customize settings for a particular package.
-no-dev-version=true
+dev-version=false
 enable-all-features=true
 
 # Handled in CI pipeline.
-disable-publish=true
-disable-push=true
+publish=false
+push=false
 
 # Release all workspace packages in a single commit.
 consolidate-commits=true

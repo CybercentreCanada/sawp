@@ -82,6 +82,10 @@ env:
 	@echo LIBDIR: $(LIBDIR)
 	@echo INCLUDEDIR: ${INCLUDEDIR}
 
+.PHONY: version
+version:
+	@echo ${CRATE_VERSION}
+
 # prevents intermediate targets from getting removed
 .SECONDARY: 
 

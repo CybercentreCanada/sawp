@@ -1,11 +1,7 @@
 steps:
   # Get the package version
-  - script: echo "##vso[task.setvariable variable=version]$((test -f Cargo.lock || cargo generate-lockfile) && cargo pkgid | cut -d# -f 2)"
+  - script: echo "##vso[task.setvariable variable=version]$(make version)"
     displayName: package version
-
-  # Check dependencies
-  - script: rpmbuild --version || yum install -y rpmbuild
-    displayName: install rpmbuild
 
   # Make rpm
   - script: make rpm

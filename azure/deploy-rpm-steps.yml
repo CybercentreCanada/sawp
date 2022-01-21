@@ -1,0 +1,49 @@
+# deploys the provided rpms to the repository
+
+parameters:
+- name: service_connection
+  displayName: 'Service Connection'
+  type: string
+- name: source_folder
+  displayName: 'Source Folder'
+  type: string
+- name: source_contents
+  displayName: 'Source Contents'
+  type: string
+- name: target_folder
+  displayName: 'Target Folder'
+  type: string
+- name: deploy
+  displayName: 'Deploy rpms to repo'
+  type: boolean
+
+steps:
+
+# Publish it within the pipeline
+- task: PublishBuildArtifacts@1
+  inputs:
+    pathToPublish: ${{ parameters.source_folder }}
+    artifactName: rpms
+
+# Deploy rpms to repository
+- ${{ if eq(parameters.deploy, true) }}:
+
+  # Copy RPM Files to the repository
+  - task: CopyFilesOverSSH@0
+    inputs:
+      sshEndpoint: ${{ parameters.service_connection }}
+      sourceFolder: ${{ parameters.source_folder }}
+      contents: ${{ parameters.source_contents }}
+      targetFolder: ${{ parameters.target_folder }}
+      cleanTargetFolder: false
+      overwrite: false
+      failOnEmptySource: true
+      flattenFolders: false
+
+  # Update the RPM repo
+  - task: SSH@0
+    inputs:
+      sshEndpoint: ${{ parameters.service_connection }}
+      runOptions: 'inline'
+      inline: sudo createrepo ${{ parameters.target_folder }}
+      interpreterCommand: /bin/bash

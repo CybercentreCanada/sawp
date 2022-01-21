@@ -18,7 +18,7 @@ parameters:
   - name: args
     displayName: Cargo Release Extra Args
     type: string
-    default: --no-confirm --skip-push --skip-publish 
+    default: --no-confirm --skip-push --skip-publish --execute
   - name: name
     displayName: Author Name
     type: string
@@ -27,6 +27,13 @@ parameters:
     displayName: Author Email
     type: string
     default: sa-sawp@cyber.gc.ca
+  - name: deploy
+    displayName: 'Deploy rpm to repo?'
+    type: boolean
+    default: true
+
+variables:
+  rpm_dir: target/rpmbuild/RPMS/x86_64/
 
 trigger: none
 pr: none
@@ -37,7 +44,7 @@ resources:
 jobs:
 - job: release_sawp
   displayName: Release SAWP
-  pool: sawp-builders
+  pool: $(pool)
   steps:
     # SAWP Steps
     # ==============
@@ -68,10 +75,6 @@ jobs:
     # Release
     # ==============
 
-    # Check if cargo release is installed
-    - script: cargo release --help > /dev/null || cargo install cargo-release
-      displayName: install cargo-release
-
     # Commit and tag the release
     - script: cargo release ${{ parameters.package }} ${{ parameters.args }} -- ${{ parameters.level }}
       displayName: cargo release
@@ -83,17 +86,11 @@ jobs:
     # ==============
     - template: package-steps.yml
 
-    # Get the package version
-    - script: echo "##vso[task.setvariable variable=version]$((test -f Cargo.lock || cargo generate-lockfile) && cargo pkgid | cut -d# -f 2)"
-      displayName: package version
-
     # Push RPM to repository
-    - script: azure/deploy-rpm.sh
-      env:
-        SRC_DIR: target/rpmbuild/RPMS/x86_64
-        SRC_PATTERN: sawp-$(version)*.rpm
-        RPM_HOST: $(rpm_host)
-        RPM_USER: $(rpm_user)
-        RPM_DIR: $(rpm_dir)
-        RPM_CHOWN: root:root
-        RPM_CHMOD: 644
+    - template: deploy-rpm-steps.yml
+      parameters:
+        service_connection: $(rpm_service_connection)
+        source_folder: $(rpm_dir)
+        source_contents: "*.rpm"
+        target_folder: $(rpm_repo_dir)
+        deploy: ${{ parameters.deploy }}

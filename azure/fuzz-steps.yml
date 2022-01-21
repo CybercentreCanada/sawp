@@ -1,0 +1,21 @@
+steps:
+  # Setup
+  # ============
+  # Configure environment
+  #
+
+  # Use cargo install path
+  - script: echo "##vso[task.setvariable variable=PATH;]$PATH:/usr/local/cargo/bin"
+    displayName: set path
+
+  # Give builder access to cached rust install
+  - script: sudo chown -R AzDevOps /usr/local/cargo /usr/local/rustup
+    displayName: chown cargo dir
+
+  # QA Steps
+  # ========
+  #
+
+  # Build fuzz
+  - script: cargo +nightly fuzz build
+    displayName: build fuzz

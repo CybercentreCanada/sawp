@@ -17,18 +17,25 @@ schedules:
 resources:
 - repo: self
 
-jobs:
-- job: test_sawp
-  displayName: Test SAWP
-  pool: sawp-builders
-  steps:
-    # SAWP Steps
-    # ==============
-    - checkout: self
-      path: sawp
-    - template: qa-steps.yml
-    - template: package-steps.yml
+stages:
+- stage: test
+  pool: $(pool)
+  dependsOn: []
+  jobs:
+  - job: test
+    displayName: Test SAWP
+    steps:
+      - template: qa-steps.yml
+      - template: package-steps.yml
 
-    # Check if cargo release would pass
-    - script: cargo release --workspace --dry-run -- patch
-      displayName: check release
+      # Check if cargo release would pass
+      - script: cargo release --workspace -- patch
+        displayName: check release
+- stage: fuzz
+  pool: $(pool)
+  dependsOn: []
+  jobs:
+  - job: fuzz
+    displayName: Fuzz SAWP
+    steps:
+      - template: fuzz-steps.yml

@@ -1,44 +1,19 @@
 steps:
-  # Dependencies
+  # Setup
   # ============
-  # Install or update dependencies
+  # Configure environment
   #
 
-  # System packages
-  # valgrind 3.17 is required and should be install from source
-  - script: valgrind --version || sudo yum install -y valgrind
-    displayName: install valgrind
-
-  # Use local cargo install path
-  - script: echo "##vso[task.setvariable variable=PATH;]$PATH:$HOME/.cargo/bin"
+  # Use cargo install path
+  - script: echo "##vso[task.setvariable variable=PATH;]$PATH:/usr/local/cargo/bin"
     displayName: set path
 
-  # Installs cargo and rust stable
-  - script: cargo --version || curl https://sh.rustup.rs -sSf | sh -s -- -y
-    displayName: install rust
-
-  # - STABLE
-  - script: rustup update stable
-    displayName: install rust (stable)
-  - script: cargo install cargo-valgrind cargo-tarpaulin cbindgen
-    displayName: update packages (stable)
-
-  # - MSRV
-  - script: rustup update 1.41.1
-    displayName: install rust (msrv)
+  # Give builder access to cached rust install
+  - script: sudo chown -R AzDevOps /usr/local/cargo /usr/local/rustup
+    displayName: chown cargo dir
   
-  # - NIGHTLY
-  - script: rustup update nightly
-    displayName: install rust (nightly)
-  
-  - script: rustup +nightly component add rust-src
-    displayName: install rust-src (nightly)
-
-  - script: cargo +nightly install cargo-fuzz
-    displayName: update packages (nightly)
-
   # Get the package version
-  - script: echo "##vso[task.setvariable variable=version]$((test -f Cargo.lock || cargo generate-lockfile) && cargo pkgid | cut -d# -f 2)"
+  - script: echo "##vso[task.setvariable variable=version]$(make version)"
     displayName: package version
 
   # QA Steps
@@ -93,10 +68,6 @@ steps:
   # Needed until this issue is fixed: https://github.com/rust-lang/cargo/issues/6669
   - script: cargo test --workspace --doc --all-features
     displayName: run doc tests
-
-  # Build fuzz
-  - script: cargo +nightly fuzz build
-    displayName: build fuzz
 
   # Check code coverage
   - script: |
