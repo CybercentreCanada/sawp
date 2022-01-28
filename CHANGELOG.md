@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+### Added
+- sawp-pop3: initial release of protocol parser.
+- sawp-ffi: add helper function for nested containers.
+- make: add version target.
+- doc: add french translations.
+- docker: add Dockerfile.
+
+### Fixed / Changed
+- azure: pipeline improvements.
+- sawp: clippy updates.
+- make: fix symlinking issue in install target.
 
 ## [0.8.0] - 2021-11-10
 ### Added
