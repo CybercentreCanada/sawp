@@ -277,14 +277,41 @@ fn is_string_type(ty: &syn::Type) -> bool {
 /// ```
 fn split_generic(ty: &syn::Type) -> Option<(syn::Ident, syn::Ident)> {
     if let syn::Type::Path(ty) = ty {
-        let segment = &ty.path.segments.first().expect("Path with no segments");
-        if let syn::PathArguments::AngleBracketed(arguments) = &segment.arguments {
-            if arguments.args.len() == 1 {
-                if let syn::GenericArgument::Type(syn::Type::Path(arg)) = &arguments.args[0] {
-                    if let Some(inner_ident) = arg.path.get_ident() {
-                        return Some((segment.ident.clone(), (*inner_ident).clone()));
-                    }
+        if let Some((ident, arg)) = split_generic_helper(ty) {
+            if let Some(inner_ident) = arg.path.get_ident() {
+                return Some((ident, (*inner_ident).clone()));
+            }
+        }
+    }
+    None
+}
+
+/// Get outer, mid and inner types of a generic data type
+/// Returns `None` if there isn't exactly 2 generics
+///
+/// # Example
+/// ```ignore
+/// Vec<Vec<u8>> -> Some(Vec, Vec, u8)
+/// ```
+fn split_generic_multi(ty: &syn::Type) -> Option<(syn::Ident, syn::Ident, syn::Ident)> {
+    if let syn::Type::Path(ty) = ty {
+        if let Some((ident_1, arg)) = split_generic_helper(ty) {
+            if let Some((ident_2, arg)) = split_generic_helper(&arg) {
+                if let Some(ident_3) = arg.path.get_ident() {
+                    return Some((ident_1, ident_2, (*ident_3).clone()));
                 }
+            }
+        }
+    }
+    None
+}
+
+fn split_generic_helper(ty: &syn::TypePath) -> Option<(syn::Ident, syn::TypePath)> {
+    let segment = &ty.path.segments.first().expect("Path with no segments");
+    if let syn::PathArguments::AngleBracketed(arguments) = &segment.arguments {
+        if arguments.args.len() == 1 {
+            if let syn::GenericArgument::Type(syn::Type::Path(arg)) = &arguments.args[0] {
+                return Some((segment.ident.clone(), arg.clone()));
             }
         }
     }
@@ -493,6 +520,23 @@ fn gen_field_accessor(
                     }
                 });
             }
+        }
+    } else if let Some((outer, mid, inner)) = split_generic_multi(ty) {
+        if outer.to_string().as_str() == "Vec"
+            && mid.to_string().as_str() == "Vec"
+            && inner.to_string().as_str() == "u8"
+        {
+            let idx_name = format_ident!("{}_ptr_to_idx", func_name);
+            accessors.extend(quote! {
+                /// Get ptr to member of `#struct_variable.#field` at index
+                /// # Safety
+                /// function will panic if called with null or an index outside bounds
+                #[no_mangle]
+                pub unsafe extern "C" fn #idx_name(#struct_variable: *const #struct_name, n: usize) -> *const #inner {
+                    #deref_variable
+                    (#ret_var[n]).as_ptr()
+                }
+            });
         }
     }
     accessors
@@ -980,6 +1024,28 @@ mod tests {
                 Empty,
             }
         "#;
+        let parsed: syn::DeriveInput = syn::parse_str(input).unwrap();
+        impl_sawp_ffi(&parsed);
+    }
+
+    #[test]
+    fn test_macro_struct_multi() {
+        let input = r#"
+            #[sawp_ffi(prefix = "sawp")]
+            pub struct MyStructMulti {
+                pub num: usize,
+                #[sawp_ffi(copy)]
+                pub version: Version,
+                #[sawp_ffi(flag = "u8")]
+                pub file_type: Flags<FileType>,
+                private: usize,
+                #[sawp_ffi(skip)]
+                skipped: usize,
+                pub complex: Vec<Vec<u8>>,
+                pub string: String,
+                pub option: Option<u8>,
+            }
+	"#;
         let parsed: syn::DeriveInput = syn::parse_str(input).unwrap();
         impl_sawp_ffi(&parsed);
     }
