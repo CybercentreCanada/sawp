@@ -4,7 +4,6 @@ version = "0.8.0"
 authors = ["Canadian Centre for Cyber Security <sa-sawp@cyber.gc.ca>"]
 description = "FFI helper macros and traits"
 readme = "../README.md"
-license = "MIT"
 license-file = "../LICENSE"
 repository = "https://github.com/CybercentreCanada/sawp"
 homepage = "https://github.com/CybercentreCanada/sawp"

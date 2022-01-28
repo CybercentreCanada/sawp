@@ -5,7 +5,6 @@ authors = ["Canadian Centre for Cyber Security <sa-sawp@cyber.gc.ca>"]
 description = "Security Aware Wire Protocol parsing library"
 readme = "README.md"
 edition = "2018"
-license = "MIT"
 license-file = "LICENSE"
 repository = "https://github.com/CybercentreCanada/sawp"
 homepage = "https://github.com/CybercentreCanada/sawp"
