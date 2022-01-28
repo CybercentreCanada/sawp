@@ -46,6 +46,15 @@ jobs:
   displayName: Release SAWP
   pool: $(pool)
   steps:
+    # Setup
+    # ============
+    # Configure environment
+    #
+
+    # git >= 2.0 is required
+    - script: echo "##vso[task.setvariable variable=PATH;]/opt/rh/sclo-git25/root/usr/bin:$PATH"
+      displayName: set path
+
     # SAWP Steps
     # ==============
     - checkout: self
