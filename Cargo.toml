@@ -32,6 +32,7 @@ members = [
     "sawp-flags",
     "sawp-flags-derive",
     "sawp-gre",
+    "sawp-pop3",
 ]
 
 [features]

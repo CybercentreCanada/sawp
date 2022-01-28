@@ -1,0 +1,42 @@
+[package]
+name = "sawp-pop3"
+version = "0.8.0"
+authors = ["Canadian Centre for Cyber Security <sa-sawp@cyber.gc.ca>"]
+description = "SAWP Protocol Parser for POP3"
+readme = "../README.md"
+edition = "2018"
+license = "MIT"
+license-file = "../LICENSE"
+repository = "https://github.com/CybercentreCanada/sawp"
+homepage = "https://github.com/CybercentreCanada/sawp"
+keywords = ["pop3", "parser", "protocol", "email", "hardware", "automation"]
+categories = ["parsing", "network-programming"]
+include = [
+    "Cargo.toml",
+    "../LICENSE",
+    "../README.md",
+    "src/**/*.rs",
+]
+
+[features]
+verbose = ["sawp/verbose"]
+ffi = ["cbindgen", "sawp/ffi", "sawp-ffi"]
+
+[build-dependencies]
+cbindgen = {version = "0.15", optional = true}
+
+[dependencies]
+sawp-ffi = { path = "../sawp-ffi", version = "^0.8.0", optional = true}
+sawp = { path = "..", version = "^0.8.0"}
+sawp-flags = { path = "../sawp-flags", version = "^0.8.0"}
+nom = "5.1.2"
+
+[lib]
+crate-type = ["cdylib", "rlib", "staticlib"]
+
+[dev-dependencies]
+rstest = "0.6.4"
+
+# Override default replacements
+[package.metadata.release]
+pre-release-replacements = []
