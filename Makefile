@@ -63,7 +63,8 @@ PUBLISH := \
 	sawp-tftp \
 	sawp-gre \
 	sawp-dns \
-	sawp-rest \
+	sawp-resp \
+	sawp-pop3 \
 	sawp-json \
 	sawp-file
 
