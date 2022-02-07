@@ -18,7 +18,7 @@ parameters:
   - name: args
     displayName: Cargo Release Extra Args
     type: string
-    default: --no-confirm --skip-push --skip-publish --execute
+    default: --no-confirm --no-push --no-publish --execute
   - name: name
     displayName: Author Name
     type: string
