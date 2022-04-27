@@ -1179,7 +1179,9 @@ impl<'a> Probe<'a> for Modbus {
     fn probe(&self, input: &'a [u8], direction: Direction) -> Status {
         match self.parse(input, direction) {
             Ok((_, Some(msg))) => {
-                if msg.error_flags == ErrorFlags::none() {
+                if msg.error_flags == ErrorFlags::none()
+                    && msg.function.code != FunctionCode::Unknown
+                {
                     Status::Recognized
                 } else {
                     Status::Unrecognized
