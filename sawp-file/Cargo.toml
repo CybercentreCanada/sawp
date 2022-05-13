@@ -23,6 +23,10 @@ rmp-serde = "0.14.4"
 serde = "1.0.116"
 serde_derive = "1.0.116"
 
+# TODO: rmp 0.8.11 is not compatible with our MSRV of 1.41.1
+# remove this when we bump our MSRV
+rmp = "=0.8.10"
+
 # Override default replacements
 [package.metadata.release]
 pre-release-replacements = []
