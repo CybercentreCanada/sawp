@@ -12,8 +12,8 @@ pub struct ParseResult {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn sawp_modbus_create() -> *mut Modbus {
-    let parser = Modbus {};
+pub unsafe extern "C" fn sawp_modbus_create(probe_strict: bool) -> *mut Modbus {
+    let parser = Modbus { probe_strict };
     parser.into_ffi_ptr()
 }
 

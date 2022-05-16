@@ -17,7 +17,7 @@
 //! use sawp_modbus::{Modbus, Message};
 //!
 //! fn parse_bytes(input: &[u8]) -> std::result::Result<&[u8], Error> {
-//!     let modbus = Modbus {};
+//!     let modbus = Modbus::default();
 //!     let mut bytes = input;
 //!     while bytes.len() > 0 {
 //!         // If we know that this is a request or response, change the Direction
@@ -464,8 +464,12 @@ pub enum Data {
     Empty,
 }
 
-#[derive(Debug)]
-pub struct Modbus {}
+#[derive(Debug, Default)]
+pub struct Modbus {
+    /// Enable strict probing, such as only recognizing
+    /// public assigned function codes
+    probe_strict: bool,
+}
 
 /// Breakdown of the parsed modbus bytes
 #[cfg_attr(feature = "ffi", derive(GenerateFFI))]
@@ -1179,7 +1183,9 @@ impl<'a> Probe<'a> for Modbus {
     fn probe(&self, input: &'a [u8], direction: Direction) -> Status {
         match self.parse(input, direction) {
             Ok((_, Some(msg))) => {
-                if msg.error_flags == ErrorFlags::none() {
+                if msg.error_flags == ErrorFlags::none()
+                    && (!self.probe_strict || msg.function.code != FunctionCode::Unknown)
+                {
                     Status::Recognized
                 } else {
                     Status::Unrecognized
@@ -1964,7 +1970,7 @@ mod tests {
         ),
     )]
     fn test_parse(input: &[u8], expected: Result<(usize, Option<<Modbus as Protocol>::Message>)>) {
-        let modbus = Modbus {};
+        let modbus = Modbus::default();
         assert_eq!(
             modbus
                 .parse(input, Direction::Unknown)
@@ -2573,7 +2579,7 @@ mod tests {
         input: &[u8],
         expected: Result<(usize, Option<<Modbus as Protocol>::Message>)>,
     ) {
-        let modbus = Modbus {};
+        let modbus = Modbus::default();
         assert_eq!(
             modbus
                 .parse(input, sawp::parser::Direction::ToServer)
@@ -2865,7 +2871,7 @@ mod tests {
         input: &[u8],
         expected: Result<(usize, Option<<Modbus as Protocol>::Message>)>,
     ) {
-        let modbus = Modbus {};
+        let modbus = Modbus::default();
         assert_eq!(
             modbus
                 .parse(input, sawp::parser::Direction::ToClient)
@@ -3220,9 +3226,10 @@ mod tests {
 
     #[rstest(
         input,
+        probe_strict,
         expected,
-        case::empty(b"", Status::Incomplete),
-        case::hello_world(b"hello world", Status::Unrecognized),
+        case::empty(b"", false, Status::Incomplete),
+        case::hello_world(b"hello world", false, Status::Unrecognized),
         case::diagnostic(
             &[
                 // Transaction ID: 1
@@ -3240,6 +3247,7 @@ mod tests {
                 // Data: 0000
                 0x00, 0x00
             ],
+            false,
             Status::Recognized
         ),
         case::invalid_diagnostic(
@@ -3255,11 +3263,64 @@ mod tests {
                 // Function Code: Diagnostics (8)
                 0x08
             ],
+            false,
             Status::Unrecognized
-        )
+        ),
+        case::unknown_func(
+            &[
+                // Transaction ID: 1
+                0x00, 0x01,
+                // Protocol ID: 0
+                0x00, 0x00,
+                // Length: 2
+                0x00, 0x02,
+                // Unit ID: 1
+                0x01,
+                // Function Code: Unknown (100)
+                0x64
+            ],
+            false,
+            Status::Recognized
+        ),
+        case::strict_diagnostic(
+            &[
+                // Transaction ID: 1
+                0x00, 0x01,
+                // Protocol ID: 0
+                0x00, 0x00,
+                // Length: 6
+                0x00, 0x06,
+                // Unit ID: 3
+                0x03,
+                // Function Code: Diagnostics (8)
+                0x08,
+                // Diagnostic Code: Force Listen Only Mode (4)
+                0x00, 0x04,
+                // Data: 0000
+                0x00, 0x00
+            ],
+            true,
+            Status::Recognized
+        ),
+        case::strict_unknown_func(
+            &[
+                // Transaction ID: 1
+                0x00, 0x01,
+                // Protocol ID: 0
+                0x00, 0x00,
+                // Length: 2
+                0x00, 0x02,
+                // Unit ID: 1
+                0x01,
+                // Function Code: Unknown (100)
+                0x64
+            ],
+            true,
+            Status::Unrecognized
+        ),
     )]
-    fn test_probe(input: &[u8], expected: Status) {
-        let modbus = Modbus {};
+    fn test_probe(input: &[u8], probe_strict: bool, expected: Status) {
+        let modbus = Modbus { probe_strict };
         assert_eq!(modbus.probe(input, Direction::Unknown), expected);
     }
 
