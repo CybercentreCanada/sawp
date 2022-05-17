@@ -29,7 +29,7 @@ stages:
       - template: package-steps.yml
 
       # Check if cargo release would pass
-      - script: cargo release --workspace -- patch
+      - script: cargo release --allow-branch HEAD --workspace -- patch
         displayName: check release
 - stage: fuzz
   pool: $(pool)
