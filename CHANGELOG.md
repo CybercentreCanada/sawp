@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+### Fixed / Changed
+- modbus: add option for strict probing
+- derive: pin proc-macro-crate to v1.1.0
+- file: pin rmp to 0.8.10
+- azure: fix use of cargo release
 
 ## [0.9.0] - 2022-02-07
 ### Added
