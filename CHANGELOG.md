@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+
+## [0.10.0] - 2022-05-20
 ### Fixed / Changed
 - modbus: add option for strict probing
 - derive: pin proc-macro-crate to v1.1.0
@@ -108,7 +110,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - sawp-modbus: FFI support.
 
 <!-- next-url -->
-[Unreleased]: https://github.com/CybercentreCanada/sawp/compare/sawp-0.9.0...HEAD
+[Unreleased]: https://github.com/CybercentreCanada/sawp/compare/sawp-0.10.0...HEAD
+[0.10.0]: https://github.com/CybercentreCanada/sawp/releases/tag/sawp-0.10.0
 [0.9.0]: https://github.com/CybercentreCanada/sawp/releases/tag/sawp-0.9.0
 [0.8.0]: https://github.com/CybercentreCanada/sawp/releases/tag/sawp-0.8.0
 [0.7.0]: https://github.com/CybercentreCanada/sawp/releases/tag/sawp-0.7.0
