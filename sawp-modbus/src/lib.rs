@@ -468,7 +468,7 @@ pub enum Data {
 pub struct Modbus {
     /// Enable strict probing, such as only recognizing
     /// public assigned function codes
-    probe_strict: bool,
+    pub probe_strict: bool,
 }
 
 /// Breakdown of the parsed modbus bytes
