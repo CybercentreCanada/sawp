@@ -2,7 +2,7 @@ parameters:
   - name: src
     displayName: Source Branch
     type: string
-    default: master
+    default: main
   - name: dest
     displayName: Destination Branch
     type: string
@@ -66,7 +66,7 @@ jobs:
     - script: git config user.name ${{ parameters.name }}
     - script: git config user.email ${{ parameters.email }}
 
-    # The src branch is the code you want to release -- e.g. master
+    # The src branch is the code you want to release -- e.g. main
     # The dest branch is where you want the code to go -- e.g. staging
     - script: git remote update origin
       displayName: update

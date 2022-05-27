@@ -7,7 +7,7 @@ name="sa-sawp"
 email="sa-sawp@cyber.gc.ca"
 mailmap=
 mapfile=
-ref="master"
+ref="main"
 
 function help() {
 read -r -d '' HELP << EOM
