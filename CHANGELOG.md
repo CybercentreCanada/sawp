@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+### Fixed / Changed
+- modbus: make parser fields public
 
 ## [0.10.0] - 2022-05-20
 ### Fixed / Changed
