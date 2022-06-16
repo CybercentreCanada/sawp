@@ -1160,7 +1160,7 @@ impl Message {
                         data: _,
                     },
             } => {
-                if *quantity > 0 {
+                if *quantity > 0 && *quantity <= std::u16::MAX - address {
                     Some((address + 1)..=(address + quantity))
                 } else {
                     None
