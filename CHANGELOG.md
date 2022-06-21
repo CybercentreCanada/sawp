@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+### Fixed / Changed
+- modbus: fix integer overflow in address and quantity
 
 ## [0.11.0] - 2022-05-27
 ### Fixed / Changed
