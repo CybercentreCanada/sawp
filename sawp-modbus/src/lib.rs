@@ -3218,6 +3218,26 @@ mod tests {
                 error_flags: ErrorFlags::none(),
             },
             None
+        ),
+        // test with overflow of address + quantity
+        case::read_file_record(
+            Message{
+                transaction_id: 1,
+                protocol_id: 0,
+                length: 10,
+                unit_id: 1,
+                function: Function { raw: 1, code: FunctionCode::RdCoils },
+                access_type: AccessType::COILS | AccessType::READ,
+                category: CodeCategory::PUBLIC_ASSIGNED.into(),
+                data: Data::Read (
+                    Read::Request {
+                        address: 0xA000,
+                        quantity: 0xC000,
+                    }
+                ),
+                error_flags: ErrorFlags::none(),
+            },
+            None
         )
     )]
     fn test_address_range(msg: Message, expected: Option<RangeInclusive<u16>>) {
