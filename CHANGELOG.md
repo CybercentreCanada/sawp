@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+
+## [0.11.1] - 2022-06-21
 ### Fixed / Changed
 - modbus: fix integer overflow in address and quantity
 
@@ -116,7 +118,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - sawp-modbus: FFI support.
 
 <!-- next-url -->
-[Unreleased]: https://github.com/CybercentreCanada/sawp/compare/sawp-0.11.0...HEAD
+[Unreleased]: https://github.com/CybercentreCanada/sawp/compare/sawp-0.11.1...HEAD
+[0.11.1]: https://github.com/CybercentreCanada/sawp/releases/tag/sawp-0.11.1
 [0.11.0]: https://github.com/CybercentreCanada/sawp/releases/tag/sawp-0.11.0
 [0.10.0]: https://github.com/CybercentreCanada/sawp/releases/tag/sawp-0.10.0
 [0.9.0]: https://github.com/CybercentreCanada/sawp/releases/tag/sawp-0.9.0

@@ -1,6 +1,6 @@
 [package]
 name = "sawp"
-version = "0.11.0"
+version = "0.11.1"
 authors = ["Canadian Centre for Cyber Security <sa-sawp@cyber.gc.ca>"]
 description = "Security Aware Wire Protocol parsing library"
 readme = "README.md"
@@ -52,7 +52,7 @@ clap = "~2.33"
 criterion = "=0.3.4"
 
 [dependencies]
-sawp-ffi = { path = "sawp-ffi", version = "^0.11.0", optional = true}
+sawp-ffi = { path = "sawp-ffi", version = "^0.11.1", optional = true}
 nom = "5.1.2"
 
 # TODO: fails to build with half 1.8 on our MSRV of 1.41.1
