@@ -24,8 +24,8 @@
 CARGO ?= cargo
 DESTDIR ?= 
 PREFIX ?= /usr
-LIBDIR ?= $(DESTDIR)/$(PREFIX)/lib64
-INCLUDEDIR ?= $(DESTDIR)/$(PREFIX)/include
+LIBDIR ?= $(PREFIX)/lib64
+INCLUDEDIR ?= $(PREFIX)/include
 
 # Use cargo to get the version or fallback to sed
 $(eval CRATE_VERSION=$(shell \
@@ -169,18 +169,18 @@ package:
 # note: symlinks must be relative to work with rpmbuild
 .PHONY: install
 install:
-	install -d $(LIBDIR)
-	install -d $(INCLUDEDIR)/sawp
+	install -d $(DESTDIR)$(LIBDIR)
+	install -d $(DESTDIR)$(INCLUDEDIR)/sawp
 	for obj in libsawp.so $(patsubst %, libsawp_%.so, ${FFI_PACKAGES}); do \
-		install -m 0755 target/release/$$obj $(LIBDIR)/$$obj.${CRATE_VERSION}; \
-		(cd $(LIBDIR) && ln -s ./$$obj.${CRATE_VERSION_MAJOR} ./$$obj); \
+		install -m 0755 target/release/$$obj $(DESTDIR)$(LIBDIR)/$$obj.${CRATE_VERSION}; \
+		(cd $(DESTDIR)$(LIBDIR) && ln -s ./$$obj.${CRATE_VERSION_MAJOR} ./$$obj); \
 	done
-	install -m 644 target/sawp/*.h $(INCLUDEDIR)/sawp
+	install -m 644 target/sawp/*.h $(DESTDIR)$(INCLUDEDIR)/sawp
 
 .PHONY: uninstall
 uninstall:
-	rm -f $(LIBDIR)/libsawp*.so*
-	rm -rf $(INCLUDEDIR)/sawp
+	rm -f $(DESTDIR)$(LIBDIR)/libsawp*.so*
+	rm -rf $(DESTDIR)$(INCLUDEDIR)/sawp
 
 # cargo publish
 # =============
