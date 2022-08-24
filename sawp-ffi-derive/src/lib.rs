@@ -544,6 +544,7 @@ fn gen_field_accessor(
 
 /// Generate match branch for enum variant
 /// If match_variant is set, will bind that field as FIELD
+#[allow(clippy::unneeded_field_pattern)]
 fn gen_enum_named_match_branch(
     enum_name: &syn::Ident,
     variant: &syn::Variant,

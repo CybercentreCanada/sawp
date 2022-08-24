@@ -32,7 +32,7 @@ $(eval CRATE_VERSION=$(shell \
 	( \
 		(${CARGO} 1> /dev/null 2> /dev/null) \
 		&& (test -f Cargo.lock || ${CARGO} generate-lockfile) \
-		&& (${CARGO} pkgid | cut -d# -f 2 | cut -d: -f 2) \
+		&& (${CARGO} pkgid | cut -d@ -f 2 | cut -d: -f 2) \
 	) \
 	|| (sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml) \
 ))

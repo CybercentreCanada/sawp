@@ -1,0 +1,9 @@
+parameters:
+  name: version
+  type: string
+
+steps:
+  - script: rustup update ${{ parameters.version }}
+    displayName: "Install Rust version (${{ parameters.version }})"
+  - script: rustup component add --toolchain ${{ parameters.version }} clippy
+    displayName: "Install Clippy"

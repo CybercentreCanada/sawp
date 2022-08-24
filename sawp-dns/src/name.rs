@@ -160,7 +160,7 @@ mod test {
         Ok((
             b"".as_ref(),
             (
-                "sterling.freenode.net".as_bytes().to_vec(),
+                b"sterling.freenode.net".to_vec(),
                 ErrorFlags::none()
             )
         ))
@@ -191,7 +191,7 @@ mod test {
         Ok((
             b"".as_ref(),
             (
-                "sterling.freenode.net".as_bytes().to_vec(),
+                b"sterling.freenode.net".to_vec(),
                 ErrorFlags::none()
             )
         ))
@@ -408,7 +408,7 @@ mod test {
                 0xd4, 0xcc, 0xd6, 0x72, // 212.204.214.114
             ].as_ref(),
             (
-                "sterling.freenode.net\
+                b"sterling.freenode.net\
                 .sterling.freenode.net\
                 .sterling.freenode.net\
                 .sterling.freenode.net\
@@ -419,7 +419,7 @@ mod test {
                 .sterling.freenode.net\
                 .sterling.freenode.net\
                 .sterling.freenode.net\
-                .sterling.free".as_bytes().to_vec(),
+                .sterling.free".to_vec(),
                 ErrorFlags::DnsNameExceedsMaxLen.into()
             )
         ))

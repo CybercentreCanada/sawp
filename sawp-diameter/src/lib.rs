@@ -1,8 +1,6 @@
 //! Protocol References:
 //!     https://tools.ietf.org/html/rfc6733
 
-#![allow(clippy::upper_case_acronyms)]
-
 use sawp::error::Result;
 use sawp::parser::{Direction, Parse};
 use sawp::probe::Probe;
@@ -809,7 +807,7 @@ mod tests {
                     flags: 0x00,
                     length: 16,
                     vendor_id: None,
-                    value: Value::Unsigned64(528297886211),
+                    value: Value::Unsigned64(528_297_886_211),
                     padding: Vec::new(),
                 },
                 ErrorFlags::NONE,
@@ -1019,7 +1017,7 @@ mod tests {
                     flags: 0x00,
                     length: 12,
                     vendor_id: None,
-                    value: Value::Time(3794601600),
+                    value: Value::Time(3_794_601_600),
                     padding: Vec::new(),
                 },
                 ErrorFlags::NONE,

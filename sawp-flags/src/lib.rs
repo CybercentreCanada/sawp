@@ -306,7 +306,7 @@ pub mod example {
     use super::*;
 
     /// Example enum
-    #[derive(Debug, Clone, Copy, PartialEq, BitFlags)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, BitFlags)]
     #[repr(u8)]
     pub enum Test {
         A = 0b0001,
@@ -324,7 +324,7 @@ mod test {
 
     #[test]
     fn test_enum_bits() {
-        let bits = 0b10101010;
+        let bits = 0b1010_1010;
         let flags = Flags::<Test>::from_bits(bits);
         assert_eq!(bits, flags.bits());
         assert_eq!(&bits, flags.bits_ref());
@@ -369,9 +369,9 @@ mod test {
     #[test]
     fn test_enum_not() {
         let flags = !Test::A;
-        assert_eq!(0b11111110, flags.bits());
+        assert_eq!(0b1111_1110, flags.bits());
         let flags = !(Test::A ^ Test::B);
-        assert_eq!(0b11111100, flags.bits());
+        assert_eq!(0b1111_1100, flags.bits());
     }
 
     #[test]
@@ -409,7 +409,7 @@ mod test {
         assert_eq!(flags, Test::A | Test::C);
         assert_ne!(flags, Test::A | Test::C | Test::E);
 
-        let flags = Flags::<Test>::from_bits(0b10000001);
+        let flags = Flags::<Test>::from_bits(0b1000_0001);
         assert_ne!(flags, Test::A);
     }
 
@@ -424,7 +424,7 @@ mod test {
 
     #[test]
     fn test_enum_string_none() {
-        #[derive(Debug, Clone, Copy, PartialEq, BitFlags)]
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, BitFlags)]
         #[repr(u8)]
         pub enum Test {
             Zero = 0b0000,

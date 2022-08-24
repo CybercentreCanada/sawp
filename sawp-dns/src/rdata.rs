@@ -1,5 +1,3 @@
-#![allow(clippy::upper_case_acronyms)]
-
 use nom::bytes::streaming::take;
 use nom::number::streaming::{be_u16, be_u32, be_u8};
 

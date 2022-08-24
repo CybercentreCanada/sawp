@@ -17,6 +17,10 @@ schedules:
 resources:
 - repo: self
 
+variables:
+- name: rust_msrv
+  value: 1.41.1
+
 stages:
 - stage: test
   pool: $(pool)
@@ -26,6 +30,8 @@ stages:
     displayName: Test SAWP
     steps:
       - template: qa-steps.yml
+        parameters:
+          rust_msrv: ${{ variables.rust_msrv }}
       - template: package-steps.yml
 
       # Check if cargo release would pass

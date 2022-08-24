@@ -49,7 +49,7 @@ cbindgen = {version = "0.15", optional = true}
 
 [dev-dependencies]
 clap = "~2.33"
-criterion = "=0.3.4"
+criterion = "=0.3.3"
 
 [dependencies]
 sawp-ffi = { path = "sawp-ffi", version = "^0.11.1", optional = true}

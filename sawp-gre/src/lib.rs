@@ -41,8 +41,6 @@
 //! }
 //! ````
 
-#![allow(clippy::upper_case_acronyms)]
-
 use sawp::error::{Error, ErrorKind, Result};
 use sawp::parser::{Direction, Parse};
 use sawp::probe::{Probe, Status};
@@ -787,7 +785,7 @@ mod tests {
                 data: Data::GreDeprecated {
                     checksum: None,
                     offset: None,
-                    key: Some(305419896),
+                    key: Some(305_419_896),
                     sequence_number: None,
                     source_route_entries: vec![],
                 },
@@ -819,7 +817,7 @@ mod tests {
                     checksum: None,
                     offset: None,
                     key: None,
-                    sequence_number: Some(4275878552),
+                    sequence_number: Some(4_275_878_552),
                     source_route_entries: vec![],
                 },
                 error_flags: ErrorFlags::none(),
@@ -865,8 +863,8 @@ mod tests {
                 data: Data::GreDeprecated {
                     checksum: Some(4660),
                     offset: Some(22136),
-                    key: Some(2596069105),
-                    sequence_number: Some(591751049),
+                    key: Some(2_596_069_105),
+                    sequence_number: Some(591_751_049),
                     source_route_entries: vec![SourceRouteEntry {
                         address_family: 4660,
                         sre_offset: 86,
@@ -999,7 +997,7 @@ mod tests {
                     payload_length: 0,
                     call_id: 47,
                     sequence_number: None,
-                    acknowledgement_number: Some(305419896),
+                    acknowledgement_number: Some(305_419_896),
                     payload: vec![],
                 },
                 error_flags: ErrorFlags::none(),
@@ -1037,8 +1035,8 @@ mod tests {
                 data: Data::Pptp {
                     payload_length: 4,
                     call_id: 255,
-                    sequence_number: Some(16909060),
-                    acknowledgement_number: Some(84281096),
+                    sequence_number: Some(16_909_060),
+                    acknowledgement_number: Some(84_281_096),
                     payload: vec![0x09, 0x0a, 0x0b, 0x0c],
                 },
                 error_flags: ErrorFlags::none(),

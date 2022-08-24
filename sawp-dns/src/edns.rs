@@ -8,8 +8,6 @@
 //! Most notably this allows servers to advertise that they can process UDP messages of size > 512
 //! bytes (the default maximum for DNS over UDP).
 
-#![allow(clippy::upper_case_acronyms)]
-
 use nom::bytes::streaming::take;
 use nom::number::streaming::be_u16;
 

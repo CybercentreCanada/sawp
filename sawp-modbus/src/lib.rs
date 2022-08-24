@@ -43,7 +43,7 @@
 //! }
 //! ```
 
-#![allow(clippy::upper_case_acronyms)]
+#![allow(clippy::unneeded_field_pattern)]
 
 /// Re-export of the `Flags` struct that is used to represent bit flags
 /// in this crate.
@@ -132,10 +132,10 @@ impl From<FunctionCode> for Flags<AccessType> {
 #[repr(u8)]
 #[derive(Copy, Clone, Debug, PartialEq, BitFlags)]
 pub enum CodeCategory {
-    PUBLIC_ASSIGNED = 0b00000001,
-    PUBLIC_UNASSIGNED = 0b00000010,
-    USER_DEFINED = 0b00000100,
-    RESERVED = 0b00001000,
+    PUBLIC_ASSIGNED = 0b0000_0001,
+    PUBLIC_UNASSIGNED = 0b0000_0010,
+    USER_DEFINED = 0b0000_0100,
+    RESERVED = 0b0000_1000,
 }
 
 impl CodeCategory {
@@ -163,7 +163,7 @@ impl From<&Message> for Flags<CodeCategory> {
     fn from(msg: &Message) -> Self {
         match msg.function.code {
             FunctionCode::Diagnostic => match &msg.data {
-                Data::Diagnostic { func, data: _ } => {
+                Data::Diagnostic { func, .. } => {
                     if func.code == DiagnosticSubfunction::Reserved {
                         CodeCategory::RESERVED.into()
                     } else {
@@ -173,7 +173,7 @@ impl From<&Message> for Flags<CodeCategory> {
                 _ => CodeCategory::none(),
             },
             FunctionCode::MEI => match &msg.data {
-                Data::MEI { mei_type, data: _ } => {
+                Data::MEI { mei_type, .. } => {
                     if mei_type.code == MEIType::Unknown {
                         CodeCategory::RESERVED.into()
                     } else {
@@ -196,11 +196,11 @@ impl From<&Message> for Flags<CodeCategory> {
 #[repr(u8)]
 #[derive(Copy, Clone, Debug, PartialEq, BitFlags)]
 pub enum ErrorFlags {
-    DATA_VALUE = 0b00000001,
-    DATA_LENGTH = 0b00000010,
-    EXC_CODE = 0b00000100,
-    FUNC_CODE = 0b00001000,
-    PROTO_ID = 0b00010000,
+    DATA_VALUE = 0b0000_0001,
+    DATA_LENGTH = 0b0000_0010,
+    EXC_CODE = 0b0000_0100,
+    FUNC_CODE = 0b0000_1000,
+    PROTO_ID = 0b0001_0000,
 }
 
 /// Information on the function code parsed
@@ -651,7 +651,6 @@ impl Message {
     //
     // Clippy wants us to factor out the first be_u16 call but we would lose
     // meaning in the variable name.
-    #[allow(clippy::branches_sharing_code)]
     fn parse_write_request<'a>(&mut self, input: &'a [u8]) -> Result<&'a [u8]> {
         let (input, address) = be_u16(input)?;
 
@@ -734,7 +733,6 @@ impl Message {
     //
     // Clippy wants us to factor out the first be_u16 call but we would lose
     // meaning in the variable name.
-    #[allow(clippy::branches_sharing_code)]
     fn parse_write_response<'a>(&mut self, input: &'a [u8]) -> Result<&'a [u8]> {
         let (input, address) = be_u16(input)?;
 
@@ -1062,10 +1060,10 @@ impl Message {
     /// the actual coil/register and not the address found in the PDU. See the
     /// [protocol reference](https://modbus.org/docs/Modbus_Application_Protocol_V1_1b.pdf)
     /// for more information on addresses.
-    pub fn get_write_value_at_address(&self, address: &u16) -> Option<u16> {
+    pub fn get_write_value_at_address(&self, address: u16) -> Option<u16> {
         // Compare the given address with the transaction's address to ensure it is covered
         if let Some(range) = self.get_address_range() {
-            if !range.contains(address) {
+            if !range.contains(&address) {
                 return None;
             }
         }
@@ -1103,7 +1101,7 @@ impl Message {
                 _ => return None,
             };
 
-            if *start == std::u16::MAX || start >= address {
+            if *start == std::u16::MAX || *start >= address {
                 return None;
             }
 
@@ -3140,7 +3138,7 @@ mod tests {
         )
     )]
     fn test_write_value_at_address(msg: Message, addr: u16, expected: Option<u16>) {
-        assert_eq!(msg.get_write_value_at_address(&addr), expected);
+        assert_eq!(msg.get_write_value_at_address(addr), expected);
     }
 
     #[rstest(

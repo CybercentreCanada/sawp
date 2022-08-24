@@ -1,5 +1,3 @@
-#![allow(clippy::upper_case_acronyms)]
-
 use nom::number::streaming::be_u16;
 
 use sawp::error::Result;
@@ -13,7 +11,7 @@ use crate::ErrorFlags;
 use sawp_ffi::GenerateFFI;
 
 /// Masks for extracting DNS header flags
-#[allow(non_camel_case_types, clippy::upper_case_acronyms)]
+#[allow(non_camel_case_types)]
 #[derive(Debug, Clone, Copy, PartialEq, BitFlags)]
 #[repr(u16)]
 pub enum header_masks {

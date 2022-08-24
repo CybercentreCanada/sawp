@@ -181,7 +181,7 @@ impl Resp {
     fn parse_integer(input: &[u8]) -> Result<(&[u8], IntegerResult, Flags<ErrorFlags>)> {
         let (rem, raw_len) = take_until(CRLF)(input)?;
         // We don't know how long ret is but it is supposed to be valid text.
-        return match std::str::from_utf8(raw_len) {
+        match std::str::from_utf8(raw_len) {
             Ok(len_str) => match len_str.parse::<i64>() {
                 Ok(len) => Ok((
                     Resp::advance_if_crlf(rem),
@@ -199,7 +199,7 @@ impl Resp {
                 IntegerResult::Data(raw_len),
                 ErrorFlags::InvalidData.into(),
             )),
-        };
+        }
     }
 
     /// The TypeOr looks a bit complicated but essentially means that if there are no errors we just return the parsed string data TypeOr::Left.

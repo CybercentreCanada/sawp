@@ -1,3 +1,7 @@
+parameters:
+  name: rust_msrv
+  type: string
+
 steps:
   # Setup
   # ============
@@ -16,6 +20,10 @@ steps:
   - script: echo "##vso[task.setvariable variable=version]$(make version)"
     displayName: package version
 
+  - template: install-rust.yml
+    parameters:
+      version: ${{ parameters.rust_msrv }}
+ 
   # QA Steps
   # ========
   #
@@ -26,7 +34,7 @@ steps:
   
   # Build project
   # First, with the minimum supported rust version
-  - script: cargo +1.41.1 build --workspace --all-targets --all-features --release
+  - script: cargo +${{ parameters.rust_msrv }} build --workspace --all-targets --all-features --release
     displayName: build (msrv)
   
   # Then, with stable
@@ -34,7 +42,8 @@ steps:
     displayName: build (stable)
   
   # Check linting warnings
-  - script: cargo clippy --workspace --all-targets --all-features -- -D warnings
+  # Run clippy with MSRV so it does not error on lints which are MSRV incompatible such as std API changes
+  - script: cargo +${{ parameters.rust_msrv }} clippy --workspace --all-targets --all-features -- -D warnings
     displayName: check clippy
 
   # Build documentation

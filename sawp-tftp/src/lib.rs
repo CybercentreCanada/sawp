@@ -39,7 +39,7 @@
 //! }
 //! ```
 
-#![allow(clippy::upper_case_acronyms)]
+#![allow(clippy::unneeded_field_pattern)]
 
 use sawp::error::{Error, Result};
 use sawp::parser::{Direction, Parse};

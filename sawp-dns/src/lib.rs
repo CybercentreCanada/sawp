@@ -171,7 +171,6 @@ where
 }
 
 /// Error flags raised while parsing DNS - to be used in the returned Message
-#[allow(clippy::upper_case_acronyms)]
 #[repr(u16)]
 #[derive(Clone, Copy, Debug, PartialEq, BitFlags)]
 pub enum ErrorFlags {
@@ -373,7 +372,7 @@ mod test {
                     queries: vec ! [
                         Question {
                             name:
-                                "sterling.freenode.net\
+                                b"sterling.freenode.net\
                                 .sterling.freenode.net\
                                 .sterling.freenode.net\
                                 .sterling.freenode.net\
@@ -384,7 +383,7 @@ mod test {
                                 .sterling.freenode.net\
                                 .sterling.freenode.net\
                                 .sterling.freenode.net\
-                                .sterling.free".as_bytes().to_vec(),
+                                .sterling.free".to_vec(),
                             record_type: RecordType::A,
                             record_type_raw: 1,
                             record_class: RecordClass::IN,
@@ -395,7 +394,7 @@ mod test {
                     answers: vec ! [
                         Answer {
                             name:
-                            "sterling.freenode.net\
+                            b"sterling.freenode.net\
                             .sterling.freenode.net\
                             .sterling.freenode.net\
                             .sterling.freenode.net\
@@ -406,7 +405,7 @@ mod test {
                             .sterling.freenode.net\
                             .sterling.freenode.net\
                             .sterling.freenode.net\
-                            .sterling.free".as_bytes().to_vec(),
+                            .sterling.free".to_vec(),
                             rtype: RecordType::A,
                             rtype_raw: 1,
                             rclass: RecordClass::IN,
@@ -562,7 +561,7 @@ mod test {
             },
             queries: vec![
                 Question {
-                    name: "sterling.freenode.net".as_bytes().to_vec(),
+                    name: b"sterling.freenode.net".to_vec(),
                     record_type: RecordType::A,
                     record_type_raw: 1,
                     record_class: RecordClass::IN,
@@ -630,7 +629,7 @@ mod test {
             },
             queries: vec![
                 Question {
-                    name: "sterling.freenode.net".as_bytes().to_vec(),
+                    name: b"sterling.freenode.net".to_vec(),
                     record_type: RecordType::UNKNOWN,
                     record_type_raw: 261,
                     record_class: RecordClass::IN,
@@ -640,7 +639,7 @@ mod test {
             nameservers: vec![],
             answers: vec![
                 Answer {
-                    name: "sterling.freenode.net".as_bytes().to_vec(),
+                    name: b"sterling.freenode.net".to_vec(),
                     rtype: RecordType::A,
                     rtype_raw: 1,
                     rclass: RecordClass::IN,
@@ -698,7 +697,7 @@ mod test {
             },
             queries: vec![
                 Question {
-                    name: "sterling.freenode.net".as_bytes().to_vec(),
+                    name: b"sterling.freenode.net".to_vec(),
                     record_type: RecordType::A,
                     record_type_raw: 1,
                     record_class: RecordClass::UNKNOWN,
@@ -708,7 +707,7 @@ mod test {
             nameservers: vec![],
             answers: vec![
                 Answer {
-                    name: "sterling.freenode.net".as_bytes().to_vec(),
+                    name: b"sterling.freenode.net".to_vec(),
                     rtype: RecordType::A,
                     rtype_raw: 1,
                     rclass: RecordClass::UNKNOWN,
@@ -766,7 +765,7 @@ mod test {
                 },
                 queries: vec![
                     Question {
-                        name: "sterling.freenode.net".as_bytes().to_vec(),
+                        name: b"sterling.freenode.net".to_vec(),
                         record_type: RecordType::A,
                         record_type_raw: 1,
                         record_class: RecordClass::IN,
@@ -776,7 +775,7 @@ mod test {
                 nameservers: vec![],
                 answers: vec![
                     Answer {
-                        name: "sterling.freenode.net".as_bytes().to_vec(),
+                        name: b"sterling.freenode.net".to_vec(),
                         rtype: RecordType::A,
                         rtype_raw: 1,
                         rclass: RecordClass::IN,
@@ -834,7 +833,7 @@ mod test {
                 },
                 queries: vec![
                     Question {
-                        name: "google.com".as_bytes().to_vec(),
+                        name: b"google.com".to_vec(),
                         record_type: RecordType::TXT,
                         record_type_raw: 16,
                         record_class: RecordClass::IN,
@@ -843,13 +842,13 @@ mod test {
                 ],
                 answers: vec![
                     Answer {
-                        name: "google.com".as_bytes().to_vec(),
+                        name: b"google.com".to_vec(),
                         rtype: RecordType::TXT,
                         rtype_raw: 16,
                         rclass: RecordClass::IN,
                         rclass_raw: 1,
                         ttl: 270,
-                        data: (RDataType::TXT("v=spf1 ptr ?all".as_bytes().to_vec())),
+                        data: (RDataType::TXT(b"v=spf1 ptr ?all".to_vec())),
                     }
                 ],
                 nameservers: vec![],
@@ -973,7 +972,7 @@ mod test {
                 },
                 queries: vec![
                     Question {
-                        name: "google.com".as_bytes().to_vec(),
+                        name: b"google.com".to_vec(),
                         record_type: RecordType::MX,
                         record_type_raw: 15,
                         record_class: RecordClass::IN,
@@ -982,64 +981,64 @@ mod test {
                 ],
                 answers: vec![
                     Answer {
-                        name: "google.com".as_bytes().to_vec(),
+                        name: b"google.com".to_vec(),
                         rtype: RecordType::MX,
                         rtype_raw: 15,
                         rclass: RecordClass::IN,
                         rclass_raw: 1,
                         ttl: 552,
-                        data: (RDataType::MX("smtp4.google.com".as_bytes().to_vec())),
+                        data: (RDataType::MX(b"smtp4.google.com".to_vec())),
                     },
                     Answer {
-                        name: "google.com".as_bytes().to_vec(),
+                        name: b"google.com".to_vec(),
                         rtype: RecordType::MX,
                         rtype_raw: 15,
                         rclass: RecordClass::IN,
                         rclass_raw: 1,
                         ttl: 552,
-                        data: (RDataType::MX("smtp5.google.com".as_bytes().to_vec())),
+                        data: (RDataType::MX(b"smtp5.google.com".to_vec())),
                     },
                     Answer {
-                        name: "google.com".as_bytes().to_vec(),
+                        name: b"google.com".to_vec(),
                         rtype: RecordType::MX,
                         rtype_raw: 15,
                         rclass: RecordClass::IN,
                         rclass_raw: 1,
                         ttl: 552,
-                        data: (RDataType::MX("smtp6.google.com".as_bytes().to_vec())),
+                        data: (RDataType::MX(b"smtp6.google.com".to_vec())),
                     },
                     Answer {
-                        name: "google.com".as_bytes().to_vec(),
+                        name: b"google.com".to_vec(),
                         rtype: RecordType::MX,
                         rtype_raw: 15,
                         rclass: RecordClass::IN,
                         rclass_raw: 1,
                         ttl: 552,
-                        data: (RDataType::MX("smtp1.google.com".as_bytes().to_vec())),
+                        data: (RDataType::MX(b"smtp1.google.com".to_vec())),
                     },
                     Answer {
-                        name: "google.com".as_bytes().to_vec(),
+                        name: b"google.com".to_vec(),
                         rtype: RecordType::MX,
                         rtype_raw: 15,
                         rclass: RecordClass::IN,
                         rclass_raw: 1,
                         ttl: 552,
-                        data: (RDataType::MX("smtp2.google.com".as_bytes().to_vec())),
+                        data: (RDataType::MX(b"smtp2.google.com".to_vec())),
                     },
                     Answer {
-                        name: "google.com".as_bytes().to_vec(),
+                        name: b"google.com".to_vec(),
                         rtype: RecordType::MX,
                         rtype_raw: 15,
                         rclass: RecordClass::IN,
                         rclass_raw: 1,
                         ttl: 552,
-                        data: (RDataType::MX("smtp3.google.com".as_bytes().to_vec())),
+                        data: (RDataType::MX(b"smtp3.google.com".to_vec())),
                     },
                 ],
                 nameservers: vec![],
                 additional: vec![
                     Answer {
-                        name: "smtp4.google.com".as_bytes().to_vec(),
+                        name: b"smtp4.google.com".to_vec(),
                         rtype: RecordType::A,
                         rtype_raw: 1,
                         rclass: RecordClass::IN,
@@ -1048,7 +1047,7 @@ mod test {
                         data: (RDataType::A(vec![216, 239, 37, 26])),
                     },
                     Answer {
-                        name: "smtp5.google.com".as_bytes().to_vec(),
+                        name: b"smtp5.google.com".to_vec(),
                         rtype: RecordType::A,
                         rtype_raw: 1,
                         rclass: RecordClass::IN,
@@ -1057,7 +1056,7 @@ mod test {
                         data: (RDataType::A(vec![64, 233, 167, 25])),
                     },
                     Answer {
-                        name: "smtp6.google.com".as_bytes().to_vec(),
+                        name: b"smtp6.google.com".to_vec(),
                         rtype: RecordType::A,
                         rtype_raw: 1,
                         rclass: RecordClass::IN,
@@ -1066,7 +1065,7 @@ mod test {
                         data: (RDataType::A(vec![66, 102, 9, 25])),
                     },
                     Answer {
-                        name: "smtp1.google.com".as_bytes().to_vec(),
+                        name: b"smtp1.google.com".to_vec(),
                         rtype: RecordType::A,
                         rtype_raw: 1,
                         rclass: RecordClass::IN,
@@ -1075,7 +1074,7 @@ mod test {
                         data: (RDataType::A(vec![216, 239, 57, 25])),
                     },
                         Answer {
-                        name: "smtp2.google.com".as_bytes().to_vec(),
+                        name: b"smtp2.google.com".to_vec(),
                         rtype: RecordType::A,
                         rtype_raw: 1,
                         rclass: RecordClass::IN,
@@ -1084,7 +1083,7 @@ mod test {
                         data: (RDataType::A(vec![216, 239, 37, 25])),
                     },
                     Answer {
-                        name: "smtp3.google.com".as_bytes().to_vec(),
+                        name: b"smtp3.google.com".to_vec(),
                         rtype: RecordType::A,
                         rtype_raw: 1,
                         rclass: RecordClass::IN,
@@ -1134,7 +1133,7 @@ mod test {
                     },
                     queries: vec![
                         Question {
-                            name: "google.com".as_bytes().to_vec(),
+                            name: b"google.com".to_vec(),
                             record_type: RecordType::LOC,
                             record_type_raw: 29,
                             record_class: RecordClass::IN,
@@ -1194,7 +1193,7 @@ mod test {
                 },
                 queries: vec![
                     Question {
-                        name: "104.9.192.66.in-addr.arpa".as_bytes().to_vec(),
+                        name: b"104.9.192.66.in-addr.arpa".to_vec(),
                         record_type: RecordType::PTR,
                         record_type_raw: 12,
                         record_class: RecordClass::IN,
@@ -1203,13 +1202,13 @@ mod test {
                 ],
                 answers: vec![
                     Answer {
-                        name: "104.9.192.66.in-addr.arpa".as_bytes().to_vec(),
+                        name: b"104.9.192.66.in-addr.arpa".to_vec(),
                         rtype: RecordType::PTR,
                         rtype_raw: 12,
                         rclass: RecordClass::IN,
                         rclass_raw: 1,
                         ttl: 86309,
-                        data: (RDataType::PTR("66-192-9-104.gen.twtelecom.net".as_bytes().to_vec())),
+                        data: (RDataType::PTR(b"66-192-9-104.gen.twtelecom.net".to_vec())),
                     }
                 ],
                 nameservers: vec![],
@@ -1262,7 +1261,7 @@ mod test {
                 },
                 queries: vec![
                     Question {
-                        name: "www.netbsd.org".as_bytes().to_vec(),
+                        name: b"www.netbsd.org".to_vec(),
                         record_type: RecordType::AAAA,
                         record_type_raw: 28,
                         record_class: RecordClass::IN,
@@ -1270,7 +1269,7 @@ mod test {
                 }],
                 answers: vec![
                     Answer {
-                        name: "www.netbsd.org".as_bytes().to_vec(),
+                        name: b"www.netbsd.org".to_vec(),
                         rtype: RecordType::AAAA,
                         rtype_raw: 28,
                         rclass: RecordClass::IN,
@@ -1329,7 +1328,7 @@ mod test {
                 },
                 queries: vec![
                     Question {
-                        name: "www.google.com".as_bytes().to_vec(),
+                        name: b"www.google.com".to_vec(),
                         record_type: RecordType::AAAA,
                         record_type_raw: 28,
                         record_class: RecordClass::IN,
@@ -1338,13 +1337,13 @@ mod test {
                 ],
                 answers: vec![
                     Answer {
-                        name: "www.google.com".as_bytes().to_vec(),
+                        name: b"www.google.com".to_vec(),
                         rtype: RecordType::CNAME,
                         rtype_raw: 5,
                         rclass: RecordClass::IN,
                         rclass_raw: 1,
                         ttl: 633,
-                        data: (RDataType::CNAME("www.l.google.com".as_bytes().to_vec())),
+                        data: (RDataType::CNAME(b"www.l.google.com".to_vec())),
                     }
                 ],
                 nameservers: vec![],
@@ -1391,7 +1390,7 @@ mod test {
                 },
                 queries: vec![
                     Question {
-                        name: "www.example.notginh".as_bytes().to_vec(),
+                        name: b"www.example.notginh".to_vec(),
                         record_type: RecordType::AAAA,
                         record_type_raw: 28,
                         record_class: RecordClass::IN,
@@ -1455,7 +1454,7 @@ mod test {
                 },
                 queries: vec![
                     Question {
-                        name: "www.isc.org".as_bytes().to_vec(),
+                        name: b"www.isc.org".to_vec(),
                         record_type: RecordType::ANY,
                         record_type_raw: 255,
                         record_class: RecordClass::IN,
@@ -1464,7 +1463,7 @@ mod test {
                 ],
                 answers: vec![
                     Answer {
-                        name: "www.isc.org".as_bytes().to_vec(),
+                        name: b"www.isc.org".to_vec(),
                         rtype: RecordType::AAAA,
                         rtype_raw: 28,
                         rclass: RecordClass::IN,
@@ -1476,7 +1475,7 @@ mod test {
                         ])),
                     },
                     Answer {
-                        name: "www.isc.org".as_bytes().to_vec(),
+                        name: b"www.isc.org".to_vec(),
                         rtype: RecordType::A,
                         rtype_raw: 1,
                         rclass: RecordClass::IN,
@@ -1554,7 +1553,7 @@ mod test {
                 },
                 queries: vec![
                     Question {
-                        name: "isc.org".as_bytes().to_vec(),
+                        name: b"isc.org".to_vec(),
                         record_type: RecordType::NS,
                         record_type_raw: 2,
                         record_class: RecordClass::IN,
@@ -1563,40 +1562,40 @@ mod test {
                 ],
                 answers: vec![
                     Answer {
-                        name: "isc.org".as_bytes().to_vec(),
+                        name: b"isc.org".to_vec(),
                         rtype: RecordType::NS,
                         rtype_raw: 2,
                         rclass: RecordClass::IN,
                         rclass_raw: 1,
                         ttl: 3600,
-                        data: (RDataType::NS("ns-ext.nrt1.isc.org".as_bytes().to_vec())),
+                        data: (RDataType::NS(b"ns-ext.nrt1.isc.org".to_vec())),
                     },
                     Answer {
-                        name: "isc.org".as_bytes().to_vec(),
+                        name: b"isc.org".to_vec(),
                         rtype: RecordType::NS,
                         rtype_raw: 2,
                         rclass: RecordClass::IN,
                         rclass_raw: 1,
                         ttl: 3600,
-                        data: (RDataType::NS("ns-ext.sth1.isc.org".as_bytes().to_vec())),
+                        data: (RDataType::NS(b"ns-ext.sth1.isc.org".to_vec())),
                     },
                     Answer {
-                        name: "isc.org".as_bytes().to_vec(),
+                        name: b"isc.org".to_vec(),
                         rtype: RecordType::NS,
                         rtype_raw: 2,
                         rclass: RecordClass::IN,
                         rclass_raw: 1,
                         ttl: 3600,
-                        data: (RDataType::NS("ns-ext.isc.org".as_bytes().to_vec())),
+                        data: (RDataType::NS(b"ns-ext.isc.org".to_vec())),
                     },
                     Answer {
-                        name: "isc.org".as_bytes().to_vec(),
+                        name: b"isc.org".to_vec(),
                         rtype: RecordType::NS,
                         rtype_raw: 2,
                         rclass: RecordClass::IN,
                         rclass_raw: 1,
                         ttl: 3600,
-                        data: (RDataType::NS("ns-ext.lga1.isc.org".as_bytes().to_vec())),
+                        data: (RDataType::NS(b"ns-ext.lga1.isc.org".to_vec())),
                     },
                 ],
                 nameservers: vec![],
@@ -1731,7 +1730,7 @@ mod test {
                 },
                 queries: vec![
                     Question {
-                        name: "mimikatz.21.packetclass.com".as_bytes().to_vec(),
+                        name: b"mimikatz.21.packetclass.com".to_vec(),
                         record_type: RecordType::TXT,
                         record_type_raw: 16,
                         record_class: RecordClass::IN,
@@ -1740,7 +1739,7 @@ mod test {
                 ],
                 answers: vec![
                     Answer {
-                        name: "mimikatz.21.packetclass.com".as_bytes().to_vec(),
+                        name: b"mimikatz.21.packetclass.com".to_vec(),
                         rtype: RecordType::TXT,
                         rtype_raw: 16,
                         rclass: RecordClass::IN,
@@ -1836,7 +1835,7 @@ mod test {
             },
             queries: vec![
                 Question {
-                    name: "dne.oisf.net".as_bytes().to_vec(),
+                    name: b"dne.oisf.net".to_vec(),
                     record_type: RecordType::A,
                     record_type_raw: 1,
                     record_class: RecordClass::IN,
@@ -1846,19 +1845,19 @@ mod test {
             answers: vec![],
             nameservers: vec![
                 Answer {
-                    name: "oisf.net".as_bytes().to_vec(),
+                    name: b"oisf.net".to_vec(),
                     rtype: RecordType::SOA,
                     rtype_raw: 6,
                     rclass: RecordClass::IN,
                     rclass_raw: 1,
                     ttl: 899,
                     data: (RDataType::SOA(RDataSoa {
-                        mname: "ns-110.awsdns-13.com".as_bytes().to_vec(),
-                        rname: "awsdns-hostmaster.amazon.com".as_bytes().to_vec(),
+                        mname: b"ns-110.awsdns-13.com".to_vec(),
+                        rname: b"awsdns-hostmaster.amazon.com".to_vec(),
                         serial: 1,
                         refresh: 7200,
                         retry: 900,
-                        expire: 1209600,
+                        expire: 1_209_600,
                         minimum: 86400,
                     })),
                 }
@@ -2066,7 +2065,7 @@ mod test {
                 },
                 queries: vec![
                     Question {
-                        name: "_kerberos._tcp.SAMBA.EXAMPLE.COM".as_bytes().to_vec(),
+                        name: b"_kerberos._tcp.SAMBA.EXAMPLE.COM".to_vec(),
                         record_type: RecordType::SRV,
                         record_type_raw: 33,
                         record_class: RecordClass::IN,
@@ -2075,7 +2074,7 @@ mod test {
                 ],
                 answers: vec![
                     Answer {
-                        name: "_kerberos._tcp.SAMBA.EXAMPLE.COM".as_bytes().to_vec(),
+                        name: b"_kerberos._tcp.SAMBA.EXAMPLE.COM".to_vec(),
                         rtype: RecordType::SRV,
                         rtype_raw: 33,
                         rclass: RecordClass::IN,
@@ -2085,7 +2084,7 @@ mod test {
                             priority: 0,
                             weight: 100,
                             port: 88,
-                            target: "localdc.samba.example.com".as_bytes().to_vec()
+                            target: b"localdc.samba.example.com".to_vec()
                         })
                     }
                 ],
@@ -2224,7 +2223,7 @@ mod test {
             },
             queries: vec![
                 Question {
-                    name: "many-rrs.weberdns.de".as_bytes().to_vec(),
+                    name: b"many-rrs.weberdns.de".to_vec(),
                     record_type: RecordType::SSHFP,
                     record_type_raw: 44,
                     record_class: RecordClass::IN,
@@ -2233,7 +2232,7 @@ mod test {
             ],
             answers: vec![
                 Answer {
-                    name: "many-rrs.weberdns.de".as_bytes().to_vec(),
+                    name: b"many-rrs.weberdns.de".to_vec(),
                     rtype: RecordType::SSHFP,
                     rtype_raw: 44,
                     rclass: RecordClass::IN,
@@ -2250,7 +2249,7 @@ mod test {
                     }))
                 },
                 Answer {
-                    name: "many-rrs.weberdns.de".as_bytes().to_vec(),
+                    name: b"many-rrs.weberdns.de".to_vec(),
                     rtype: RecordType::SSHFP,
                     rtype_raw: 44,
                     rclass: RecordClass::IN,
@@ -2266,7 +2265,7 @@ mod test {
                     }))
                 },
                 Answer {
-                    name: "many-rrs.weberdns.de".as_bytes().to_vec(),
+                    name: b"many-rrs.weberdns.de".to_vec(),
                     rtype: RecordType::SSHFP,
                     rtype_raw: 44,
                     rclass: RecordClass::IN,
@@ -2283,7 +2282,7 @@ mod test {
                     }))
                 },
                 Answer {
-                    name: "many-rrs.weberdns.de".as_bytes().to_vec(),
+                    name: b"many-rrs.weberdns.de".to_vec(),
                     rtype: RecordType::SSHFP,
                     rtype_raw: 44,
                     rclass: RecordClass::IN,
@@ -2300,7 +2299,7 @@ mod test {
                     }))
                 },
                 Answer {
-                    name: "many-rrs.weberdns.de".as_bytes().to_vec(),
+                    name: b"many-rrs.weberdns.de".to_vec(),
                     rtype: RecordType::SSHFP,
                     rtype_raw: 44,
                     rclass: RecordClass::IN,
@@ -2316,7 +2315,7 @@ mod test {
                     }))
                 },
                 Answer {
-                    name: "many-rrs.weberdns.de".as_bytes().to_vec(),
+                    name: b"many-rrs.weberdns.de".to_vec(),
                     rtype: RecordType::SSHFP,
                     rtype_raw: 44,
                     rclass: RecordClass::IN,
@@ -2332,7 +2331,7 @@ mod test {
                     }))
                 },
                 Answer {
-                    name: "many-rrs.weberdns.de".as_bytes().to_vec(),
+                    name: b"many-rrs.weberdns.de".to_vec(),
                     rtype: RecordType::SSHFP,
                     rtype_raw: 44,
                     rclass: RecordClass::IN,
@@ -2349,7 +2348,7 @@ mod test {
                     }))
                 },
                 Answer {
-                    name: "many-rrs.weberdns.de".as_bytes().to_vec(),
+                    name: b"many-rrs.weberdns.de".to_vec(),
                     rtype: RecordType::SSHFP,
                     rtype_raw: 44,
                     rclass: RecordClass::IN,
@@ -2501,9 +2500,9 @@ mod test {
                 rclass_raw: 255,
                 ttl: 0,
                 data: RDataType::TKEY(RDataTKEY {
-                    algorithm: "gss-tsig".as_bytes().to_vec(),
-                    inception: 1358483387,
-                    expiration: 1358569787,
+                    algorithm: b"gss-tsig".to_vec(),
+                    inception: 1_358_483_387,
+                    expiration: 1_358_569_787,
                     mode: TkeyMode::GssApiNegotiation,
                     error: TSigResponseCode::NOERROR,
                     key_data: vec![
@@ -2540,8 +2539,8 @@ mod test {
                 rclass_raw: 255,
                 ttl: 0,
                 data: RDataType::TSIG(RDataTSIG {
-                    algorithm_name: "gss-tsig".as_bytes().to_vec(),
-                    time_signed: 1358483387,
+                    algorithm_name: b"gss-tsig".to_vec(),
+                    time_signed: 1_358_483_387,
                     fudge: 36000,
                     mac: vec![
                     0x04, 0x04, 0x05, 0xff, 0xff, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00,
@@ -2606,14 +2605,14 @@ mod test {
                     arcount: 0
                 },
                 queries: vec![Question {
-                    name: "google.com".as_bytes().to_vec(),
+                    name: b"google.com".to_vec(),
                     record_type: RecordType::CAA,
                     record_type_raw: 257,
                     record_class: RecordClass::IN,
                     record_class_raw: 1,
                 }],
                 answers: vec![Answer {
-                    name: "google.com".as_bytes().to_vec(),
+                    name: b"google.com".to_vec(),
                     rtype: RecordType::CAA,
                     rtype_raw: 257,
                     rclass: RecordClass::IN,
@@ -2621,8 +2620,8 @@ mod test {
                     ttl: 21577,
                     data: RDataType::CAA(RDataCAA {
                         flags: 0,
-                        tag: "issue".as_bytes().to_vec(),
-                        value: "symantec.com".as_bytes().to_vec()
+                        tag: b"issue".to_vec(),
+                        value: b"symantec.com".to_vec()
                 })
                 }],
                 nameservers: vec![],

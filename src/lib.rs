@@ -26,6 +26,8 @@ The following utility packages also exist:
 - [File](/sawp-file) Serializes API calls for debugging
 */
 
+#![allow(clippy::unneeded_field_pattern)]
+
 /// Return common errors
 pub mod error;
 

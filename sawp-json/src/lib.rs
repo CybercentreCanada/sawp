@@ -1,5 +1,7 @@
 //! SAWP JSON Parser
 
+#![allow(clippy::unneeded_field_pattern)]
+
 use sawp::error::{Error, ErrorKind, Result};
 use sawp::parser::{Direction, Parse};
 use sawp::probe::Probe;

@@ -1,4 +1,4 @@
-#![allow(clippy::upper_case_acronyms)]
+#![allow(clippy::unneeded_field_pattern)]
 
 extern crate sawp_ffi_derive;
 pub use sawp_ffi_derive::GenerateFFI;
@@ -42,7 +42,7 @@ pub trait IntoFFIPtr<T> {
     fn into_ffi_ptr(self) -> *mut T;
 }
 
-impl<'a, T> IntoFFIPtr<T> for Option<T> {
+impl<T> IntoFFIPtr<T> for Option<T> {
     fn into_ffi_ptr(self) -> *mut T {
         match self {
             Some(value) => value.into_ffi_ptr(),
