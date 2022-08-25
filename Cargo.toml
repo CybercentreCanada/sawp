@@ -4,7 +4,7 @@ version = "0.11.1"
 authors = ["Canadian Centre for Cyber Security <sa-sawp@cyber.gc.ca>"]
 description = "Security Aware Wire Protocol parsing library"
 readme = "README.md"
-edition = "2018"
+edition = "2021"
 license-file = "LICENSE"
 repository = "https://github.com/CybercentreCanada/sawp"
 homepage = "https://github.com/CybercentreCanada/sawp"
@@ -49,7 +49,7 @@ cbindgen = {version = "0.15", optional = true}
 
 [dev-dependencies]
 clap = "~2.33"
-criterion = "=0.3.3"
+criterion = "=0.3.4"
 
 [dependencies]
 sawp-ffi = { path = "sawp-ffi", version = "^0.11.1", optional = true}

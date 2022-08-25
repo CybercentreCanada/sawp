@@ -4,7 +4,7 @@ name = "sawp-fuzz"
 version = "0.0.0"
 authors = ["Canadian Centre for Cyber Security <sa-sawp@cyber.gc.ca>"]
 publish = false
-edition = "2018"
+edition = "2021"
 
 [package.metadata]
 cargo-fuzz = true
