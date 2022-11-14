@@ -11,9 +11,7 @@ use nom::Needed as NomNeeded;
 pub type Result<T> = std::result::Result<T, Error>;
 
 /// Helper for nom's default error type
-// A better nom error will be available once we can migrate
-// to nom 6.0+
-pub type NomError<I> = (I, NomErrorKind);
+pub type NomError<I> = nom::error::Error<I>;
 
 /// Common protocol or parsing error
 ///
@@ -114,10 +112,10 @@ impl From<NomErrorKind> for ErrorKind {
 impl<I: std::fmt::Debug> From<nom::Err<NomError<I>>> for Error {
     fn from(nom_err: nom::Err<NomError<I>>) -> Self {
         match nom_err {
-            nom::Err::Error(err) | nom::Err::Failure(err) => Error::new(err.1.into()),
+            nom::Err::Error(err) | nom::Err::Failure(err) => Error::new(err.code.into()),
             nom::Err::Incomplete(needed) => match needed {
                 NomNeeded::Unknown => Error::incomplete(),
-                NomNeeded::Size(size) => Error::incomplete_needed(size),
+                NomNeeded::Size(size) => Error::incomplete_needed(size.into()),
             },
         }
     }
@@ -130,3 +128,9 @@ impl std::fmt::Display for Error {
 }
 
 impl std::error::Error for Error {}
+
+impl<I: std::fmt::Debug> From<NomError<I>> for Error {
+    fn from(nom_err: NomError<I>) -> Self {
+        Error::new(nom_err.code.into())
+    }
+}

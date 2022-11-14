@@ -1,7 +1,9 @@
 use crate::ErrorFlags::DnsNameInvalidCompression;
 use crate::{ErrorFlags, IResult};
+use nom::error::ErrorKind;
 use nom::multi::length_data;
 use nom::number::streaming::{be_u16, be_u8};
+use sawp::error::NomError;
 use sawp_flags::{Flag, Flags};
 
 // From RFC 1035: DNS labels cannot exceed 63 characters in length
@@ -37,13 +39,16 @@ impl Name {
         input: &'a [u8],
         reference_bytes: &'a [u8],
     ) -> IResult<'a, &'a [u8]> {
-        let (rem, referenced_name_loc) = be_u16::<sawp::error::NomError<&[u8]>>(input)?;
+        let (rem, referenced_name_loc) = be_u16::<_, sawp::error::NomError<&[u8]>>(input)?;
         if let Some(offset) = reference_bytes
             .get(usize::from(referenced_name_loc) & MSG_COMPRESSION_OFFSET_MASK as usize..)
         {
             Ok((rem, offset))
         } else {
-            Err(nom::Err::Error((rem, nom::error::ErrorKind::Verify)))
+            Err(nom::Err::Error(NomError::new(
+                rem,
+                nom::error::ErrorKind::Verify,
+            )))
         }
     }
 
@@ -76,7 +81,11 @@ impl Name {
                             }
                             current_position = offset;
                         }
-                        Err(nom::Err::Error((pos, nom::error::ErrorKind::Verify))) => {
+                        Err(nom::Err::Error(NomError {
+                            input: pos,
+
+                            code: ErrorKind::Verify,
+                        })) => {
                             error_flags |= ErrorFlags::DnsNameInvalidCompression;
                             return Ok((pos, (name, error_flags)));
                         }

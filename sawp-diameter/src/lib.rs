@@ -3,7 +3,7 @@
 
 #![allow(clippy::upper_case_acronyms)]
 
-use sawp::error::Result;
+use sawp::error::{NomError, Result};
 use sawp::parser::{Direction, Parse};
 use sawp::probe::Probe;
 use sawp::protocol::Protocol;
@@ -276,9 +276,12 @@ fn length(read: usize) -> impl Fn(&[u8]) -> IResult<&[u8], u32> {
         let (input, length) = be_u24(input)?;
         let len = length as usize;
         if len < read {
-            Err(nom::Err::Error((input, ErrorKind::LengthValue)))
+            Err(nom::Err::Error(NomError::new(
+                input,
+                ErrorKind::LengthValue,
+            )))
         } else if len > (input.len() + read) {
-            Err(nom::Err::Incomplete(nom::Needed::Size(
+            Err(nom::Err::Incomplete(nom::Needed::new(
                 len - (input.len() + read),
             )))
         } else {
@@ -348,7 +351,10 @@ impl Header {
         let (input, version) = tag(&[1u8])(input)?;
         let (input, length) = length(Self::PRE_LENGTH_SIZE)(input)?;
         if (length as usize) < Self::SIZE {
-            return Err(nom::Err::Error((input, ErrorKind::LengthValue)));
+            return Err(nom::Err::Error(NomError::new(
+                input,
+                ErrorKind::LengthValue,
+            )));
         }
         let (input, flags) = be_u8(input)?;
         if Self::reserved_set(flags) {
@@ -444,7 +450,10 @@ impl AVP {
             Self::PRE_LENGTH_SIZE
         };
         if (length as usize) < header_size {
-            return Err(nom::Err::Error((input, ErrorKind::LengthValue)));
+            return Err(nom::Err::Error(NomError::new(
+                input,
+                ErrorKind::LengthValue,
+            )));
         }
         let data_length = (length as usize) - header_size;
         let (input, vendor_id) = if Self::vendor_specific_flag(flags) {
@@ -468,7 +477,11 @@ impl AVP {
                 error_flags |= flags;
                 value
             }
-            Err(nom::Err::Error((_, ErrorKind::LengthValue))) | Err(nom::Err::Incomplete(_)) => {
+            Err(nom::Err::Error(NomError {
+                input: _,
+                code: ErrorKind::LengthValue,
+            }))
+            | Err(nom::Err::Incomplete(_)) => {
                 error_flags |= ErrorFlags::DATA_LENGTH;
                 Value::Unhandled(data.into())
             }
@@ -513,7 +526,7 @@ fn parse_avps(input: &[u8]) -> IResult<&[u8], (Vec<AVP>, ErrorFlags)> {
     let (rest, avps_flags) = many0(combinator::complete(AVP::parse))(input)?;
     if !rest.is_empty() {
         // many0 will stop if subparser fails, but should read all
-        Err(nom::Err::Error((input, ErrorKind::Many0)))
+        Err(nom::Err::Error(NomError::new(input, ErrorKind::Many0)))
     } else {
         let mut error_flags = ErrorFlags::NONE;
         let mut avps = Vec::new();
@@ -569,8 +582,8 @@ mod tests {
     #[rstest(
         input,
         expected,
-        case::empty(b"", Err(nom::Err::Incomplete(nom::Needed::Size(1)))),
-        case::hello_world(b"hello world", Err(nom::Err::Error((b"hello world" as &[u8], ErrorKind::Tag)))),
+        case::empty(b"", Err(nom::Err::Incomplete(nom::Needed::new(1)))),
+        case::hello_world(b"hello world", Err(nom::Err::Error(NomError::new(b"hello world" as &[u8], ErrorKind::Tag)))),
         case::invalid_length(
             &[
                 // Version: 1
@@ -588,7 +601,7 @@ mod tests {
                 // End-to-End ID: 0x7dc0a11b
                 0x7d, 0xc0, 0xa1, 0x1b,
             ],
-            Err(nom::Err::Error((
+            Err(nom::Err::Error(NomError::new(
                 &[
                     // Flags: 128 (Request)
                     0x80_u8,
@@ -683,7 +696,7 @@ mod tests {
                 // End-to-End ID: 0x7dc0a11b
                 0x7d, 0xc0, 0xa1, 0x1b,
             ],
-            Err(nom::Err::Incomplete(nom::Needed::Size(4)))
+            Err(nom::Err::Incomplete(nom::Needed::new(4)))
         ),
     )]
     fn test_header(input: &[u8], expected: IResult<&[u8], (Header, ErrorFlags)>) {
@@ -693,7 +706,7 @@ mod tests {
     #[rstest(
         input,
         expected,
-        case::empty(b"", Err(nom::Err::Incomplete(nom::Needed::Size(4)))),
+        case::empty(b"", Err(nom::Err::Incomplete(nom::Needed::new(4)))),
         case::diagnostic(
             &[
                 // Code: 264 (Origin-Host)
