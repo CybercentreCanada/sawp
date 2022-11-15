@@ -173,7 +173,7 @@ install:
 	install -d $(DESTDIR)$(INCLUDEDIR)/sawp
 	for obj in libsawp.so $(patsubst %, libsawp_%.so, ${FFI_PACKAGES}); do \
 		install -m 0755 target/release/$$obj $(DESTDIR)$(LIBDIR)/$$obj.${CRATE_VERSION}; \
-		(cd $(DESTDIR)$(LIBDIR) && ln -s ./$$obj.${CRATE_VERSION_MAJOR} ./$$obj); \
+		(cd $(DESTDIR)$(LIBDIR) && ln -s ./$$obj.${CRATE_VERSION} ./$$obj); \
 	done
 	install -m 644 target/sawp/*.h $(DESTDIR)$(INCLUDEDIR)/sawp
 
