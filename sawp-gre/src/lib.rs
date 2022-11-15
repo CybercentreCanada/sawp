@@ -465,7 +465,7 @@ mod tests {
     #[rstest(
         input,
         expected,
-        case::empty(b" ", Err(Error::incomplete_needed(2))),
+        case::empty(b"", Err(Error::incomplete_needed(2))),
         case::basic_ip(
             &[
                 // header: No flags set. Version zero.
@@ -800,7 +800,7 @@ mod tests {
                 // key - missing one byte
                 0x12, 0x34, 0x56,
             ],
-            Err(Error::incomplete_needed(4))),
+            Err(Error::incomplete_needed(1))),
         case::deprecated_sequence(
             &[
                 // header: sequence flag set. Version 0.
@@ -831,7 +831,7 @@ mod tests {
                 // sequence - missing 2 bytes
                 0xfe, 0xdc,
             ],
-            Err(Error::incomplete_needed(4))),
+            Err(Error::incomplete_needed(2))),
         case::deprecated_all(
             &[
                 // header: all flags set. Version 0.
@@ -1013,7 +1013,7 @@ mod tests {
                 // acknowledgement missing 1 byte
                 0x12, 0x34, 0x78,
             ],
-            Err(Error::incomplete_needed(4))),
+            Err(Error::incomplete_needed(1))),
         case::pptp_all(
             &[
                 // header: key and sequence flag set. Version 1 and acknowledgement flag set.

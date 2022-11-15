@@ -1857,7 +1857,7 @@ mod tests {
                 // Data: 00
                 0x00
             ],
-            Err(Error::incomplete_needed(5))
+            Err(Error::incomplete_needed(1))
         ),
         case::mei_dev_id(
             &[

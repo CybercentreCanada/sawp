@@ -41,7 +41,7 @@
 
 #![allow(clippy::unneeded_field_pattern)]
 
-use sawp::error::{Error, Result};
+use sawp::error::{NomError, Result};
 use sawp::parser::{Direction, Parse};
 use sawp::probe::Probe;
 use sawp::protocol::Protocol;
@@ -251,7 +251,7 @@ impl<'a> Parse<'a> for TFTP {
             };
             Ok((input, Some(Message { op_code, packet })))
         } else {
-            Err(Error::from(nom::Err::Error((input, ErrorKind::IsA))))
+            Err(NomError::new(input, ErrorKind::IsA).into())
         }
     }
 }
@@ -272,7 +272,7 @@ mod tests {
         input,
         expected,
         case::empty(b"", Err(error::Error::incomplete_needed(2))),
-        case::hello_world(b"hello world", Err(error::Error::from(nom::Err::Error((b"hello world" as &[u8], ErrorKind::Tag))))),
+        case::hello_world(b"hello world", Err(NomError::new(b"hello world", ErrorKind::Tag).into())),
         case::read(
             &[
                 // OpCode: 1 (Read)

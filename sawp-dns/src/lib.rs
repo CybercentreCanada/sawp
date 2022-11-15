@@ -72,7 +72,7 @@
 //! }
 //! ```
 
-use sawp::error::Result;
+use sawp::error::{NomError, Result};
 use sawp::parser::{Direction, Parse};
 use sawp::probe::Probe;
 use sawp::protocol::Protocol;
@@ -120,12 +120,13 @@ where
         let mut acc = Vec::with_capacity(1);
         loop {
             match func(input) {
-                Err(nom::Err::Error((_, nom::error::ErrorKind::LengthValue))) => {
-                    return Ok((input, acc))
-                }
+                Err(nom::Err::Error(NomError {
+                    input: _,
+                    code: ErrorKind::LengthValue,
+                })) => return Ok((input, acc)),
                 Ok((rem, out)) => {
                     if rem == input {
-                        return Err(nom::Err::Error((input, ErrorKind::Many0)));
+                        return Err(nom::Err::Error(NomError::new(input, ErrorKind::Many0)));
                     }
 
                     input = rem;
@@ -158,7 +159,10 @@ where
                     res.push(out);
                     input = rem;
                 }
-                Err(nom::Err::Error((input, nom::error::ErrorKind::Count))) => {
+                Err(nom::Err::Error(NomError {
+                    input,
+                    code: ErrorKind::Count,
+                })) => {
                     return Ok((input, res));
                 }
                 Err(e) => {

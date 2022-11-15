@@ -385,7 +385,7 @@ mod tests {
     use super::*;
     use nom::error::ErrorKind;
     use rstest::rstest;
-    use sawp::error;
+    use sawp::error::{Error, NomError};
 
     #[test]
     fn test_name() {
@@ -395,8 +395,8 @@ mod tests {
     #[rstest(
         input,
         expected,
-        case::empty(b"", Err(error::Error::from(nom::Err::Error((b"" as &[u8], ErrorKind::Many0))))),
-        case::hello_world(b"hello world", Err(error::Error::from(nom::Err::Error((b"\x01\x02\x03\x04 world" as &[u8], ErrorKind::Tag))))),
+        case::empty(b"", Err(Error::from(NomError::new(b"" as &[u8], ErrorKind::Many0)))),
+        case::hello_world(b"hello world", Err(Error::from(NomError::new(b"\x01\x02\x03\x04 world" as &[u8], ErrorKind::Tag)))),
         case::unknown_keyword(
             b"HELLO WORLD\r\n", 
             Ok((b"".as_ref(),
