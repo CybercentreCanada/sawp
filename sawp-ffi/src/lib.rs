@@ -257,8 +257,8 @@ mod tests {
             assert_ne!(non_option_ffi, std::ptr::null_mut());
             assert_eq!(*non_option_ffi, 42);
 
-            Box::from_raw(option_ffi);
-            Box::from_raw(non_option_ffi);
+            drop(Box::from_raw(option_ffi));
+            drop(Box::from_raw(non_option_ffi));
         }
     }
 

@@ -106,7 +106,7 @@ impl Name {
 
                     current_position = rem;
 
-                    if rem.get(0) == Some(&b'\0') {
+                    if rem.first() == Some(&b'\0') {
                         rem = &rem[1..];
                     }
 

@@ -20,8 +20,7 @@ pub unsafe extern "C" fn sawp_resp_create() -> *mut Resp {
 #[no_mangle]
 pub unsafe extern "C" fn sawp_resp_destroy(r: *mut Resp) {
     if !r.is_null() {
-        // r will be dropped when this box goes out of scope
-        Box::from_raw(r);
+        drop(Box::from_raw(r));
     }
 }
 
@@ -56,7 +55,7 @@ impl Drop for ParseResult {
         unsafe {
             sawp_resp_message_destroy(self.message);
             if !self.error.is_null() {
-                Box::from_raw(self.error);
+                drop(Box::from_raw(self.error));
             }
         }
     }
@@ -67,15 +66,13 @@ impl Drop for ParseResult {
 #[no_mangle]
 pub unsafe extern "C" fn sawp_resp_parse_result_destroy(d: *mut ParseResult) {
     if !d.is_null() {
-        // d will be dropped when this box goes out of scope
-        Box::from_raw(d);
+        drop(Box::from_raw(d));
     }
 }
 
 #[no_mangle]
 pub unsafe extern "C" fn sawp_resp_message_destroy(d: *mut Message) {
     if !d.is_null() {
-        // d will be dropped when this box goes out of scope
-        Box::from_raw(d);
+        drop(Box::from_raw(d));
     }
 }
