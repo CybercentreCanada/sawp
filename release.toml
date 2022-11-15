@@ -1,6 +1,5 @@
 # These settings are shared across all workspace packages
 # Use Cargo.toml to customize settings for a particular package.
-dev-version=false
 enable-all-features=true
 
 # Handled in CI pipeline.
