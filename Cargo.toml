@@ -17,6 +17,9 @@ include = [
     "src/**/*.rs",
 ]
 
+# Minimum supported rust version
+rust-version = "1.58.1"
+
 [workspace]
 members = [
     "sawp-dns",
