@@ -33,8 +33,6 @@
 //!                     InnerMessage::Command(_) => println!("POP3 Command {:?}", message.inner),
 //!                     // Response sent by server
 //!                     InnerMessage::Response(_) => println!("POP3 Response {:?}", message.inner),
-//!                     // Empty input
-//!                     InnerMessage::None => {},
 //!                 }
 //!             }
 //!             // This should never occur with POP3 but is included for consistency with other parsers
@@ -48,11 +46,15 @@
 //! }
 //! ```
 
-use sawp::error::Result;
+/// Re-export of the `Flags` struct that is used to represent bit flags
+/// in this crate.
+pub use sawp_flags::{Flag, Flags};
+
+use sawp::error::{Error, Result};
 use sawp::parser::{Direction, Parse};
 use sawp::probe::Probe;
 use sawp::protocol::Protocol;
-use sawp_flags::{BitFlags, Flag, Flags};
+use sawp_flags::BitFlags;
 
 /// FFI structs and Accessors
 #[cfg(feature = "ffi")]
@@ -66,6 +68,7 @@ use nom::character::complete::{char, crlf};
 use nom::combinator::opt;
 use nom::multi::many_till;
 use nom::sequence::{pair, preceded, terminated};
+use std::convert::TryFrom;
 
 pub const CRLF: &[u8] = b"\r\n";
 pub const SPACE: &[u8] = b" ";
@@ -73,7 +76,7 @@ pub const CLIENT_COMMAND_MAX_LEN: usize = 256;
 pub const SERVER_RESP_FIRST_LINE_MAX_LEN: usize = 512;
 
 /// The supported POP3 client commands
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "ffi", derive(GenerateFFI), sawp_ffi(prefix = "sawp_pop3"))]
 pub enum Keyword {
     QUIT,
@@ -89,75 +92,126 @@ pub enum Keyword {
     PASS,
     APOP,
     CAPA,
-    Unknown(Vec<u8>),
+    STLS,
+    AUTH,
+    SASL,
+    Unknown(String),
 }
 
 /// POP3 servers can respond with either an OK or Error response based on client input
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "ffi", derive(GenerateFFI), sawp_ffi(prefix = "sawp_pop3"))]
 pub enum Status {
     OK,
     ERR,
-    Unknown(Vec<u8>),
 }
 
 /// Parser-identified errors that are not fatal
 #[repr(u8)]
-#[derive(Debug, Copy, Clone, BitFlags, PartialEq)]
+#[derive(Debug, Copy, Clone, BitFlags, PartialEq, Eq)]
 pub enum ErrorFlag {
     /// Command + space + argument + CRLF must not exceed 255 octets (RFC 2449)
     CommandTooLong = 0b0000_0001,
-    /// Some commands require 1 or 2 mandatory arguments to be specified by the client
-    MissingArgument = 0b0000_0010,
-    /// First word in client-to-server payload was not a recognized keyword
-    InvalidKeyword = 0b0000_0100,
+    /// Number of arguments doesn't match the command
+    IncorrectArgumentNum = 0b0000_0010,
+    /// Correct keyword format, but unknown value
+    UnknownKeyword = 0b0000_0100,
     /// First line of server response + CRLF must not exceed 512 octets (RFC 2449)
     ResponseTooLong = 0b0000_1000,
-    EmptyInput = 0b0001_0000,
-    /// First word in server-to-client payload was not a recognized status (+OK or -ERR)
-    InvalidStatus = 0b0010_0000,
 }
 
-impl Keyword {
-    fn from_raw(cmd: &[u8]) -> Self {
-        match cmd {
-            b"QUIT" => Keyword::QUIT,
-            b"STAT" => Keyword::STAT,
-            b"LIST" => Keyword::LIST,
-            b"RETR" => Keyword::RETR,
-            b"DELE" => Keyword::DELE,
-            b"NOOP" => Keyword::NOOP,
-            b"RSET" => Keyword::RSET,
-            b"TOP" => Keyword::TOP,
-            b"UIDL" => Keyword::UIDL,
-            b"USER" => Keyword::USER,
-            b"PASS" => Keyword::PASS,
-            b"APOP" => Keyword::APOP,
-            b"CAPA" => Keyword::CAPA,
-            _ => Keyword::Unknown(cmd.to_vec()),
+impl TryFrom<&[u8]> for Keyword {
+    type Error = Error;
+
+    fn try_from(cmd: &[u8]) -> Result<Self> {
+        if cmd.is_empty() {
+            Err(Error::parse(Some("Empty Keyword".to_string())))
+        } else if cmd[0] == b'+' {
+            Err(Error::parse(Some("Keyword is response".to_string())))
+        } else {
+            match cmd {
+                b"QUIT" => Ok(Keyword::QUIT),
+                b"STAT" => Ok(Keyword::STAT),
+                b"LIST" => Ok(Keyword::LIST),
+                b"RETR" => Ok(Keyword::RETR),
+                b"DELE" => Ok(Keyword::DELE),
+                b"NOOP" => Ok(Keyword::NOOP),
+                b"RSET" => Ok(Keyword::RSET),
+                b"TOP" => Ok(Keyword::TOP),
+                b"UIDL" => Ok(Keyword::UIDL),
+                b"USER" => Ok(Keyword::USER),
+                b"PASS" => Ok(Keyword::PASS),
+                b"APOP" => Ok(Keyword::APOP),
+                b"CAPA" => Ok(Keyword::CAPA),
+                b"STLS" => Ok(Keyword::STLS),
+                b"AUTH" => Ok(Keyword::AUTH),
+                b"SASL" => Ok(Keyword::SASL),
+                _ => {
+                    if cmd.iter().all(|b| b.is_ascii_alphanumeric()) {
+                        Ok(Keyword::Unknown(std::str::from_utf8(cmd).unwrap().into()))
+                    } else {
+                        Err(Error::parse(Some("Invalid Keyword".to_string())))
+                    }
+                }
+            }
+        }
+    }
+}
+
+impl std::fmt::Display for Keyword {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
+        fmt.write_str(match self {
+            Keyword::QUIT => "QUIT",
+            Keyword::STAT => "STAT",
+            Keyword::LIST => "LIST",
+            Keyword::RETR => "RETR",
+            Keyword::DELE => "DELE",
+            Keyword::NOOP => "NOOP",
+            Keyword::RSET => "RSET",
+            Keyword::TOP => "TOP",
+            Keyword::UIDL => "UIDL",
+            Keyword::USER => "USER",
+            Keyword::PASS => "PASS",
+            Keyword::APOP => "APOP",
+            Keyword::CAPA => "CAPA",
+            Keyword::STLS => "STLS",
+            Keyword::AUTH => "AUTH",
+            Keyword::SASL => "SASL",
+            Keyword::Unknown(keyword) => keyword,
+        })
+    }
+}
+
+impl TryFrom<&[u8]> for Status {
+    type Error = Error;
+
+    fn try_from(status: &[u8]) -> Result<Self> {
+        match status {
+            b"+OK" => Ok(Status::OK),
+            b"-ERR" => Ok(Status::ERR),
+            _ => Err(Error::parse(Some("Unknown Status".to_string()))),
         }
     }
 }
 
 impl Status {
-    fn from_raw(status: &[u8]) -> Self {
-        match status {
-            b"+OK" => Status::OK,
-            b"-ERR" => Status::ERR,
-            _ => Status::Unknown(status.to_vec()),
+    pub fn to_str(&self) -> &'static str {
+        match self {
+            Status::OK => "OK",
+            Status::ERR => "ERR",
         }
     }
 }
 
 #[cfg_attr(feature = "ffi", derive(GenerateFFI), sawp_ffi(prefix = "sawp_pop3"))]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Command {
     pub keyword: Keyword,
     pub args: Vec<Vec<u8>>,
 }
 
 #[cfg_attr(feature = "ffi", derive(GenerateFFI), sawp_ffi(prefix = "sawp_pop3"))]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Response {
     pub status: Status,
     pub header: Vec<u8>,
@@ -165,15 +219,14 @@ pub struct Response {
 }
 
 #[cfg_attr(feature = "ffi", derive(GenerateFFI), sawp_ffi(prefix = "sawp_pop3"))]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum InnerMessage {
     Command(Command),
     Response(Response),
-    None,
 }
 
 #[cfg_attr(feature = "ffi", derive(GenerateFFI), sawp_ffi(prefix = "sawp_pop3"))]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Message {
     pub error_flags: Flags<ErrorFlag>,
     pub inner: InnerMessage,
@@ -205,8 +258,7 @@ impl POP3 {
         let mut flags: Flags<ErrorFlag> = ErrorFlag::none();
 
         let (input, raw_status) = terminated(is_not(" \r"), opt(char(' ')))(input)?;
-        let status = Status::from_raw(raw_status);
-
+        let status = Status::try_from(raw_status)?;
         let first_line = terminated(take_until(CRLF), crlf);
         let additional_line = terminated(preceded(opt(char('.')), take_until(CRLF)), crlf);
         let termination_line = pair(char('.'), crlf);
@@ -220,10 +272,6 @@ impl POP3 {
             None => vec![],
             Some((x, _)) => x.iter().map(|x| x.to_vec()).collect(),
         };
-
-        if let Status::Unknown(_) = status {
-            flags |= ErrorFlag::InvalidStatus;
-        }
 
         if POP3::server_response_too_long(raw_status.len(), header.len()) {
             flags |= ErrorFlag::ResponseTooLong;
@@ -245,8 +293,7 @@ impl POP3 {
         let mut flags: Flags<ErrorFlag> = ErrorFlag::none();
 
         let (input, raw_keyword) = terminated(is_not(" \r"), opt(char(' ')))(input)?;
-        let keyword = Keyword::from_raw(raw_keyword);
-
+        let keyword = Keyword::try_from(raw_keyword)?;
         let (input, raw_args) = terminated(take_until(CRLF), crlf)(input)?;
         let args: Vec<Vec<u8>> = raw_args
             .split(|&x| x == b' ')
@@ -254,23 +301,42 @@ impl POP3 {
             .filter(|x| !x.is_empty())
             .collect();
 
-        // Apply MissingArgument flag if necessary, depending on the specific client command used
-        match keyword {
-            Keyword::DELE | Keyword::RETR | Keyword::USER | Keyword::PASS => {
+        // Apply IncorrectArgumentNum flag if necessary, depending on the specific client command used
+        match &keyword {
+            Keyword::STAT
+            | Keyword::NOOP
+            | Keyword::RSET
+            | Keyword::QUIT
+            | Keyword::CAPA
+            | Keyword::STLS => {
+                if !args.is_empty() {
+                    flags |= ErrorFlag::IncorrectArgumentNum;
+                }
+            }
+            Keyword::SASL => {
                 if args.is_empty() {
-                    flags |= ErrorFlag::MissingArgument;
+                    flags |= ErrorFlag::IncorrectArgumentNum;
                 }
             }
+            Keyword::LIST | Keyword::UIDL => match args.len() {
+                0 | 1 => {}
+                _ => flags |= ErrorFlag::IncorrectArgumentNum,
+            },
+            Keyword::RETR | Keyword::DELE | Keyword::USER | Keyword::PASS => {
+                if args.len() != 1 {
+                    flags |= ErrorFlag::IncorrectArgumentNum;
+                }
+            }
+            Keyword::AUTH => match args.len() {
+                1 | 2 => {}
+                _ => flags |= ErrorFlag::IncorrectArgumentNum,
+            },
             Keyword::TOP | Keyword::APOP => {
-                if args.len() < 2 {
-                    flags |= ErrorFlag::MissingArgument;
+                if args.len() != 2 {
+                    flags |= ErrorFlag::IncorrectArgumentNum;
                 }
             }
-            _ => {}
-        }
-
-        if let Keyword::Unknown(_) = keyword {
-            flags |= ErrorFlag::InvalidKeyword;
+            Keyword::Unknown(_) => flags |= ErrorFlag::UnknownKeyword,
         }
 
         if POP3::client_command_too_long(raw_keyword.len(), raw_args.len()) {
@@ -284,46 +350,42 @@ impl POP3 {
 
         Ok((input, message))
     }
-
-    fn return_empty_message() -> Result<(&'static [u8], Message)> {
-        let mut flags: Flags<ErrorFlag> = ErrorFlag::none();
-        flags |= ErrorFlag::EmptyInput;
-        let message = Message {
-            error_flags: flags,
-            inner: InnerMessage::None,
-        };
-
-        Ok((b"", message))
-    }
-
-    fn parse_data(input: &[u8]) -> Result<(&[u8], Message)> {
-        if input.is_empty() {
-            POP3::return_empty_message()
-        } else if input[0] == b'+' || input[0] == b'-' {
-            // Well-formed server responses will always start with + or -
-            POP3::parse_response(input)
-        } else {
-            POP3::parse_command(input)
-        }
-    }
 }
 
 impl<'a> Parse<'a> for POP3 {
     fn parse(
         &self,
         input: &'a [u8],
-        _direction: Direction,
+        direction: Direction,
     ) -> Result<(&'a [u8], Option<Self::Message>)> {
-        let (tail, message) = POP3::parse_data(input)?;
-
-        Ok((tail, Some(message)))
+        match direction {
+            Direction::ToServer => {
+                let (input, msg) = POP3::parse_command(input)?;
+                Ok((input, Some(msg)))
+            }
+            Direction::ToClient => {
+                let (input, msg) = POP3::parse_response(input)?;
+                Ok((input, Some(msg)))
+            }
+            Direction::Unknown => {
+                // Can't use nom::branch::alt since parse_* return sawp::error
+                if let Ok((input, msg)) = POP3::parse_command(input) {
+                    Ok((input, Some(msg)))
+                } else {
+                    let (input, msg) = POP3::parse_response(input)?;
+                    Ok((input, Some(msg)))
+                }
+            }
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use nom::error::ErrorKind;
     use rstest::rstest;
+    use sawp::error;
 
     #[test]
     fn test_name() {
@@ -333,15 +395,27 @@ mod tests {
     #[rstest(
         input,
         expected,
-        case::empty_input(
-            b"",
+        case::empty(b"", Err(error::Error::from(nom::Err::Error((b"" as &[u8], ErrorKind::Many0))))),
+        case::hello_world(b"hello world", Err(error::Error::from(nom::Err::Error((b"\x01\x02\x03\x04 world" as &[u8], ErrorKind::Tag))))),
+        case::unknown_keyword(
+            b"HELLO WORLD\r\n", 
             Ok((b"".as_ref(),
                 Some(Message {
-                        error_flags: ErrorFlag::EmptyInput.into(),
-                        inner: InnerMessage::None,
+                        error_flags: ErrorFlag::UnknownKeyword.into(),
+                        inner: InnerMessage::Command(Command {
+                            keyword: Keyword::Unknown("HELLO".into()),
+                            args: vec![
+                                b"WORLD".to_vec(),
+                            ],
+                        }),
                     },
                 ),
             ))),
+        case::invalid_keyword(
+            b"\x01\x02\x03\0x04 WORLD\r\n", 
+            Err(
+                Error::parse(Some("Invalid Keyword".to_string()))
+            )),
         case::client_command_no_args(
             b"CAPA\r\n",
             Ok((b"".as_ref(),
@@ -383,25 +457,11 @@ mod tests {
                     },
                 ),
             ))),
-        case::client_command_invalid_keyword(
-            b"HELLO SAWP\r\n",
-            Ok((b"".as_ref(),
-                Some(Message {
-                        error_flags: ErrorFlag::InvalidKeyword.into(),
-                        inner: InnerMessage::Command(Command {
-                            keyword: Keyword::Unknown(b"HELLO".to_vec()),
-                            args: vec![
-                                b"SAWP".to_vec(),
-                            ],
-                        }),
-                    },
-                ),
-            ))),
         case::client_command_too_long(
-            b"PASS 12345678901234567890123456789012345678901234567890 \
-            123456789012345678901234567890123456789012345678901234567890 \
-            123456789012345678901234567890123456789012345678901234567890 \
-            123456789012345678901234567890123456789012345678901234567890 \
+            b"PASS 12345678901234567890123456789012345678901234567890\
+            123456789012345678901234567890123456789012345678901234567890\
+            123456789012345678901234567890123456789012345678901234567890\
+            123456789012345678901234567890123456789012345678901234567890\
             123456789012345678901234567890123456789012345678901234567890\r\n",
             Ok((b"".as_ref(),
                 Some(Message {
@@ -409,11 +469,11 @@ mod tests {
                         inner: InnerMessage::Command(Command {
                             keyword: Keyword::PASS,
                             args: vec![
-                                b"12345678901234567890123456789012345678901234567890".to_vec(),
-                                b"123456789012345678901234567890123456789012345678901234567890".to_vec(),
-                                b"123456789012345678901234567890123456789012345678901234567890".to_vec(),
-                                b"123456789012345678901234567890123456789012345678901234567890".to_vec(),
-                                b"123456789012345678901234567890123456789012345678901234567890".to_vec(),
+                                b"12345678901234567890123456789012345678901234567890\
+                                123456789012345678901234567890123456789012345678901234567890\
+                                123456789012345678901234567890123456789012345678901234567890\
+                                123456789012345678901234567890123456789012345678901234567890\
+                                123456789012345678901234567890123456789012345678901234567890".to_vec(),
                             ],
                         }),
                     },
@@ -423,10 +483,25 @@ mod tests {
             b"DELE\r\n",
             Ok((b"".as_ref(),
                 Some(Message {
-                        error_flags: ErrorFlag::MissingArgument.into(),
+                        error_flags: ErrorFlag::IncorrectArgumentNum.into(),
                         inner: InnerMessage::Command(Command {
                             keyword: Keyword::DELE,
                             args: vec![],
+                        }),
+                    },
+                ),
+            ))),
+        case::client_command_missing_argument(
+            b"CAPA HELLO WORLD\r\n",
+            Ok((b"".as_ref(),
+                Some(Message {
+                        error_flags: ErrorFlag::IncorrectArgumentNum.into(),
+                        inner: InnerMessage::Command(Command {
+                            keyword: Keyword::CAPA,
+                            args: vec![
+                                b"HELLO".to_vec(),
+                                b"WORLD".to_vec(),
+                            ],
                         }),
                     },
                 ),
@@ -514,17 +589,7 @@ mod tests {
             ))),
         case::server_response_invalid_status(
             b"+SUCCESS 2 200\r\n",
-            Ok((b"".as_ref(),
-                Some(Message {
-                        error_flags: ErrorFlag::InvalidStatus.into(),
-                        inner: InnerMessage::Response(Response {
-                            status: Status::Unknown(b"+SUCCESS".to_vec()),
-                            header: b"2 200".to_vec(),
-                            data: vec![],
-                        }),
-                    },
-                ),
-            ))),
+            Err(Error::parse(Some("Keyword is response".to_string())))),
     )]
     fn test_parse(input: &[u8], expected: Result<(&[u8], Option<Message>)>) {
         let pop3 = POP3 {};
