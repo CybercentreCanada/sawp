@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+### Added
+- sawp-ike: initial release of protocol parser
+- sawp: added ip types to the C/C++ FFI
+
+### Changed
+- make: compose directories from $DESTDIR at usage time instead of preformatting LIBDIR and INCLUDEDIR with it
+- sawp: apply clippy lints
+- sawp: increase MSRV to 1.58.1
+- sawp: change to 2021 edition
+- sawp: update to nom 7.1
+- sawp: unpin half version
+- sawp-file: unpin rmp version
+
+### Fixed
+- make: pkgid cut updated for latest version
+- make: link to correct artifact
+- sawp: impl Display for Error (was todo!)
+- sawp-dns: use binary strings instead of taking as\_bytes() of a string
+- sawp-dns: parse zero-label names as empty string instead of failing
+- sawp-flags: derive Eq on enums when PartialEq is derived
+- sawp-modbus: breaking API change - get\_write\_value\_at\_address now takes address by value.
+- sawp-pop3: limit keyword count which prevented publishing
+- sawp-pop3: more restrictive keyword and status matching
 
 ## [0.11.1] - 2022-06-21
 ### Fixed / Changed
