@@ -122,8 +122,19 @@ impl<I: std::fmt::Debug> From<nom::Err<NomError<I>>> for Error {
 }
 
 impl std::fmt::Display for Error {
-    fn fmt(&self, _: &mut std::fmt::Formatter) -> std::result::Result<(), std::fmt::Error> {
-        todo!()
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::result::Result<(), std::fmt::Error> {
+        match &self.kind {
+            ErrorKind::Unimplemented => write!(f, "Unimplemented feature"),
+            ErrorKind::InvalidData => write!(f, "Encountered invalid data"),
+            ErrorKind::ParseError(err) if err.is_some() => {
+                write!(f, "Parsing error: {}", err.clone().unwrap())
+            }
+            ErrorKind::ParseError(_) => write!(f, "Parsing error"),
+            ErrorKind::Incomplete(Needed::Unknown) => write!(f, "More bytes required to parse"),
+            ErrorKind::Incomplete(Needed::Size(n)) => {
+                write!(f, "{} more bytes required to parse", n)
+            }
+        }
     }
 }
 
