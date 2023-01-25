@@ -59,6 +59,12 @@ impl Error {
     }
 }
 
+impl From<ErrorKind> for Error {
+    fn from(kind: ErrorKind) -> Self {
+        Self::new(kind)
+    }
+}
+
 /// Number of bytes needed for the next parsing attempt.
 ///
 /// Used in `ErrorKind::Incomplete` to tell the caller how many bytes to wait

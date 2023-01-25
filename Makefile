@@ -66,7 +66,8 @@ PUBLISH := \
 	sawp-resp \
 	sawp-pop3 \
 	sawp-json \
-	sawp-file
+	sawp-file \
+	sawp-ike
 
 .PHONY: env
 env:

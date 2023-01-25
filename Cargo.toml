@@ -35,6 +35,7 @@ members = [
     "sawp-flags-derive",
     "sawp-gre",
     "sawp-pop3",
+    "sawp-ike",
 ]
 
 [features]
