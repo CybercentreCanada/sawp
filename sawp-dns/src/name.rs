@@ -61,6 +61,11 @@ impl Name {
             let mut error_flags = ErrorFlags::none();
             let mut name: Vec<u8> = Vec::new();
 
+            // Special case for zero-label string
+            if !input.is_empty() && input[0] == b'\0' {
+                return Ok((&input[1..], (vec![], ErrorFlags::none())));
+            }
+
             for _ in 0..MAX_LABEL_PARSES {
                 if current_position.is_empty() || current_position[0] == b'\0' {
                     break;
@@ -471,6 +476,17 @@ mod test {
             (
                 vec![],
                 ErrorFlags::DnsNameInvalidCompression.into()
+            )
+        ))
+    ),
+    case::zero_label_name(
+        &[0x00],
+        &[],
+        Ok((
+            [].as_ref(),
+            (
+                vec![],
+                ErrorFlags::none()
             )
         ))
     ),
