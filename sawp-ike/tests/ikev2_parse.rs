@@ -16,18 +16,17 @@ use sawp_ike::{header::*, payloads::*, *};
                 header: Header {
                     initiator_spi: 18446744073709551615,
                     responder_spi: 17216961135462248174,
-                    raw_next_payload: 0,
                     next_payload: PayloadType::NoNextPayload,
                     version: 0x20,
                     major_version: 2,
                     minor_version: 0,
-                    raw_exchange_type: 34,
                     exchange_type: ExchangeType::IkeSaInit,
-                    flags: 8,
+                    flags: IkeFlags::INITIATOR.into(),
                     message_id: 16909060,
                     length: 28
                 },
                 payloads: Vec::new(),
+                encrypted_data: Vec::with_capacity(0),
                 error_flags: ErrorFlags::NonZeroMessageIdInInit | ErrorFlags::NonZeroResponderSpiInInit
             })
         )))),
@@ -45,20 +44,17 @@ use sawp_ike::{header::*, payloads::*, *};
                 header: Header {
                     initiator_spi: 18446744073709551615,
                     responder_spi: 0,
-                    raw_next_payload: 255,
                     next_payload: PayloadType::Unknown,
                     version: 0x20,
                     major_version: 2,
                     minor_version: 0,
-                    raw_exchange_type: 34,
                     exchange_type: ExchangeType::IkeSaInit,
-                    flags: 8,
+                    flags: IkeFlags::INITIATOR.into(),
                     message_id: 0,
                     length: 38,
                 },
                 payloads: vec![
                     Payload {
-                        raw_next_payload: 2,
                         next_payload: PayloadType::Unknown, // 2 is V1Proposal but it is invalid in this spot
                         critical_bit: Some(0),
                         reserved: 0,
@@ -66,7 +62,6 @@ use sawp_ike::{header::*, payloads::*, *};
                         data: PayloadData::Unknown(vec![0x00]),
                     },
                     Payload {
-                        raw_next_payload: 0,
                         next_payload: PayloadType::NoNextPayload,
                         critical_bit: Some(0),
                         reserved: 0,
@@ -74,6 +69,7 @@ use sawp_ike::{header::*, payloads::*, *};
                         data: PayloadData::Unknown(vec![0x00]),
                     }
                 ],
+                encrypted_data: Vec::with_capacity(0),
                 error_flags: ErrorFlags::UnknownPayload.into()
             })
         )))),
@@ -103,20 +99,17 @@ use sawp_ike::{header::*, payloads::*, *};
                 header: Header {
                     initiator_spi: 0x89922c915f35570e,
                     responder_spi: 0,
-                    raw_next_payload: 33,
                     next_payload: PayloadType::SecurityAssociation,
                     version: 0x20,
                     major_version: 2,
                     minor_version: 0,
-                    raw_exchange_type: 34,
                     exchange_type: ExchangeType::IkeSaInit,
-                    flags: 0x08,
+                    flags: IkeFlags::INITIATOR.into(),
                     message_id: 0,
                     length: 300,
                 },
                 payloads: vec![
                     Payload {
-                        raw_next_payload: 34,
                         next_payload: PayloadType::KeyExchange,
                         critical_bit: Some(0),
                         reserved: 0,
@@ -167,7 +160,6 @@ use sawp_ike::{header::*, payloads::*, *};
                         }]),
                     },
                     Payload {
-                        raw_next_payload: 40,
                         next_payload: PayloadType::Nonce,
                         critical_bit: Some(0),
                         reserved: 0,
@@ -186,7 +178,6 @@ use sawp_ike::{header::*, payloads::*, *};
                         },
                     },
                     Payload {
-                        raw_next_payload: 43,
                         next_payload: PayloadType::VendorID,
                         critical_bit: Some(0),
                         reserved: 0,
@@ -199,7 +190,6 @@ use sawp_ike::{header::*, payloads::*, *};
                         ]),
                     },
                     Payload {
-                        raw_next_payload: 43,
                         next_payload: PayloadType::VendorID,
                         critical_bit: Some(0),
                         reserved: 0,
@@ -210,7 +200,6 @@ use sawp_ike::{header::*, payloads::*, *};
                         ]),
                     },
                     Payload {
-                        raw_next_payload: 43,
                         next_payload: PayloadType::VendorID,
                         critical_bit: Some(0),
                         reserved: 0,
@@ -221,7 +210,6 @@ use sawp_ike::{header::*, payloads::*, *};
                         ]),
                     },
                     Payload {
-                        raw_next_payload: 43,
                         next_payload: PayloadType::VendorID,
                         critical_bit: Some(0),
                         reserved: 0,
@@ -232,7 +220,6 @@ use sawp_ike::{header::*, payloads::*, *};
                         ]),
                     },
                     Payload {
-                        raw_next_payload: 41,
                         next_payload: PayloadType::Notify,
                         critical_bit: Some(0),
                         reserved: 0,
@@ -243,7 +230,6 @@ use sawp_ike::{header::*, payloads::*, *};
                         ]),
                     },
                     Payload {
-                        raw_next_payload: 41,
                         next_payload: PayloadType::Notify,
                         critical_bit: Some(0),
                         reserved: 0,
@@ -257,7 +243,6 @@ use sawp_ike::{header::*, payloads::*, *};
                         },
                     },
                     Payload {
-                        raw_next_payload: 41,
                         next_payload: PayloadType::Notify,
                         critical_bit: Some(0),
                         reserved: 0,
@@ -271,7 +256,6 @@ use sawp_ike::{header::*, payloads::*, *};
                         },
                     },
                     Payload {
-                        raw_next_payload: 0,
                         next_payload: PayloadType::NoNextPayload,
                         critical_bit: Some(0),
                         reserved: 0,
@@ -285,6 +269,7 @@ use sawp_ike::{header::*, payloads::*, *};
                         },
                     },
                 ],
+                encrypted_data: Vec::with_capacity(0),
                 error_flags: ErrorFlags::none(),
             })
         )))),
@@ -475,18 +460,17 @@ fn ikev2_payload_parse(
                 header: Header {
                     initiator_spi: 18446744073709551615,
                     responder_spi: 17216961135462248174,
-                    raw_next_payload: 0,
                     next_payload: PayloadType::NoNextPayload,
                     version: 0x20,
                     major_version: 2,
                     minor_version: 0,
-                    raw_exchange_type: 34,
                     exchange_type: ExchangeType::IkeSaInit,
-                    flags: 8,
+                    flags: IkeFlags::INITIATOR.into(),
                     message_id: 16909060,
                     length: 28
                 },
                 payloads: Vec::new(),
+                encrypted_data: Vec::with_capacity(0),
                 error_flags: ErrorFlags::NonZeroMessageIdInInit | ErrorFlags::NonZeroResponderSpiInInit
             })),
             Some(Message::Esp(EspMessage {

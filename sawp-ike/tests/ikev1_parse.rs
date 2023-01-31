@@ -23,20 +23,17 @@ use sawp_ike::{header::*, payloads::*, *};
             header: Header {
                 initiator_spi: 0xfafa_eb49_382a_763c,
                     responder_spi: 0x00,
-                    raw_next_payload: 0x01,
                     next_payload: PayloadType::V1SecurityAssociation,
                     version: 0x10,
                     major_version: 1,
                     minor_version: 0,
-                    raw_exchange_type: 2,
                     exchange_type: ExchangeType::IdentityProtection,
-                    flags: 0x00,
+                    flags: IkeFlags::none(),
                     message_id: 0,
                     length: 116,
             },
             payloads: vec![
                 Payload {
-                    raw_next_payload: 13,
                     next_payload: PayloadType::V1VendorID,
                     critical_bit: None,
                     reserved: 1,
@@ -107,7 +104,6 @@ use sawp_ike::{header::*, payloads::*, *};
                         },
                 },
                 Payload {
-                    raw_next_payload: 13,
                     next_payload: PayloadType::V1VendorID,
                     critical_bit: None,
                     reserved: 0,
@@ -117,7 +113,6 @@ use sawp_ike::{header::*, payloads::*, *};
                         )
                 },
                 Payload {
-                    raw_next_payload: 0,
                     next_payload: PayloadType::NoNextPayload,
                     critical_bit: None,
                     reserved: 0,
@@ -127,10 +122,42 @@ use sawp_ike::{header::*, payloads::*, *};
                         )
                 }
             ],
+            encrypted_data: Vec::with_capacity(0),
             error_flags: ErrorFlags::none() | ErrorFlags::NonZeroReserved,
-        })
-    )))
-)
+            })
+        )))
+    ),
+    case::quick_mode(
+        &[
+            0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, // Init SPI
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Resp SPI
+            0x08, // Next Payload (hash)
+            0x10, // Version 1
+            0x20, // Quick Mode
+            0x01, // Flags - Encryption
+            0x01, 0x02, 0x03, 0x04, // Message ID
+            0x00, 0x00, 0x00, 0x24, // Length, 8 + HEADER_LEN
+            0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, // Encrypted data
+        ], Ok((0, Some(
+            Message::Ike(IkeMessage {
+                header: Header {
+                    initiator_spi: 0xffff_ffff_ffff_ffff,
+                    responder_spi: 0,
+                    next_payload: PayloadType::V1Hash,
+                    version: 0x10,
+                    major_version: 1,
+                    minor_version: 0,
+                    exchange_type: ExchangeType::QuickMode,
+                    flags: IkeFlags::ENCRYPTED.into(),
+                    message_id: 16909060,
+                    length: 36,
+                },
+                payloads: Vec::new(),
+                encrypted_data: vec![0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08],
+                error_flags: ErrorFlags::none(),
+            })
+        )))
+    ),
 )]
 fn ikev1_full_parse(input: &[u8], expected: Result<(usize, Option<<Ike as Protocol>::Message>)>) {
     let ike = Ike::default();

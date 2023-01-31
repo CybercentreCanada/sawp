@@ -89,8 +89,6 @@ impl PayloadType {
 #[cfg_attr(feature = "ffi", sawp_ffi(prefix = "sawp_ike"))]
 #[derive(Debug, PartialEq)]
 pub struct Payload {
-    pub raw_next_payload: u8,
-    #[cfg_attr(feature = "ffi", sawp_ffi(copy))]
     pub next_payload: PayloadType,
     pub critical_bit: Option<u8>,
     pub reserved: u8,
@@ -142,7 +140,6 @@ impl Payload {
             input,
             (
                 Self {
-                    raw_next_payload,
                     next_payload,
                     critical_bit: None,
                     reserved,
@@ -204,7 +201,6 @@ impl Payload {
             input,
             (
                 Self {
-                    raw_next_payload,
                     next_payload,
                     critical_bit,
                     reserved,

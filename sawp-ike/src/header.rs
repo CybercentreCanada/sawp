@@ -1,7 +1,7 @@
-use crate::{flags_mask, ErrorFlags, PayloadType};
+use crate::{ErrorFlags, PayloadType};
 
 use sawp::error::Result;
-use sawp_flags::{Flag, Flags};
+use sawp_flags::{BitFlags, Flag, Flags};
 
 #[cfg(feature = "ffi")]
 use sawp_ffi::GenerateFFI;
@@ -26,6 +26,7 @@ pub enum ExchangeType {
     AuthenticationOnly = 3,
     Aggressive = 4,
     InformationalV1 = 5,
+    QuickMode = 32,
     IkeSaInit = 34,
     IkeAuth = 35,
     CreateChildSa = 36,
@@ -40,22 +41,39 @@ pub enum ExchangeType {
     Unknown,
 }
 
+/// Flags that can be set for IKEv1 and IKEv2
+#[cfg_attr(feature = "ffi", derive(GenerateFFI))]
+#[cfg_attr(feature = "ffi", sawp_ffi(prefix = "sawp_ike"))]
+#[repr(u8)]
+#[derive(Clone, Copy, Debug, PartialEq, BitFlags)]
+pub enum IkeFlags {
+    /// Body is encrypted
+    ENCRYPTED = 0b0000_0001,
+    /// Signal for Key Exchange synchronization
+    COMMIT = 0b0000_0010,
+    /// Authenticated but not Encrypted
+    AUTHENTICATION = 0b0000_0100,
+    /// Sender is the original initiator
+    INITIATOR = 0b0000_1000,
+    /// Version upgrade available from sender
+    VERSION = 0b0001_0000,
+    /// Message is a response to a message containing the same Message ID
+    RESPONSE = 0b0010_0000,
+}
+
 #[cfg_attr(feature = "ffi", derive(GenerateFFI))]
 #[cfg_attr(feature = "ffi", sawp_ffi(prefix = "sawp_ike"))]
 #[derive(Debug, PartialEq)]
 pub struct Header {
     pub initiator_spi: u64,
     pub responder_spi: u64,
-    pub raw_next_payload: u8,
-    #[cfg_attr(feature = "ffi", sawp_ffi(copy))]
     pub next_payload: PayloadType,
     pub version: u8,
     pub major_version: u8,
     pub minor_version: u8,
-    pub raw_exchange_type: u8,
-    #[cfg_attr(feature = "ffi", sawp_ffi(copy))]
     pub exchange_type: ExchangeType,
-    pub flags: u8,
+    #[cfg_attr(feature = "ffi", sawp_ffi(flag = "u8"))]
+    pub flags: Flags<IkeFlags>,
     pub message_id: u32,
     pub length: u32,
 }
@@ -103,16 +121,11 @@ impl Header {
 
         let (
             input,
-            (
-                initiator_spi,
-                responder_spi,
-                (raw_next_payload, next_payload),
-                (version, (major_version, minor_version)),
-            ),
+            (initiator_spi, responder_spi, next_payload, (version, (major_version, minor_version))),
         ) = tuple((
             be_u64,
             be_u64,
-            map(be_u8, |np| (np, PayloadType::from(np))),
+            map(be_u8, PayloadType::from),
             verify(
                 map(be_u8, |version| (version, Self::split_version(version))),
                 |(_, (major, _))| (1..=2).contains(major),
@@ -130,32 +143,34 @@ impl Header {
             error_flags |= ErrorFlags::UnknownPayload;
         }
 
-        let (input, ((raw_exchange_type, exchange_type), flags, message_id, length)) =
-            tuple((
-                map(be_u8, |et| (et, ExchangeType::from(et))),
-                be_u8,
-                be_u32,
-                verify(be_u32, |length| *length >= HEADER_LEN),
-            ))(input)?;
+        let (input, (exchange_type, flags, message_id, length)) = tuple((
+            map(be_u8, ExchangeType::from),
+            map(be_u8, Flags::<IkeFlags>::from_bits),
+            be_u32,
+            verify(be_u32, |length| *length >= HEADER_LEN),
+        ))(input)?;
         if exchange_type == ExchangeType::Unknown {
             error_flags |= ErrorFlags::UnknownExchange;
         }
-        let wrapped_flags = Flags::<flags_mask>::from_bits(flags);
 
-        if exchange_type == ExchangeType::IkeSaInit
-            && wrapped_flags.intersects(flags_mask::INITIATOR_FLAG)
-        {
+        let ikev1_flags = IkeFlags::ENCRYPTED | IkeFlags::COMMIT | IkeFlags::AUTHENTICATION;
+        let ikev2_flags = IkeFlags::INITIATOR | IkeFlags::VERSION | IkeFlags::RESPONSE;
+        if flags.intersects(ikev1_flags) && flags.intersects(ikev2_flags) {
+            error_flags |= ErrorFlags::InvalidFlags;
+        }
+
+        if exchange_type == ExchangeType::IkeSaInit && flags.intersects(IkeFlags::INITIATOR) {
             // message_id must be zero in an initiator request
             if message_id != 0 {
                 error_flags |= ErrorFlags::NonZeroMessageIdInInit;
             }
             // responder_spi must be zero in an initiator request
-            if wrapped_flags.intersects(flags_mask::INITIATOR_FLAG) && responder_spi != 0 {
+            if flags.intersects(IkeFlags::INITIATOR) && responder_spi != 0 {
                 error_flags |= ErrorFlags::NonZeroResponderSpiInInit;
             }
         }
 
-        if wrapped_flags.intersects(flags_mask::RESPONSE_FLAG) && responder_spi == 0 {
+        if flags.intersects(IkeFlags::RESPONSE) && responder_spi == 0 {
             error_flags |= ErrorFlags::ZeroResponderSpiInResponse;
         }
 
@@ -165,12 +180,10 @@ impl Header {
                 Self {
                     initiator_spi,
                     responder_spi,
-                    raw_next_payload,
                     next_payload,
                     version,
                     major_version,
                     minor_version,
-                    raw_exchange_type,
                     exchange_type,
                     flags,
                     message_id,

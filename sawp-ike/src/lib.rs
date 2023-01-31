@@ -59,7 +59,7 @@
 pub mod header;
 pub mod payloads;
 
-use header::{Header, HEADER_LEN};
+use header::{Header, IkeFlags, HEADER_LEN};
 use payloads::{Payload, PayloadType};
 
 use sawp::error::Result;
@@ -107,6 +107,11 @@ pub enum ErrorFlags {
     /// Typically indicative of a length which is too short to accomodate the generic payload
     /// header
     InvalidLength = 0b0000_0001_0000_0000,
+    /// Header flags were invalid.
+    ///
+    /// Either a nonexistant flag bit was set or both IKEv1 and IKEv2 flags were set at the same
+    /// time.
+    InvalidFlags = 0b0000_0010_0000_0000,
 }
 
 impl ErrorFlags {
@@ -142,6 +147,8 @@ pub struct IkeMessage {
     pub header: Header,
     /// The array of payloads following the header
     pub payloads: Vec<Payload>,
+    /// Encrypted Data, if IKEv1 and ENCRYPTED flag is set
+    pub encrypted_data: Vec<u8>,
     /// Errors encountered while parsing
     #[cfg_attr(feature = "ffi", sawp_ffi(flag = "u16"))]
     pub error_flags: Flags<ErrorFlags>,
@@ -156,16 +163,6 @@ pub struct IkeMessage {
 pub struct EspMessage {
     pub spi: u32,
     pub sequence: u32,
-}
-
-/// Values in the header FLAGS field
-#[allow(non_camel_case_types, clippy::upper_case_acronyms)]
-#[derive(Debug, Clone, Copy, PartialEq, BitFlags)]
-#[repr(u8)]
-pub enum flags_mask {
-    RESPONSE_FLAG = 0b0010_0000,
-    VERSION_FLAG = 0b0001_0000,
-    INITIATOR_FLAG = 0b0000_1000,
 }
 
 /// Parser handle.
@@ -244,6 +241,16 @@ impl<'a> Parse<'a> for Ike {
         let mut payloads = Vec::new();
         let mut payload_error_flags = ErrorFlags::none();
 
+        if header.major_version == 1 && header.flags.contains(IkeFlags::ENCRYPTED) {
+            let message = Message::Ike(IkeMessage {
+                header,
+                payloads: Vec::new(),
+                encrypted_data: payload_input.to_vec(),
+                error_flags: ErrorFlags::none(),
+            });
+            return Ok((input, Some(message)));
+        }
+
         let parse = if header.major_version == 1 {
             Payload::parse_v1
         } else {
@@ -256,10 +263,10 @@ impl<'a> Parse<'a> for Ike {
         while next_payload != PayloadType::NoNextPayload {
             let should_early_break = next_payload == PayloadType::EncryptedAndAuthenticated
                 || next_payload == PayloadType::EncryptedAndAuthenticatedFragment;
-            let (_payload_input, (payload, errors)) = parse(payload_input, next_payload)?;
+            let (tmp_payload_input, (payload, errors)) = parse(payload_input, next_payload)?;
             // We need _payload_input as an interim variable until de structuring assignments are
             // supported in our MSRV rust version
-            payload_input = _payload_input;
+            payload_input = tmp_payload_input;
             next_payload = payload.next_payload;
             payloads.push(payload);
             payload_error_flags |= errors;
@@ -274,6 +281,7 @@ impl<'a> Parse<'a> for Ike {
         let message = Message::Ike(IkeMessage {
             header,
             payloads,
+            encrypted_data: Vec::with_capacity(0),
             error_flags,
         });
 

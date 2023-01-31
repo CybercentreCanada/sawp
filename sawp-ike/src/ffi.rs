@@ -22,7 +22,7 @@ pub unsafe extern "C" fn sawp_ike_create() -> *mut Ike {
 #[no_mangle]
 pub unsafe extern "C" fn sawp_ike_destroy(d: *mut Ike) {
     if !d.is_null() {
-        drop(Box::from_raw(d))
+        drop(Box::from_raw(d));
     }
 }
 
@@ -58,7 +58,7 @@ impl Drop for ParseResult {
         unsafe {
             sawp_ike_message_destroy(self.message);
             if !self.error.is_null() {
-                drop(Box::from_raw(self.error))
+                drop(Box::from_raw(self.error));
             }
         }
     }
@@ -69,14 +69,14 @@ impl Drop for ParseResult {
 #[no_mangle]
 pub unsafe extern "C" fn sawp_ike_parse_result_destroy(d: *mut ParseResult) {
     if !d.is_null() {
-        drop(Box::from_raw(d))
+        drop(Box::from_raw(d));
     }
 }
 
 #[no_mangle]
 pub unsafe extern "C" fn sawp_ike_message_destroy(d: *mut Message) {
     if !d.is_null() {
-        drop(Box::from_raw(d))
+        drop(Box::from_raw(d));
     }
 }
 
