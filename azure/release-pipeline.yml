@@ -80,6 +80,8 @@ jobs:
     # QA Checks
     # ==============
     - template: qa-steps.yml
+      parameters:
+        rust_msrv: stable
 
     # Release
     # ==============
