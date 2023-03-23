@@ -12,7 +12,6 @@ consolidate-commits=true
 # There is a missing feature in cargo-release preventing replacements
 # like {{version}} from working in "consolidate-commits" mode.
 pre-release-commit-message="sawp: release package(s)"
-post-release-commit-message="sawp: bump version"
 
 # Tags have an rpm-like versioning scheme.
 # E.g. sawp-0.1.0-rc.1
