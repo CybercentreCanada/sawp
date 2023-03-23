@@ -8,7 +8,7 @@ use sawp_ffi::GenerateFFI;
 
 use nom::bits::streaming::take as bit_take;
 use nom::bytes::streaming::take;
-use nom::combinator::{complete, flat_map, map, peek, rest};
+use nom::combinator::{complete, flat_map, map, map_parser, peek, rest};
 use nom::multi::{count, length_data, many0, many1};
 use nom::number::streaming::{be_u16, be_u24, be_u32, be_u8};
 use nom::sequence::tuple;
@@ -508,23 +508,26 @@ impl PayloadData {
             tuple((
                 be_u8,
                 be_u8,
-                be_u16,
-                be_u8,
-                be_u8,
-                be_u16,
-                map(many0(complete(Self::parse_attribute)), |attributes| {
-                    let (attributes, errs): (Vec<_>, Vec<_>) = attributes.into_iter().unzip();
-                    let errs = ErrorFlags::flatten(&errs);
-                    (attributes, errs)
-                }),
+                peek(tuple((be_u16, be_u8, be_u8, be_u16))),
+                flat_map(
+                    tuple((be_u16, be_u8, be_u8, be_u16)),
+                    |(payload_length, _, _, _)| {
+                        map_parser(
+                            take(payload_length.saturating_sub(8)),
+                            map(many0(complete(Self::parse_attribute)), |attributes| {
+                                let (attributes, errs): (Vec<_>, Vec<_>) =
+                                    attributes.into_iter().unzip();
+                                let errs = ErrorFlags::flatten(&errs);
+                                (attributes, errs)
+                            }),
+                        )
+                    },
+                ),
             )),
             |(
                 next_payload,
                 reserved,
-                payload_length,
-                transform_num,
-                transform_id,
-                reserved2,
+                (payload_length, transform_num, transform_id, reserved2),
                 (attributes, errs),
             )| {
                 let mut error_flags = ErrorFlags::none() | errs;

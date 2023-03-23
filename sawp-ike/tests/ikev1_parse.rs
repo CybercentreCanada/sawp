@@ -236,6 +236,118 @@ fn ikev1_full_parse(input: &[u8], expected: Result<(usize, Option<<Ike as Protoc
             },
             ErrorFlags::none()
         ))
+    ),
+    case::sa_multiple_transforms(
+        // IKE SA
+        &[
+        0x00, 0x00, 0x00, 0x01, // DOI (IPSec)
+        0x00, 0x00, 0x00, 0x00, // situation
+        // Proposal
+        0x00, // no next payload
+        0x00, // reserved
+        0x00, 0x38, // length - 44
+        0x01, // proposal number
+        0x01, // protocol ID
+        0x00, // spi size
+        0x03, // num transforms
+        // Transform 1
+        0x03, // next payload is transform
+        0x00, //reserved
+        0x00, 0x0C, // length - 12
+        0x01, // transform number
+        0x01, // transform ID
+        0x00, 0x00, // reserved
+        // Attribute
+        0x80, 0x01, // Type-value format, type 1
+        0x00, 0x01, // value
+        // Transform 2
+        0x03, // no next payload
+        0x00, // reserved
+        0x00, 0x0C, // length - 12
+        0x02, //transform number
+        0x01, // transform id
+        0x00, 0x00, // reserved
+        // Attribute
+        0x80, 0x01, // type-value format, type 1
+        0x00, 0x02, // value
+        // Transform 3
+        0x00, // no next payload
+        0x00, // reserved
+        0x00, 0x0C, // length - 12
+        0x03, //transform number
+        0x01, // transform id
+        0x00, 0x00, // reserved
+        // Attribute
+        0x80, 0x01, // type-value format, type 1
+        0x00, 0x03, // value
+        ],
+        PayloadType::V1SecurityAssociation,
+        (0usize, (PayloadData::V1SecurityAssociation {
+            doi: 1,
+            situation: 0,
+            proposals: vec![
+                V1Proposal {
+                    next_payload: 0,
+                    reserved: 0,
+                    payload_length: 56,
+                    proposal_num: 1,
+                    protocol_id: 1,
+                    spi_size: 0,
+                    num_transforms: 3,
+                    spi: vec![],
+                    transforms: vec![
+                        V1Transform {
+                            next_payload: 3,
+                            reserved: 0,
+                            payload_length: 12,
+                            transform_num: 1,
+                            transform_id: 1,
+                            reserved2: 0,
+                            attributes: vec![
+                                Attribute {
+                                    att_format: AttributeFormat::TypeValue,
+                                    att_type: 1,
+                                    att_length: 0,
+                                    att_value: vec![0x00, 0x01],
+                                }
+                            ]
+                        },
+                        V1Transform {
+                            next_payload: 3,
+                            reserved: 0,
+                            payload_length: 12,
+                            transform_num: 2,
+                            transform_id: 1,
+                            reserved2: 0,
+                            attributes: vec![
+                                Attribute {
+                                    att_format: AttributeFormat::TypeValue,
+                                    att_type: 1,
+                                    att_length: 0,
+                                    att_value: vec![0x00, 0x02],
+                                }
+                            ]
+                        },
+                        V1Transform {
+                            next_payload: 0,
+                            reserved: 0,
+                            payload_length: 12,
+                            transform_num: 3,
+                            transform_id: 1,
+                            reserved2: 0,
+                            attributes: vec![
+                                Attribute {
+                                    att_format: AttributeFormat::TypeValue,
+                                    att_type: 1,
+                                    att_length: 0,
+                                    att_value: vec![0x00, 0x03]
+                                }
+                            ]
+                        }
+                    ]
+                },
+            ]
+        }, ErrorFlags::none()))
     )
 )]
 fn ikev1_payload_parse(
