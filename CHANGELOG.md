@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+### Fixed
+- sawp-ike: Restricted lengths for attribute parsing to prevent buffer over-reads
+- sawp: Pin criterion dependencies to maintain our MSRV promise
+- sawp: Remove unused key from release.toml which caused build failures
+
 
 ## [0.12.0] - 2023-02-13
 ### Added
