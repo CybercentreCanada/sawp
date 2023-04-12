@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+
+## [0.12.1] - 2023-04-12
 ### Fixed
 - sawp-ike: Restricted lengths for attribute parsing to prevent buffer over-reads
 - sawp: Pin criterion dependencies to maintain our MSRV promise
@@ -148,7 +150,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - sawp-modbus: FFI support.
 
 <!-- next-url -->
-[Unreleased]: https://github.com/CybercentreCanada/sawp/compare/sawp-0.12.0...HEAD
+[Unreleased]: https://github.com/CybercentreCanada/sawp/compare/sawp-0.12.1...HEAD
+[0.12.1]: https://github.com/CybercentreCanada/sawp/releases/tag/sawp-0.12.1
 [0.12.0]: https://github.com/CybercentreCanada/sawp/releases/tag/sawp-0.12.0
 [0.11.1]: https://github.com/CybercentreCanada/sawp/releases/tag/sawp-0.11.1
 [0.11.0]: https://github.com/CybercentreCanada/sawp/releases/tag/sawp-0.11.0

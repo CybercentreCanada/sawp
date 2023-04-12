@@ -41,8 +41,8 @@ types.
 ## Example
 ```
 [dependencies]
-sawp-modbus = "0.12.0"
-sawp = "0.12.0"
+sawp-modbus = "0.12.1"
+sawp = "0.12.1"
 ```
 
 ## FFI Support
