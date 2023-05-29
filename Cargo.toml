@@ -59,6 +59,9 @@ criterion = "=0.3.4"
 rayon = "=1.6.1"
 rayon-core = "=1.10.2"
 csv = "=1.1.6"
+# Pin to regex 1.5.5 which is being used by criterion
+# This is the same version that is pinned in Suricata
+regex = "~1.5.5"
 
 [dependencies]
 sawp-ffi = { path = "sawp-ffi", version = "^0.12.1", optional = true}
