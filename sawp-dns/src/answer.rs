@@ -20,7 +20,7 @@ const OPT_RR_START: [u8; 3] = [0, 0, 41];
 /// A parsed DNS answer
 #[cfg_attr(feature = "ffi", derive(GenerateFFI))]
 #[cfg_attr(feature = "ffi", sawp_ffi(prefix = "sawp_dns"))]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Answer {
     pub name: Vec<u8>,
     #[cfg_attr(feature = "ffi", sawp_ffi(copy))]

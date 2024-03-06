@@ -64,7 +64,7 @@ use sawp_ffi::GenerateFFI;
 
 /// The TFTP header of a packet contains the  opcode  associated  with
 /// that packet. TFTP supports five types of packets
-#[derive(Clone, Copy, Debug, PartialEq, TryFromPrimitive)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, TryFromPrimitive)]
 #[repr(u16)]
 pub enum OpCode {
     ReadRequest = 1,
@@ -76,7 +76,7 @@ pub enum OpCode {
 }
 
 #[cfg_attr(feature = "ffi", derive(GenerateFFI), sawp_ffi(prefix = "sawp_tftp"))]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum Mode {
     NetASCII,
     Mail,
@@ -85,7 +85,7 @@ pub enum Mode {
 }
 
 ///  The error code is an integer indicating the nature of the error.
-#[derive(Clone, Copy, Debug, PartialEq, TryFromPrimitive)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, TryFromPrimitive)]
 #[repr(u16)]
 pub enum ErrorCode {
     NotDefined = 0,
@@ -102,7 +102,7 @@ pub enum ErrorCode {
 
 #[cfg_attr(feature = "ffi", derive(GenerateFFI))]
 #[cfg_attr(feature = "ffi", sawp_ffi(prefix = "sawp_tftp"))]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct OptionExtension {
     pub name: String,
     pub value: String,
@@ -110,7 +110,7 @@ pub struct OptionExtension {
 
 /// Represents the various types of TFTP Packets
 #[cfg_attr(feature = "ffi", derive(GenerateFFI), sawp_ffi(prefix = "sawp_tftp"))]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum Packet {
     ReadWriteRequest {
         filename: String,
@@ -132,7 +132,7 @@ pub enum Packet {
 
 /// Breakdown of the parsed TFTP bytes
 #[cfg_attr(feature = "ffi", derive(GenerateFFI), sawp_ffi(prefix = "sawp_tftp"))]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Message {
     #[cfg_attr(feature = "ffi", sawp_ffi(copy))]
     pub op_code: OpCode,

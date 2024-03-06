@@ -2,7 +2,7 @@ use num_enum::TryFromPrimitive;
 
 use std::convert::TryFrom;
 
-#[derive(Clone, Copy, Debug, PartialEq, TryFromPrimitive)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, TryFromPrimitive)]
 #[repr(u16)]
 pub enum RecordType {
     /// Address record
@@ -192,7 +192,7 @@ impl RecordType {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, TryFromPrimitive)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, TryFromPrimitive)]
 #[repr(u16)]
 pub enum RecordClass {
     IN = 1,
@@ -209,7 +209,7 @@ impl RecordClass {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, TryFromPrimitive)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, TryFromPrimitive)]
 #[repr(u16)]
 pub enum OpCode {
     QUERY = 0,
@@ -227,7 +227,7 @@ impl OpCode {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, TryFromPrimitive)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, TryFromPrimitive)]
 #[repr(u16)]
 pub enum ResponseCode {
     /// No error condition.
@@ -261,7 +261,7 @@ impl ResponseCode {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, TryFromPrimitive)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, TryFromPrimitive)]
 #[repr(u16)]
 pub enum OptResponseCode {
     /// No error condition.
@@ -299,7 +299,7 @@ impl OptResponseCode {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, TryFromPrimitive)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, TryFromPrimitive)]
 #[repr(u16)]
 pub enum TSigResponseCode {
     /// No error condition.
@@ -350,7 +350,7 @@ impl TSigResponseCode {
 }
 
 /// Indicates whether the message is a query or response.
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[repr(u8)]
 pub enum QueryResponse {
     Query = 0,
@@ -358,7 +358,7 @@ pub enum QueryResponse {
 }
 
 /// Helper enum for determining where to store parsed answers in the message
-#[derive(Clone, Copy, Debug, PartialEq, TryFromPrimitive)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, TryFromPrimitive)]
 #[repr(u8)]
 pub enum AnswerType {
     Answer = 0,
@@ -366,7 +366,7 @@ pub enum AnswerType {
     Additional = 2,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, TryFromPrimitive)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, TryFromPrimitive)]
 #[repr(u8)]
 pub enum SshfpAlgorithm {
     RESERVED = 0,
@@ -383,7 +383,7 @@ impl SshfpAlgorithm {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, TryFromPrimitive)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, TryFromPrimitive)]
 #[repr(u8)]
 pub enum SshfpFingerprint {
     RESERVED = 0,
@@ -398,7 +398,7 @@ impl SshfpFingerprint {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, TryFromPrimitive)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, TryFromPrimitive)]
 #[repr(u16)]
 pub enum TkeyMode {
     RESERVED = 0,

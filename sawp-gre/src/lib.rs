@@ -67,7 +67,7 @@ const ETHERTYPE_PPP: u16 = 0x880b;
 /// pack of bytes and take action using this information.
 #[allow(non_camel_case_types)]
 #[repr(u8)]
-#[derive(Copy, Clone, Debug, PartialEq, BitFlags)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, BitFlags)]
 pub enum ErrorFlags {
     /// Indicate that a reserve bit in the gre_flags field is inappropriately set
     RESERVE = 0b0000_0001,
@@ -89,7 +89,7 @@ pub enum ErrorFlags {
 ///   |C|R|K|S|s|Recur|A| Flags | Ver |
 ///   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 #[allow(non_camel_case_types)]
-#[derive(Copy, Clone, Debug, PartialEq, BitFlags)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, BitFlags)]
 #[repr(u16)]
 pub enum GreFlags {
     CHECKSUM = 0b1000_0000_0000_0000,
@@ -112,7 +112,7 @@ pub enum GreFlags {
 /// Source Route Entries are present in deprecated GRE and need to be handled.
 /// See https://tools.ietf.org/html/rfc1701 for implementation in GRE headers
 /// and https://tools.ietf.org/html/rfc1702 for further details.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct SourceRouteEntry {
     address_family: u16,
     sre_offset: u8,
@@ -125,7 +125,7 @@ pub struct SourceRouteEntry {
 ///  Current GRE: https://tools.ietf.org/html/rfc2784
 ///  Deprecated GRE: https://tools.ietf.org/html/rfc1701
 ///  Point-to-Point Tunneling Protocol (Enhanced GRE Header): https://tools.ietf.org/html/rfc2637
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum Data {
     Gre {
         checksum: Option<u16>,
@@ -152,7 +152,7 @@ pub enum Data {
 pub struct Gre {}
 
 /// Breakdown of the parsed GRE bytes
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Message {
     pub header: Flags<GreFlags>,
     pub protocol_type: u16,

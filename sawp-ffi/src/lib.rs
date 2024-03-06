@@ -100,7 +100,7 @@ mod tests {
     #[test]
     fn test_struct() {
         #[repr(u16)]
-        #[derive(Debug, PartialEq, Copy, Clone)]
+        #[derive(Debug, PartialEq, Eq, Copy, Clone)]
         pub enum Version {
             Ver1 = 0x0100,
             Ver1_1 = 0x0101,
@@ -108,7 +108,7 @@ mod tests {
         }
 
         #[repr(u8)]
-        #[derive(Debug, Clone, Copy, PartialEq, BitFlags)]
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, BitFlags)]
         pub enum FileType {
             Read = 0b0000_0001,
             Write = 0b0000_0010,
@@ -168,7 +168,7 @@ mod tests {
         }
 
         #[repr(u8)]
-        #[derive(Debug, Clone, Copy, PartialEq, BitFlags)]
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, BitFlags)]
         pub enum FileType {
             Read = 0b0000_0001,
             Write = 0b0000_0010,

@@ -23,7 +23,7 @@ use crate::Version;
 use std::io::{Read, Write};
 
 // Direction of a chunk of data or gap.
-#[derive(Serialize, Deserialize, Debug, PartialEq, Copy, Clone)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Copy, Clone)]
 pub enum Direction {
     Unknown,
     ToServer,
@@ -31,21 +31,21 @@ pub enum Direction {
 }
 
 /// A chunk of input data to parse.
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
 pub struct Data {
     direction: Direction,
     data: Vec<u8>,
 }
 
 /// Identifies a missing chunk of input data.
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
 pub struct Gap {
     direction: Direction,
     gap: usize,
 }
 
 /// A list of all API calls we want to expose.
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
 pub enum Call {
     /// Parse the input data.
     Parse(Data),

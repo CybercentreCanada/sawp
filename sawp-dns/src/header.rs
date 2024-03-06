@@ -12,7 +12,7 @@ use sawp_ffi::GenerateFFI;
 
 /// Masks for extracting DNS header flags
 #[allow(non_camel_case_types)]
-#[derive(Debug, Clone, Copy, PartialEq, BitFlags)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, BitFlags)]
 #[repr(u16)]
 pub enum header_masks {
     QUERY_RESPONSE = 0b1000_0000_0000_0000,
@@ -30,7 +30,7 @@ pub enum header_masks {
 /// A parsed DNS header
 #[cfg_attr(feature = "ffi", derive(GenerateFFI))]
 #[cfg_attr(feature = "ffi", sawp_ffi(prefix = "sawp_dns"))]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Header {
     /// Transaction ID
     pub transaction_id: u16,

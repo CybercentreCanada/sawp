@@ -3,7 +3,7 @@ use crate::protocol::Protocol;
 
 /// Destination of the input byte stream.
 #[repr(C)]
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Direction {
     /// Message is destined to the client
     ToClient,

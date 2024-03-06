@@ -15,7 +15,7 @@ use sawp_ffi::GenerateFFI;
 
 #[cfg_attr(feature = "ffi", derive(GenerateFFI))]
 #[cfg_attr(feature = "ffi", sawp_ffi(prefix = "sawp_dns"))]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct RDataCAA {
     pub flags: u8,
     pub tag: Vec<u8>,
@@ -24,7 +24,7 @@ pub struct RDataCAA {
 
 #[cfg_attr(feature = "ffi", derive(GenerateFFI))]
 #[cfg_attr(feature = "ffi", sawp_ffi(prefix = "sawp_dns"))]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct RDataOPT {
     /// Requestor's UDP payload size
     pub udp_payload_size: u16,
@@ -37,7 +37,7 @@ pub struct RDataOPT {
 
 #[cfg_attr(feature = "ffi", derive(GenerateFFI))]
 #[cfg_attr(feature = "ffi", sawp_ffi(prefix = "sawp_dns"))]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct RDataSoa {
     /// Primary NS for this zone
     pub mname: Vec<u8>,
@@ -57,7 +57,7 @@ pub struct RDataSoa {
 
 #[cfg_attr(feature = "ffi", derive(GenerateFFI))]
 #[cfg_attr(feature = "ffi", sawp_ffi(prefix = "sawp_dns"))]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct RDataSSHFP {
     #[cfg_attr(feature = "ffi", sawp_ffi(copy))]
     /// Algorithm number
@@ -69,7 +69,7 @@ pub struct RDataSSHFP {
 
 #[cfg_attr(feature = "ffi", derive(GenerateFFI))]
 #[cfg_attr(feature = "ffi", sawp_ffi(prefix = "sawp_dns"))]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct RDataSRV {
     pub priority: u16,
     pub weight: u16,
@@ -79,7 +79,7 @@ pub struct RDataSRV {
 
 #[cfg_attr(feature = "ffi", derive(GenerateFFI))]
 #[cfg_attr(feature = "ffi", sawp_ffi(prefix = "sawp_dns"))]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct RDataTKEY {
     pub algorithm: Vec<u8>,
     /// Time signature incepted - seconds since epoch
@@ -96,7 +96,7 @@ pub struct RDataTKEY {
 
 #[cfg_attr(feature = "ffi", derive(GenerateFFI))]
 #[cfg_attr(feature = "ffi", sawp_ffi(prefix = "sawp_dns"))]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct RDataTSIG {
     pub algorithm_name: Vec<u8>,
     /// Seconds since epoch
@@ -115,7 +115,7 @@ pub struct RDataTSIG {
 
 #[cfg_attr(feature = "ffi", derive(GenerateFFI))]
 #[cfg_attr(feature = "ffi", sawp_ffi(prefix = "sawp_dns"))]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum RDataType {
     /// Addresses
     A(Vec<u8>),

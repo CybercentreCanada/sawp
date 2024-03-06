@@ -176,7 +176,7 @@ where
 
 /// Error flags raised while parsing DNS - to be used in the returned Message
 #[repr(u16)]
-#[derive(Clone, Copy, Debug, PartialEq, BitFlags)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, BitFlags)]
 pub enum ErrorFlags {
     /// more than one pseudo-RR exists - EDNS specs limit OPT RRs to <=1
     ExtraOptRr = 0b0000_0000_0000_0001,
@@ -201,7 +201,7 @@ pub enum ErrorFlags {
 /// Breakdown of the parsed dns bytes
 #[cfg_attr(feature = "ffi", derive(GenerateFFI))]
 #[cfg_attr(feature = "ffi", sawp_ffi(prefix = "sawp_dns"))]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Message {
     pub header: Header,
     pub queries: Vec<Question>,

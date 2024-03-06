@@ -11,7 +11,7 @@ use sawp_ffi::GenerateFFI;
 /// A parsed DNS question
 #[cfg_attr(feature = "ffi", derive(GenerateFFI))]
 #[cfg_attr(feature = "ffi", sawp_ffi(prefix = "sawp_dns"))]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Question {
     pub name: Vec<u8>,
     #[cfg_attr(feature = "ffi", sawp_ffi(copy))]

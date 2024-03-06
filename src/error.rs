@@ -20,7 +20,7 @@ pub type NomError<I> = nom::error::Error<I>;
 /// Sub packages may choose to implement their own error
 /// types if they wish to avoid adding extra dependencies
 /// to the base crate.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "ffi", derive(GenerateFFI))]
 #[cfg_attr(feature = "ffi", sawp_ffi(prefix = "sawp"))]
 pub struct Error {
@@ -69,14 +69,14 @@ impl From<ErrorKind> for Error {
 ///
 /// Used in `ErrorKind::Incomplete` to tell the caller how many bytes to wait
 /// for before calling the parser with more data.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum Needed {
     Unknown,
     Size(NonZeroUsize),
 }
 
 /// Kinds of common errors used by the parsers
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 #[non_exhaustive]
 #[cfg_attr(feature = "ffi", derive(GenerateFFI))]
 #[cfg_attr(feature = "ffi", sawp_ffi(type_only, prefix = "sawp"))]

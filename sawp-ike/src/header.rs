@@ -45,7 +45,7 @@ pub enum ExchangeType {
 #[cfg_attr(feature = "ffi", derive(GenerateFFI))]
 #[cfg_attr(feature = "ffi", sawp_ffi(prefix = "sawp_ike"))]
 #[repr(u8)]
-#[derive(Clone, Copy, Debug, PartialEq, BitFlags)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, BitFlags)]
 pub enum IkeFlags {
     /// Body is encrypted
     ENCRYPTED = 0b0000_0001,
@@ -63,7 +63,7 @@ pub enum IkeFlags {
 
 #[cfg_attr(feature = "ffi", derive(GenerateFFI))]
 #[cfg_attr(feature = "ffi", sawp_ffi(prefix = "sawp_ike"))]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Header {
     pub initiator_spi: u64,
     pub responder_spi: u64,

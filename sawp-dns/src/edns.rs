@@ -21,7 +21,7 @@ use crate::{custom_many0, ErrorFlags, IResult};
 #[cfg(feature = "ffi")]
 use sawp_ffi::GenerateFFI;
 
-#[derive(Clone, Copy, Debug, PartialEq, TryFromPrimitive)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, TryFromPrimitive)]
 #[repr(u16)]
 pub enum OptionCode {
     /// Long-Lived Queries
@@ -69,7 +69,7 @@ impl OptionCode {
 
 #[cfg_attr(feature = "ffi", derive(GenerateFFI))]
 #[cfg_attr(feature = "ffi", sawp_ffi(prefix = "sawp_dns"))]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct EdnsOption {
     #[cfg_attr(feature = "ffi", sawp_ffi(copy))]
     pub code: OptionCode,

@@ -87,7 +87,7 @@ const MAX_LENGTH: u16 = 254;
 /// will have the same request/response structure.
 #[allow(non_camel_case_types)]
 #[repr(u8)]
-#[derive(Copy, Clone, Debug, PartialEq, BitFlags)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, BitFlags)]
 pub enum AccessType {
     READ = 0b0000_0001,
     WRITE = 0b0000_0010,
@@ -130,7 +130,7 @@ impl From<FunctionCode> for Flags<AccessType> {
 /// Function Code Categories as stated in the [protocol reference](https://modbus.org/docs/Modbus_Application_Protocol_V1_1b.pdf)
 #[allow(non_camel_case_types)]
 #[repr(u8)]
-#[derive(Copy, Clone, Debug, PartialEq, BitFlags)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, BitFlags)]
 pub enum CodeCategory {
     PUBLIC_ASSIGNED = 0b0000_0001,
     PUBLIC_UNASSIGNED = 0b0000_0010,
@@ -194,7 +194,7 @@ impl From<&Message> for Flags<CodeCategory> {
 /// pack of bytes and take action using this information.
 #[allow(non_camel_case_types)]
 #[repr(u8)]
-#[derive(Copy, Clone, Debug, PartialEq, BitFlags)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, BitFlags)]
 pub enum ErrorFlags {
     DATA_VALUE = 0b0000_0001,
     DATA_LENGTH = 0b0000_0010,
@@ -206,7 +206,7 @@ pub enum ErrorFlags {
 /// Information on the function code parsed
 #[cfg_attr(feature = "ffi", derive(GenerateFFI))]
 #[cfg_attr(feature = "ffi", sawp_ffi(prefix = "sawp_modbus"))]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Function {
     /// Value of the function byte
     pub raw: u8,
@@ -231,7 +231,7 @@ impl Function {
 }
 
 /// Function code names as stated in the [protocol reference](https://modbus.org/docs/Modbus_Application_Protocol_V1_1b.pdf)
-#[derive(Clone, Copy, Debug, PartialEq, TryFromPrimitive)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, TryFromPrimitive)]
 #[repr(u8)]
 pub enum FunctionCode {
     RdCoils = 0x01,
@@ -277,7 +277,7 @@ impl FunctionCode {
 /// Information on the diagnostic subfunction code parsed
 #[cfg_attr(feature = "ffi", derive(GenerateFFI))]
 #[cfg_attr(feature = "ffi", sawp_ffi(prefix = "sawp_modbus"))]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Diagnostic {
     /// Value of the subfunction bytes
     pub raw: u16,
@@ -296,7 +296,7 @@ impl Diagnostic {
 }
 
 /// Subfunction code names as stated in the [protocol reference](https://modbus.org/docs/Modbus_Application_Protocol_V1_1b.pdf)
-#[derive(Clone, Copy, Debug, PartialEq, TryFromPrimitive)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, TryFromPrimitive)]
 #[repr(u16)]
 pub enum DiagnosticSubfunction {
     RetQueryData = 0x00,
@@ -330,7 +330,7 @@ impl std::fmt::Display for DiagnosticSubfunction {
 /// Information on the mei code parsed
 #[cfg_attr(feature = "ffi", derive(GenerateFFI))]
 #[cfg_attr(feature = "ffi", sawp_ffi(prefix = "sawp_modbus"))]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct MEI {
     /// Value of the mei function byte
     pub raw: u8,
@@ -349,7 +349,7 @@ impl MEI {
 }
 
 /// MEI function code names as stated in the [protocol reference](https://modbus.org/docs/Modbus_Application_Protocol_V1_1b.pdf)
-#[derive(Clone, Copy, Debug, PartialEq, TryFromPrimitive)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, TryFromPrimitive)]
 #[repr(u8)]
 pub enum MEIType {
     Unknown = 0x00,
@@ -366,7 +366,7 @@ impl std::fmt::Display for MEIType {
 /// Information on the exception code parsed
 #[cfg_attr(feature = "ffi", derive(GenerateFFI))]
 #[cfg_attr(feature = "ffi", sawp_ffi(prefix = "sawp_modbus"))]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Exception {
     /// Value of the exception code byte
     pub raw: u8,
@@ -385,7 +385,7 @@ impl Exception {
 }
 
 /// Exception code names as stated in the [protocol reference](https://modbus.org/docs/Modbus_Application_Protocol_V1_1b.pdf)
-#[derive(Clone, Copy, Debug, PartialEq, TryFromPrimitive)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, TryFromPrimitive)]
 #[repr(u8)]
 pub enum ExceptionCode {
     IllegalFunction = 0x01,
@@ -410,7 +410,7 @@ impl std::fmt::Display for ExceptionCode {
 /// Read information on parsed in function data
 #[cfg_attr(feature = "ffi", derive(GenerateFFI))]
 #[cfg_attr(feature = "ffi", sawp_ffi(prefix = "sawp_modbus"))]
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Read {
     Request { address: u16, quantity: u16 },
     Response(Vec<u8>),
@@ -419,7 +419,7 @@ pub enum Read {
 /// Write information on parsed in function data
 #[cfg_attr(feature = "ffi", derive(GenerateFFI))]
 #[cfg_attr(feature = "ffi", sawp_ffi(prefix = "sawp_modbus"))]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum Write {
     /// [`AccessType::MULTIPLE`] requests, responses fall in [`Write::Other`]
     MultReq {
@@ -442,7 +442,7 @@ pub enum Write {
 /// Represents the various fields found in the PDU
 #[cfg_attr(feature = "ffi", derive(GenerateFFI))]
 #[cfg_attr(feature = "ffi", sawp_ffi(prefix = "sawp_modbus"))]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum Data {
     Exception(Exception),
     Diagnostic {
@@ -474,7 +474,7 @@ pub struct Modbus {
 /// Breakdown of the parsed modbus bytes
 #[cfg_attr(feature = "ffi", derive(GenerateFFI))]
 #[cfg_attr(feature = "ffi", sawp_ffi(prefix = "sawp_modbus"))]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Message {
     pub transaction_id: u16,
     pub protocol_id: u16,

@@ -632,7 +632,7 @@ fn gen_enum_type(
     let deref_variable = deref(&enum_variable);
     quote! {
         #[repr(C)]
-        #[derive(Debug, PartialEq, Clone, Copy)]
+        #[derive(Debug, PartialEq, Eq, Clone, Copy)]
         pub enum #enum_name {
             #members
         }

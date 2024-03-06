@@ -23,7 +23,7 @@ use bitflags::bitflags;
 #[derive(Debug)]
 pub struct Diameter {}
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Header {
     version: u8,
     length: u32, // Actually u24
@@ -35,7 +35,7 @@ pub struct Header {
 }
 
 /// AVP Attribute Names as stated in the [protocol reference](https://tools.ietf.org/html/rfc6733#section-4.5)
-#[derive(Debug, PartialEq, TryFromPrimitive)]
+#[derive(Debug, PartialEq, Eq, TryFromPrimitive)]
 #[repr(u32)]
 pub enum AttributeCode {
     Unknown = 0,
@@ -90,7 +90,7 @@ pub enum AttributeCode {
     VendorSpecificApplicationId = 260,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Attribute {
     /// Value of the code in AVP header
     raw: u32,

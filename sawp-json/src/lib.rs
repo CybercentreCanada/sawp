@@ -11,7 +11,7 @@ use serde_json::{Deserializer, Value};
 #[derive(Debug)]
 pub struct Json {}
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Message {
     pub value: Value,
 }

@@ -87,7 +87,7 @@ impl PayloadType {
 
 #[cfg_attr(feature = "ffi", derive(GenerateFFI))]
 #[cfg_attr(feature = "ffi", sawp_ffi(prefix = "sawp_ike"))]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Payload {
     pub next_payload: PayloadType,
     pub critical_bit: Option<u8>,
@@ -215,7 +215,7 @@ impl Payload {
 
 #[cfg_attr(feature = "ffi", derive(GenerateFFI))]
 #[cfg_attr(feature = "ffi", sawp_ffi(prefix = "sawp_ike"))]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum PayloadData {
     V1SecurityAssociation {
         doi: u32,
@@ -1558,7 +1558,7 @@ impl PayloadData {
 
 #[cfg_attr(feature = "ffi", derive(GenerateFFI))]
 #[cfg_attr(feature = "ffi", sawp_ffi(prefix = "sawp_ike"))]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct V1Proposal {
     pub next_payload: u8,
     pub reserved: u8,
@@ -1573,7 +1573,7 @@ pub struct V1Proposal {
 
 #[cfg_attr(feature = "ffi", derive(GenerateFFI))]
 #[cfg_attr(feature = "ffi", sawp_ffi(prefix = "sawp_ike"))]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct V1Transform {
     pub next_payload: u8,
     pub reserved: u8,
@@ -1584,7 +1584,7 @@ pub struct V1Transform {
     pub attributes: Vec<Attribute>,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct SaKek {
     pub protocol: u8,
     pub src_id_type: u8,
@@ -1603,7 +1603,7 @@ pub struct SaKek {
 
 #[cfg_attr(feature = "ffi", derive(GenerateFFI))]
 #[cfg_attr(feature = "ffi", sawp_ffi(prefix = "sawp_ike"))]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct KeyPacket {
     pub kd_type: u8,
     pub reserved: u8,
@@ -1615,7 +1615,7 @@ pub struct KeyPacket {
 
 #[cfg_attr(feature = "ffi", derive(GenerateFFI))]
 #[cfg_attr(feature = "ffi", sawp_ffi(prefix = "sawp_ike"))]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Proposal {
     pub last_substruc: u8,
     pub reserved: u8,
@@ -1630,7 +1630,7 @@ pub struct Proposal {
 
 #[cfg_attr(feature = "ffi", derive(GenerateFFI))]
 #[cfg_attr(feature = "ffi", sawp_ffi(prefix = "sawp_ike"))]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Transform {
     pub last_substruc: u8,
     pub reserved: u8,
@@ -1667,7 +1667,7 @@ pub enum TransformType {
 
 #[cfg_attr(feature = "ffi", derive(GenerateFFI))]
 #[cfg_attr(feature = "ffi", sawp_ffi(prefix = "sawp_ike"))]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Attribute {
     pub att_format: AttributeFormat,
     pub att_type: u16,
@@ -1677,7 +1677,7 @@ pub struct Attribute {
 
 #[cfg_attr(feature = "ffi", derive(GenerateFFI))]
 #[cfg_attr(feature = "ffi", sawp_ffi(prefix = "sawp_ike"))]
-#[derive(Debug, PartialEq, FromPrimitive)]
+#[derive(Debug, PartialEq, Eq, FromPrimitive)]
 #[repr(u8)]
 pub enum AttributeFormat {
     #[num_enum(default)]
@@ -1687,7 +1687,7 @@ pub enum AttributeFormat {
 
 #[cfg_attr(feature = "ffi", derive(GenerateFFI))]
 #[cfg_attr(feature = "ffi", sawp_ffi(prefix = "sawp_ike"))]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct TrafficSelector {
     pub number_ts: u8,
     pub reserved: u32, // 24 bits
@@ -1696,7 +1696,7 @@ pub struct TrafficSelector {
 
 #[cfg_attr(feature = "ffi", derive(GenerateFFI))]
 #[cfg_attr(feature = "ffi", sawp_ffi(prefix = "sawp_ike"))]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct TrafficSelectorBody {
     pub ts_type: u8,
     pub ip_protocol_id: u8,
@@ -1706,7 +1706,7 @@ pub struct TrafficSelectorBody {
 
 #[cfg_attr(feature = "ffi", derive(GenerateFFI))]
 #[cfg_attr(feature = "ffi", sawp_ffi(prefix = "sawp_ike"))]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum Address {
     Ipv4(AddressV4),
     Ipv6(AddressV6),
@@ -1716,7 +1716,7 @@ pub enum Address {
 
 #[cfg_attr(feature = "ffi", derive(GenerateFFI))]
 #[cfg_attr(feature = "ffi", sawp_ffi(prefix = "sawp_ike"))]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct AddressV4 {
     pub start_port: u16,
     pub end_port: u16,
@@ -1726,7 +1726,7 @@ pub struct AddressV4 {
 
 #[cfg_attr(feature = "ffi", derive(GenerateFFI))]
 #[cfg_attr(feature = "ffi", sawp_ffi(prefix = "sawp_ike"))]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct AddressV6 {
     pub start_port: u16,
     pub end_port: u16,
@@ -1736,7 +1736,7 @@ pub struct AddressV6 {
 
 #[cfg_attr(feature = "ffi", derive(GenerateFFI))]
 #[cfg_attr(feature = "ffi", sawp_ffi(prefix = "sawp_ike"))]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Fibre {
     pub reserved: u8,
     pub starting_address: u32, // Actually 24 bits left-padded to 32
@@ -1750,7 +1750,7 @@ pub struct Fibre {
 
 #[cfg_attr(feature = "ffi", derive(GenerateFFI))]
 #[cfg_attr(feature = "ffi", sawp_ffi(prefix = "sawp_ike"))]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Certificate {
     pub cert_encoding: u8,
     pub certificate_data: Vec<u8>,
@@ -1758,7 +1758,7 @@ pub struct Certificate {
 
 #[cfg_attr(feature = "ffi", derive(GenerateFFI))]
 #[cfg_attr(feature = "ffi", sawp_ffi(prefix = "sawp_ike"))]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct CertificateRequest {
     pub cert_encoding: u8,
     pub certification_authority: Vec<u8>,
@@ -1766,7 +1766,7 @@ pub struct CertificateRequest {
 
 #[cfg_attr(feature = "ffi", derive(GenerateFFI))]
 #[cfg_attr(feature = "ffi", sawp_ffi(prefix = "sawp_ike"))]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Identification {
     pub id_type: u8,
     pub reserved: u32, // 24 bits

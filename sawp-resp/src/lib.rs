@@ -71,7 +71,7 @@ pub const MAX_BULK_STRING_LEN: usize = 1024 * 512;
 
 /// Error flags raised while parsing RESP - to be used in the returned Message
 #[repr(u8)]
-#[derive(Clone, Copy, Debug, PartialEq, BitFlags)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, BitFlags)]
 pub enum ErrorFlags {
     /// Malformed data including invalid type tokens, invalid integers,
     /// or improperly formatted RESP has been parsed.
@@ -85,7 +85,7 @@ pub enum ErrorFlags {
 }
 
 /// RESP signals data types by prepending these one-character tokens
-#[derive(Clone, Copy, Debug, PartialEq, TryFromPrimitive)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, TryFromPrimitive)]
 #[repr(u8)]
 pub enum DataTypeToken {
     /// A single binary-safe string up to 512 MB in length. Precedes a CRLF-terminated length describing the following
@@ -117,7 +117,7 @@ impl DataTypeToken {
 /// Entry types to return in the parsed message
 #[cfg_attr(feature = "ffi", derive(GenerateFFI))]
 #[cfg_attr(feature = "ffi", sawp_ffi(prefix = "sawp_resp"))]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum Entry {
     /// Arrays of entries
     Array(Vec<Entry>),
@@ -149,7 +149,7 @@ pub enum StringResult<'a> {
 /// Breakdown of the parsed resp bytes
 #[cfg_attr(feature = "ffi", derive(GenerateFFI))]
 #[cfg_attr(feature = "ffi", sawp_ffi(prefix = "sawp_resp"))]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Message {
     pub entry: Entry,
     #[cfg_attr(feature = "ffi", sawp_ffi(flag = "u8"))]

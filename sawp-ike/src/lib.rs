@@ -84,7 +84,7 @@ type IResult<'a, O> = nom::IResult<&'a [u8], O, sawp::error::NomError<&'a [u8]>>
 
 /// Classes of errors that can be returned by this parser.
 #[repr(u16)]
-#[derive(Clone, Copy, Debug, PartialEq, BitFlags)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, BitFlags)]
 pub enum ErrorFlags {
     /// Unknown Exchange number
     UnknownExchange = 0b0000_0000_0000_0001,
@@ -130,7 +130,7 @@ impl ErrorFlags {
 /// transport layer (i.e. layer 3 Ethernet header followed by encrypted payload).
 #[cfg_attr(feature = "ffi", derive(GenerateFFI))]
 #[cfg_attr(feature = "ffi", sawp_ffi(prefix = "sawp_ike"))]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum Message {
     /// An IKE payload
     Ike(IkeMessage),
@@ -141,7 +141,7 @@ pub enum Message {
 /// The parsed IKEv1 or v2 message
 #[cfg_attr(feature = "ffi", derive(GenerateFFI))]
 #[cfg_attr(feature = "ffi", sawp_ffi(prefix = "sawp_ike"))]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct IkeMessage {
     /// The header
     pub header: Header,
@@ -159,7 +159,7 @@ pub struct IkeMessage {
 /// The full encrypted payload, tail padding, and integrity check is not parsed.
 #[cfg_attr(feature = "ffi", derive(GenerateFFI))]
 #[cfg_attr(feature = "ffi", sawp_ffi(prefix = "sawp_ike"))]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct EspMessage {
     pub spi: u32,
     pub sequence: u32,
