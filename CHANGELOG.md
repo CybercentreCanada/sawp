@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased] - ReleaseDate
 ### Changed
 - sawp: increased MSRV to 1.63.0
+- sawp: Remove Cargo.toml deps which served to pin MSRV compatible transitive dependencies
 - sawp: derive Eq where PartialEq is already derived and Eq could be derived (applied from clippy lint)
 
 ## [0.12.1] - 2023-04-12
