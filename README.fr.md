@@ -33,7 +33,7 @@ capteurs de sécurité réseau existantes et à venir. (tâche)
 Pour commencer à utiliser SAWP, ajoutez un analyseur aux dépendances `Cargo.toml` de
 vos projets. La bibliothèque de base sera également nécessaire à l’utilisation de types courants.
 
-**La version minimale prise en charge de `rustc` est `1.58.1`.**
+**La version minimale prise en charge de `rustc` est `1.63.0`.**
 
 ## Exemple 
 ``` 

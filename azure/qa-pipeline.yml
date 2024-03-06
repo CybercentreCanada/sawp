@@ -19,7 +19,7 @@ resources:
 
 variables:
 - name: rust_msrv
-  value: 1.58.1
+  value: 1.63.0
 
 stages:
 - stage: test
