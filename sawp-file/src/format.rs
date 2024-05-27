@@ -22,6 +22,8 @@ use crate::error::{Error, ErrorKind, Result};
 use crate::Version;
 use std::io::{Read, Write};
 
+use serde::{Deserialize, Serialize};
+
 // Direction of a chunk of data or gap.
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Copy, Clone)]
 pub enum Direction {

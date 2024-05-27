@@ -1,5 +1,7 @@
 use crate::Version;
 
+use rmp_serde as rmps;
+
 pub type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Debug)]

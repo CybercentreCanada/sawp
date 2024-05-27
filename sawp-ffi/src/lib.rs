@@ -1,6 +1,5 @@
 #![allow(clippy::unneeded_field_pattern)]
 
-extern crate sawp_ffi_derive;
 pub use sawp_ffi_derive::GenerateFFI;
 
 #[macro_export]
@@ -57,9 +56,6 @@ impl<T> IntoFFIPtr<T> for T {
         Box::into_raw(boxed)
     }
 }
-
-#[cfg(test)]
-extern crate sawp_flags;
 
 #[cfg(test)]
 #[allow(dead_code)]

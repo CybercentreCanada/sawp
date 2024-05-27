@@ -3,12 +3,6 @@
 //! This module defines structs to serialize and deserialize arguments to SAWP
 //! calls in order to replay them into a parser.
 
-extern crate serde;
-
-#[macro_use]
-extern crate serde_derive;
-extern crate rmp_serde as rmps;
-
 pub mod error;
 pub mod format;
 

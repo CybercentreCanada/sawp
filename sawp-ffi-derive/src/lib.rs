@@ -126,7 +126,6 @@
 //!
 //! ### Example
 //! ```
-//! extern crate sawp_flags;
 //! use sawp_flags::{BitFlags, Flags, Flag};
 //! use sawp_ffi_derive::GenerateFFI;
 //!
@@ -213,8 +212,6 @@
 //!
 //! If the field type is a sawp_flags::Flags, the accessor will return
 //! the primative value, ie. the returned value by `.bits()`.
-
-extern crate proc_macro;
 
 mod attrs;
 use crate::attrs::*;
