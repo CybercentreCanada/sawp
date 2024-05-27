@@ -52,11 +52,7 @@ bench = false
 cbindgen = {version = "0.15", optional = true}
 
 [dev-dependencies]
-clap = "~2.33"
 criterion = "=0.3.4"
-# Pin to regex 1.5.5 which is being used by criterion
-# This is the same version that is pinned in Suricata
-regex = "~1.5.5"
 
 [dependencies]
 sawp-ffi = { path = "sawp-ffi", version = "^0.12.1", optional = true}
