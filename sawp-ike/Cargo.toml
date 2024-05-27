@@ -30,7 +30,6 @@ sawp-flags = { path = "../sawp-flags", version = "^0.13.1" }
 sawp = {path = "..", version = "^0.13.1" }
 nom = "7.1.1"
 num_enum = "0.5.1"
-byteorder = "1.4.3"
 
 [lib]
 crate-type = ["staticlib", "rlib", "cdylib"]

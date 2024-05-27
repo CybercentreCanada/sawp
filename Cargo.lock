@@ -595,7 +595,6 @@ name = "sawp-ffi-derive"
 version = "0.13.1"
 dependencies = [
  "heck",
- "proc-macro-crate",
  "proc-macro2",
  "quote",
  "sawp-flags",
@@ -609,7 +608,6 @@ dependencies = [
  "rmp-serde",
  "sawp",
  "serde",
- "serde_derive",
 ]
 
 [[package]]
@@ -623,7 +621,6 @@ dependencies = [
 name = "sawp-flags-derive"
 version = "0.13.1"
 dependencies = [
- "proc-macro-crate",
  "proc-macro2",
  "quote",
  "syn 1.0.109",
@@ -635,7 +632,6 @@ version = "0.13.1"
 dependencies = [
  "cbindgen",
  "nom",
- "num_enum",
  "rstest",
  "sawp",
  "sawp-ffi",
@@ -646,7 +642,6 @@ dependencies = [
 name = "sawp-ike"
 version = "0.13.1"
 dependencies = [
- "byteorder",
  "cbindgen",
  "nom",
  "num_enum",
@@ -696,7 +691,6 @@ dependencies = [
 name = "sawp-resp"
 version = "0.13.1"
 dependencies = [
- "byteorder",
  "cbindgen",
  "nom",
  "num_enum",
