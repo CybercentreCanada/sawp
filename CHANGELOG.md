@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - sawp: Remove Cargo.toml deps which served to pin MSRV compatible transitive dependencies
 - sawp: derive Eq where PartialEq is already derived and Eq could be derived (applied from clippy lint)
 - sawp: Include Cargo.lock to help deliver on our MSRV promise
+- sawp-file: Update to rmp-serde 1.1.1
 
 ## [0.12.1] - 2023-04-12
 ### Fixed
