@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - sawp: Include Cargo.lock to help deliver on our MSRV promise
 - sawp-file: Update to rmp-serde 1.1.1
 - sawp: Applied clippy lints
+- sawp-diameter: error flags now use sawp\_flags, changing from a struct to an enum.
 
 ## [0.12.1] - 2023-04-12
 ### Fixed

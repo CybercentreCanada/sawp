@@ -561,11 +561,11 @@ dependencies = [
 name = "sawp-diameter"
 version = "0.12.1"
 dependencies = [
- "bitflags 1.2.1",
  "nom",
  "num_enum",
  "rstest",
  "sawp",
+ "sawp-flags",
 ]
 
 [[package]]
