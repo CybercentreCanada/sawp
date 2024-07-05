@@ -73,7 +73,7 @@ mod tests {
     fn test_deref() {
         let ptr: *const u8 = std::ptr::null();
         unsafe {
-            crate::deref!(ptr);
+            let _ = crate::deref!(ptr);
         }
     }
 

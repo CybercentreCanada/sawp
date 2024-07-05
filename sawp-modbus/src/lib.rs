@@ -1101,7 +1101,7 @@ impl Message {
                 _ => return None,
             };
 
-            if *start == std::u16::MAX || *start >= address {
+            if *start == u16::MAX || *start >= address {
                 return None;
             }
 
@@ -1158,7 +1158,7 @@ impl Message {
                         data: _,
                     },
             } => {
-                if *quantity > 0 && *quantity <= std::u16::MAX - address {
+                if *quantity > 0 && *quantity <= u16::MAX - address {
                     Some((address + 1)..=(address + quantity))
                 } else {
                     None
