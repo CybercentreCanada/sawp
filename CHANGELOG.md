@@ -16,6 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - sawp: Applied clippy lints
 - sawp-diameter: error flags now use sawp\_flags, changing from a struct to an enum.
 
+### Fixed
+- sawp: Fix release pipeline to verify MSRV, not stable
+
 ## [0.12.1] - 2023-04-12
 ### Fixed
 - sawp-ike: Restricted lengths for attribute parsing to prevent buffer over-reads

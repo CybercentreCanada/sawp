@@ -33,7 +33,10 @@ parameters:
     default: true
 
 variables:
-  rpm_dir: target/rpmbuild/RPMS/x86_64/
+- name: rpm_dir
+  value: target/rpmbuild/RPMS/x86_64/
+- name: rust_msrv
+  value: 1.63.0
 
 trigger: none
 pr: none
@@ -61,7 +64,7 @@ jobs:
       clean: true
       path: sawp
       persistCredentials: true
-    
+
     # Configure author to commit release with
     - script: git config user.name ${{ parameters.name }}
     - script: git config user.email ${{ parameters.email }}
@@ -81,7 +84,7 @@ jobs:
     # ==============
     - template: qa-steps.yml
       parameters:
-        rust_msrv: stable
+        rust_msrv: ${{ variables.rust_msrv }}
 
     # Release
     # ==============
