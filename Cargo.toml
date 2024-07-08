@@ -1,6 +1,6 @@
 [package]
 name = "sawp"
-version = "0.12.1"
+version = "0.13.0"
 authors = ["Canadian Centre for Cyber Security <sa-sawp@cyber.gc.ca>"]
 description = "Security Aware Wire Protocol parsing library"
 readme = "README.md"
@@ -55,7 +55,7 @@ cbindgen = {version = "0.15", optional = true}
 criterion = "=0.3.4"
 
 [dependencies]
-sawp-ffi = { path = "sawp-ffi", version = "^0.12.1", optional = true}
+sawp-ffi = { path = "sawp-ffi", version = "^0.13.0", optional = true}
 nom = "7.1.1"
 
 [[bench]]

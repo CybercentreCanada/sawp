@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+
+## [0.13.0] - 2024-07-08
 ### Changed
 - sawp: increased MSRV to 1.63.0
 - sawp: Remove Cargo.toml deps which served to pin MSRV compatible transitive dependencies
@@ -161,7 +163,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - sawp-modbus: FFI support.
 
 <!-- next-url -->
-[Unreleased]: https://github.com/CybercentreCanada/sawp/compare/sawp-0.12.1...HEAD
+[Unreleased]: https://github.com/CybercentreCanada/sawp/compare/sawp-0.13.0...HEAD
+[0.13.0]: https://github.com/CybercentreCanada/sawp/releases/tag/sawp-0.13.0
 [0.12.1]: https://github.com/CybercentreCanada/sawp/releases/tag/sawp-0.12.1
 [0.12.0]: https://github.com/CybercentreCanada/sawp/releases/tag/sawp-0.12.0
 [0.11.1]: https://github.com/CybercentreCanada/sawp/releases/tag/sawp-0.11.1
