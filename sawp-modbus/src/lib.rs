@@ -478,7 +478,7 @@ pub struct Modbus {
 pub struct Message {
     pub transaction_id: u16,
     pub protocol_id: u16,
-    length: u16,
+    pub length: u16,
     pub unit_id: u8,
     pub function: Function,
     #[cfg_attr(feature = "ffi", sawp_ffi(flag = "u8"))]

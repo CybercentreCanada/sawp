@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+### Changed
+- sawp-modbus: Make length field of Message public
 
 ## [0.13.0] - 2024-07-08
 ### Changed
