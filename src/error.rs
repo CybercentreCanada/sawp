@@ -47,13 +47,13 @@ impl Error {
     }
 
     /// Helper for creating a parse error.
-    #[cfg(verbose)]
+    #[cfg(feature = "verbose")]
     pub fn parse(msg: Option<String>) -> Self {
         Error::new(ErrorKind::ParseError(msg))
     }
 
     /// Helper for creating a parse error.
-    #[cfg(not(verbose))]
+    #[cfg(not(feature = "verbose"))]
     pub fn parse(_msg: Option<String>) -> Self {
         Error::new(ErrorKind::ParseError(None))
     }
@@ -104,12 +104,12 @@ pub enum ErrorKind {
 }
 
 impl From<NomErrorKind> for ErrorKind {
-    #[cfg(verbose)]
+    #[cfg(feature = "verbose")]
     fn from(kind: NomErrorKind) -> Self {
         Self::ParseError(Some(format!("{:?}", kind)))
     }
 
-    #[cfg(not(verbose))]
+    #[cfg(not(feature = "verbose"))]
     fn from(_kind: NomErrorKind) -> Self {
         Self::ParseError(None)
     }
