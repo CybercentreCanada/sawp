@@ -43,7 +43,7 @@
 
 use sawp::error::Result;
 use sawp::parser::{Direction, Parse};
-use sawp::probe::Probe;
+use sawp::probe::{Probe, Status};
 use sawp::protocol::Protocol;
 use sawp_flags::{BitFlags, Flag, Flags};
 
@@ -169,7 +169,29 @@ impl<'a> Protocol<'a> for Resp {
     }
 }
 
-impl<'a> Probe<'a> for Resp {}
+impl<'a> Probe<'a> for Resp {
+    /// Probes the input to recognize if the underlying bytes likely match this
+    /// protocol.
+    ///
+    /// Returns a probe status. Probe again once more data is available when the
+    /// status is `Status::Incomplete`.
+    fn probe(&self, input: &'a [u8], direction: Direction) -> Status {
+        match self.parse(input, direction) {
+            Ok((
+                _,
+                Some(Message {
+                    entry: Entry::Invalid(_),
+                    error_flags: _,
+                }),
+            )) => Status::Unrecognized, // If the only message is Invalid it is probably not RESP
+            Ok(_) => Status::Recognized,
+            Err(sawp::error::Error {
+                kind: sawp::error::ErrorKind::Incomplete(_),
+            }) => Status::Incomplete,
+            Err(_) => Status::Unrecognized,
+        }
+    }
+}
 
 impl Resp {
     fn advance_if_crlf(input: &[u8]) -> &[u8] {

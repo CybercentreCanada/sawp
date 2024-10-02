@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - sawp-resp: Fix crash with negative length arrays triggering a massive memory allocation
+- sawp-resp: Override Probe to reject when Invalid is the only message. The default implementation caused all data to always be interpreted as RESP.
 
 ## [0.13.0] - 2024-07-08
 ### Changed
