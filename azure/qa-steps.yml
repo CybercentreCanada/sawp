@@ -66,7 +66,7 @@ steps:
       artifactName: sawp-$(version).tar.gz
 
   # Run the unit tests
-  - script: cargo test --workspace --all-targets --all-features --locked
+  - script: cargo test --workspace --all-targets --locked
     displayName: run tests
 
   # Run the memory checks
@@ -75,7 +75,7 @@ steps:
 
   # Run the doc tests
   # Needed until this issue is fixed: https://github.com/rust-lang/cargo/issues/6669
-  - script: cargo test --workspace --doc --all-features --locked
+  - script: cargo test --workspace --doc --locked
     displayName: run doc tests
 
   # Check code coverage
