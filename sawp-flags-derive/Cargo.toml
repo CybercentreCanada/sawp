@@ -1,6 +1,6 @@
 [package]
 name = "sawp-flags-derive"
-version = "0.13.0"
+version = "0.13.1"
 authors = ["Canadian Centre for Cyber Security <sa-sawp@cyber.gc.ca>"]
 description = "SAWP BitFlags Handling and Storage Derive Macro"
 readme = "../README.md"

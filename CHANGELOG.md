@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+
+## [0.13.1] - 2024-10-02
 ### Changed
 - sawp-modbus: Make length field of Message public
 
@@ -170,7 +172,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - sawp-modbus: FFI support.
 
 <!-- next-url -->
-[Unreleased]: https://github.com/CybercentreCanada/sawp/compare/sawp-0.13.0...HEAD
+[Unreleased]: https://github.com/CybercentreCanada/sawp/compare/sawp-0.13.1...HEAD
+[0.13.1]: https://github.com/CybercentreCanada/sawp/releases/tag/sawp-0.13.1
 [0.13.0]: https://github.com/CybercentreCanada/sawp/releases/tag/sawp-0.13.0
 [0.12.1]: https://github.com/CybercentreCanada/sawp/releases/tag/sawp-0.12.1
 [0.12.0]: https://github.com/CybercentreCanada/sawp/releases/tag/sawp-0.12.0
