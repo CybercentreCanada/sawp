@@ -225,6 +225,7 @@ impl Resp {
                     if length == -1 {
                         return Ok((Resp::advance_if_crlf(rem), StringResult::Nil, error_flags));
                     }
+                    error_flags |= ErrorFlags::InvalidData;
                     Ok((
                         Resp::advance_if_crlf(rem),
                         StringResult::String(b""),
@@ -266,7 +267,7 @@ impl Resp {
                 if array_depth < MAX_ARRAY_DEPTH {
                     let (mut local_input, length, mut error_flags) = Resp::parse_integer(input)?;
                     match length {
-                        IntegerResult::Integer(length) => {
+                        IntegerResult::Integer(length) if length >= 0 => {
                             let mut entries: Vec<Entry> = Vec::with_capacity(length as usize);
 
                             for _ in 0..length {
@@ -280,6 +281,15 @@ impl Resp {
                                 local_input = rem;
                             }
                             Ok((local_input, Entry::Array(entries), error_flags))
+                        }
+                        IntegerResult::Integer(-1) => Ok((local_input, Entry::Nil, error_flags)),
+                        IntegerResult::Integer(_length) => {
+                            error_flags |= ErrorFlags::InvalidData;
+                            Ok((
+                                Resp::advance_if_crlf(local_input),
+                                Entry::Array(vec![]),
+                                error_flags,
+                            ))
                         }
                         IntegerResult::Data(invalid_length) => Ok((
                             Resp::advance_if_crlf(local_input),
@@ -424,6 +434,30 @@ mod test {
             )
         ))
     ),
+    case::parse_null_value_array(
+        b"*-1\r\n",
+        Ok((
+            0,
+            Some(
+                Message {
+                    entry: Entry::Nil,
+                    error_flags: ErrorFlags::none(),
+                }
+            )
+        ))
+    ),
+    case::invalid_negative_array_length(
+        b"*-2\r\n",
+        Ok((
+            0,
+            Some(
+                Message {
+                    entry: Entry::Array(vec![]),
+                    error_flags: ErrorFlags::InvalidData.into(),
+                }
+            )
+        ))
+    ),
     case::parse_nested_array(
         b"*1\r\n*2\r\n$3\r\nfoo\r\n$3\r\nbar\r\n",
         Ok((
@@ -490,7 +524,7 @@ mod test {
         )
         ))
     ),
-    case::parse_null_value(
+    case::parse_null_value_string(
         b"$-1\r\n",
         Ok((
             0,
@@ -498,6 +532,18 @@ mod test {
                 Message {
                     entry: Entry::Nil,
                     error_flags: ErrorFlags::none(),
+                }
+            )
+        ))
+    ),
+    case::invalid_negative_bulk_string_length(
+        b"$-2\r\n",
+        Ok((
+            0,
+            Some(
+                Message {
+                    entry: Entry::String(b"".to_vec()),
+                    error_flags: ErrorFlags::InvalidData.into(),
                 }
             )
         ))

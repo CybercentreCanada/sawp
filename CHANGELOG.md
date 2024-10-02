@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - sawp-modbus: Make length field of Message public
 
+### Fixed
+- sawp-resp: Fix crash with negative length arrays triggering a massive memory allocation
+
 ## [0.13.0] - 2024-07-08
 ### Changed
 - sawp: increased MSRV to 1.63.0
