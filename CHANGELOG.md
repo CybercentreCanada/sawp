@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - ReleaseDate
 
+### Changed
+- sawp: Remove usage of 'extern crate' and replace with 'use'.
+- sawp: Remove unused dependencies
+
 ## [0.13.1] - 2024-10-02
 ### Changed
 - sawp-modbus: Make length field of Message public
