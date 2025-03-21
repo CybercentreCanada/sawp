@@ -46,13 +46,14 @@
 //! }
 //! ```
 
+use nom::branch::alt;
 /// Re-export of the `Flags` struct that is used to represent bit flags
 /// in this crate.
 pub use sawp_flags::{Flag, Flags};
 
-use sawp::error::{Error, Result};
+use sawp::error::{Error, ErrorKind, Needed, Result};
 use sawp::parser::{Direction, Parse};
-use sawp::probe::Probe;
+use sawp::probe::{Probe, Status as ProbeStatus};
 use sawp::protocol::Protocol;
 use sawp_flags::BitFlags;
 
@@ -63,11 +64,11 @@ mod ffi;
 #[cfg(feature = "ffi")]
 use sawp_ffi::GenerateFFI;
 
-use nom::bytes::complete::{is_not, take_until};
-use nom::character::complete::{char, crlf};
-use nom::combinator::opt;
+use nom::bytes::streaming::tag;
+use nom::character::streaming::{alpha1, char, crlf, not_line_ending, space1};
+use nom::combinator::{eof, map, opt, peek};
 use nom::multi::many_till;
-use nom::sequence::{pair, preceded, terminated};
+use nom::sequence::{delimited, terminated};
 use std::convert::TryFrom;
 
 pub const CRLF: &[u8] = b"\r\n";
@@ -126,8 +127,6 @@ impl TryFrom<&[u8]> for Keyword {
     fn try_from(cmd: &[u8]) -> Result<Self> {
         if cmd.is_empty() {
             Err(Error::parse(Some("Empty Keyword".to_string())))
-        } else if cmd[0] == b'+' {
-            Err(Error::parse(Some("Keyword is response".to_string())))
         } else {
             match cmd {
                 b"QUIT" => Ok(Keyword::QUIT),
@@ -146,13 +145,7 @@ impl TryFrom<&[u8]> for Keyword {
                 b"STLS" => Ok(Keyword::STLS),
                 b"AUTH" => Ok(Keyword::AUTH),
                 b"SASL" => Ok(Keyword::SASL),
-                _ => {
-                    if cmd.iter().all(|b| b.is_ascii_alphanumeric()) {
-                        Ok(Keyword::Unknown(std::str::from_utf8(cmd).unwrap().into()))
-                    } else {
-                        Err(Error::parse(Some("Invalid Keyword".to_string())))
-                    }
-                }
+                _ => Ok(Keyword::Unknown(std::str::from_utf8(cmd).unwrap().into())),
             }
         }
     }
@@ -234,7 +227,24 @@ pub struct Message {
 
 pub struct POP3 {}
 
-impl<'a> Probe<'a> for POP3 {}
+impl<'a> Probe<'a> for POP3 {
+    fn probe(&self, input: &'a [u8], direction: Direction) -> ProbeStatus {
+        match self.parse(input, direction) {
+            Ok((_, Some(msg))) => {
+                if msg.error_flags == ErrorFlag::none() {
+                    ProbeStatus::Recognized
+                } else {
+                    ProbeStatus::Unrecognized
+                }
+            }
+            Ok((_, _)) => ProbeStatus::Recognized,
+            Err(Error {
+                kind: ErrorKind::Incomplete(_),
+            }) => ProbeStatus::Incomplete,
+            Err(_) => ProbeStatus::Unrecognized,
+        }
+    }
+}
 
 impl Protocol<'_> for POP3 {
     type Message = Message;
@@ -251,27 +261,30 @@ impl POP3 {
     }
 
     fn client_command_too_long(command_length: usize, client_payload_length: usize) -> bool {
-        command_length + SPACE.len() + client_payload_length + CRLF.len() > CLIENT_COMMAND_MAX_LEN
+        command_length + client_payload_length + CRLF.len() > CLIENT_COMMAND_MAX_LEN
     }
 
     fn parse_response(input: &[u8]) -> Result<(&[u8], Message)> {
         let mut flags: Flags<ErrorFlag> = ErrorFlag::none();
 
-        let (input, raw_status) = terminated(is_not(" \r"), opt(char(' ')))(input)?;
+        let (input, raw_status) = terminated(alt((tag("+OK"), tag("-ERR"))), opt(space1))(input)?;
         let status = Status::try_from(raw_status)?;
-        let first_line = terminated(take_until(CRLF), crlf);
-        let additional_line = terminated(preceded(opt(char('.')), take_until(CRLF)), crlf);
-        let termination_line = pair(char('.'), crlf);
-        let (input, (header, data)) = pair(
-            first_line,
-            opt(many_till(additional_line, termination_line)),
-        )(input)?;
 
+        let (input, header) = terminated(not_line_ending, crlf)(input)?;
         let header = header.to_vec();
-        let data: Vec<Vec<u8>> = match data {
-            None => vec![],
-            Some((x, _)) => x.iter().map(|x| x.to_vec()).collect(),
-        };
+
+        // This is complicated, because without knowing the command, don't know if response is multiline
+        // Will fail in the case that input has only the header, but is a multiline response
+        let non_multiline = map(alt((eof, peek(tag("+OK")), peek(tag("-ERR")))), |_| vec![]);
+        let multiline = delimited(opt(char('.')), not_line_ending, crlf);
+        let multiline_terminator = tag(".\r\n");
+        let multilines = map(many_till(multiline, multiline_terminator), |(lines, _)| {
+            lines
+        });
+
+        let (input, data) = alt((non_multiline, multilines))(input)?;
+
+        let data: Vec<Vec<u8>> = data.iter().map(|x| x.to_vec()).collect();
 
         if POP3::server_response_too_long(raw_status.len(), header.len()) {
             flags |= ErrorFlag::ResponseTooLong;
@@ -292,14 +305,17 @@ impl POP3 {
     fn parse_command(input: &[u8]) -> Result<(&[u8], Message)> {
         let mut flags: Flags<ErrorFlag> = ErrorFlag::none();
 
-        let (input, raw_keyword) = terminated(is_not(" \r"), opt(char(' ')))(input)?;
+        let (input, raw_keyword) = terminated(alpha1, opt(space1))(input)?;
         let keyword = Keyword::try_from(raw_keyword)?;
-        let (input, raw_args) = terminated(take_until(CRLF), crlf)(input)?;
+
+        let (input, raw_args) = terminated(not_line_ending, crlf)(input)?;
         let args: Vec<Vec<u8>> = raw_args
             .split(|&x| x == b' ')
             .map(|x| x.to_vec())
             .filter(|x| !x.is_empty())
             .collect();
+
+        let args: Vec<Vec<u8>> = args.iter().map(|x| x.to_vec()).collect();
 
         // Apply IncorrectArgumentNum flag if necessary, depending on the specific client command used
         match &keyword {
@@ -368,12 +384,37 @@ impl<'a> Parse<'a> for POP3 {
                 Ok((input, Some(msg)))
             }
             Direction::Unknown => {
-                // Can't use nom::branch::alt since parse_* return sawp::error
-                if let Ok((input, msg)) = POP3::parse_command(input) {
-                    Ok((input, Some(msg)))
-                } else {
-                    let (input, msg) = POP3::parse_response(input)?;
-                    Ok((input, Some(msg)))
+                match (POP3::parse_command(input), POP3::parse_response(input)) {
+                    (Ok((input, msg)), _) => Ok((input, Some(msg))),
+                    (_, Ok((input, msg))) => Ok((input, Some(msg))),
+                    (
+                        Err(Error {
+                            kind: ErrorKind::Incomplete(req_needed),
+                        }),
+                        Err(Error {
+                            kind: ErrorKind::Incomplete(resp_needed),
+                        }),
+                    ) => match (req_needed, resp_needed) {
+                        (Needed::Unknown, resp) => Err(Error::new(ErrorKind::Incomplete(resp))),
+                        (req, Needed::Unknown) => Err(Error::new(ErrorKind::Incomplete(req))),
+                        (Needed::Size(req), Needed::Size(resp)) if req < resp => {
+                            Err(Error::incomplete_needed(req.into()))
+                        }
+                        (_, resp) => Err(Error::new(ErrorKind::Incomplete(resp))),
+                    },
+                    (
+                        Err(Error {
+                            kind: ErrorKind::Incomplete(size),
+                        }),
+                        _,
+                    ) => Err(Error::new(ErrorKind::Incomplete(size))),
+                    (
+                        _,
+                        Err(Error {
+                            kind: ErrorKind::Incomplete(size),
+                        }),
+                    ) => Err(Error::new(ErrorKind::Incomplete(size))),
+                    (Err(e), _) => Err(e), // with no direction and not incomplete, either error is as good as the other
                 }
             }
         }
@@ -383,7 +424,6 @@ impl<'a> Parse<'a> for POP3 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use nom::error::ErrorKind;
     use rstest::rstest;
     use sawp::error::{Error, NomError};
 
@@ -395,8 +435,120 @@ mod tests {
     #[rstest(
         input,
         expected,
-        case::empty(b"", Err(Error::from(NomError::new(b"" as &[u8], ErrorKind::Many0)))),
-        case::hello_world(b"hello world", Err(Error::from(NomError::new(b"\x01\x02\x03\x04 world" as &[u8], ErrorKind::Tag)))),
+        case::empty(b"", Err(Error::incomplete_needed(3))),
+        case::incomplete_ok(b"+OK", Err(Error::incomplete_needed(1))),
+        case::incomplete_err(b"-ERR ", Err(Error::incomplete_needed(1))),
+        case::ok(
+            b"+OK 2 200\r\n",
+            Ok((b"".as_ref(),
+                Some(Message {
+                        error_flags: ErrorFlag::none(),
+                        inner: InnerMessage::Response(Response {
+                            status: Status::OK,
+                            header: b"2 200".to_vec(),
+                            data: vec![],
+                        }),
+                    },
+                ),
+            ))),
+        case::multiple_responses(b"+OK 2 200\r\n+OK 3 300\r\n",
+            Ok((b"+OK 3 300\r\n".as_ref(),
+                Some(Message {
+                        error_flags: ErrorFlag::none(),
+                        inner: InnerMessage::Response(Response {
+                            status: Status::OK,
+                            header: b"2 200".to_vec(),
+                            data: vec![],
+                        }),
+                    },
+                ),
+            ))),
+    case::multiline(
+        b"+OK Capability list follows\r\nTOP\r\nUSER\r\nUIDL\r\n.\r\n",
+        Ok((b"".as_ref(),
+            Some(Message {
+                    error_flags: ErrorFlag::none(),
+                    inner: InnerMessage::Response(Response {
+                        status: Status::OK,
+                        header: b"Capability list follows".to_vec(),
+                        data: vec![
+                            b"TOP".to_vec(),
+                            b"USER".to_vec(),
+                            b"UIDL".to_vec(),
+                        ],
+                    }),
+                },
+            ),
+        ))),
+    case::multline_byte_stuffing(
+        b"+OK 120 octets\r\n\
+        Grocery list:\r\n\
+        ..6kg of flour\r\n\
+        .\r\n",
+        Ok((b"".as_ref(),
+            Some(Message {
+                    error_flags: ErrorFlag::none(),
+                    inner: InnerMessage::Response(Response {
+                        status: Status::OK,
+                        header: b"120 octets".to_vec(),
+                        data: vec![
+                            b"Grocery list:".to_vec(),
+                            b".6kg of flour".to_vec(),
+                        ],
+                    }),
+                },
+            ),
+        ))),
+    case::incomplete_multiline(
+        b"+OK Capability list follows\r\nTOP\r\n",
+        Err(Error::incomplete_needed(3))
+    ),
+    case::too_long(
+        b"-ERR 12345678901234567890123456789012345678901234567890 \
+        123456789012345678901234567890123456789012345678901234567890 \
+        123456789012345678901234567890123456789012345678901234567890 \
+        123456789012345678901234567890123456789012345678901234567890 \
+        123456789012345678901234567890123456789012345678901234567890 \
+        123456789012345678901234567890123456789012345678901234567890 \
+        123456789012345678901234567890123456789012345678901234567890 \
+        123456789012345678901234567890123456789012345678901234567890 \
+        123456789012345678901234567890123456789012345678901234567890 \
+        123456789012345678901234567890123456789012345678901234567890\r\n",
+        Ok((b"".as_ref(),
+            Some(Message {
+                    error_flags: ErrorFlag::ResponseTooLong.into(),
+                    inner: InnerMessage::Response(Response {
+                        status: Status::ERR,
+                        header: b"12345678901234567890123456789012345678901234567890 \
+                                123456789012345678901234567890123456789012345678901234567890 \
+                                123456789012345678901234567890123456789012345678901234567890 \
+                                123456789012345678901234567890123456789012345678901234567890 \
+                                123456789012345678901234567890123456789012345678901234567890 \
+                                123456789012345678901234567890123456789012345678901234567890 \
+                                123456789012345678901234567890123456789012345678901234567890 \
+                                123456789012345678901234567890123456789012345678901234567890 \
+                                123456789012345678901234567890123456789012345678901234567890 \
+                                123456789012345678901234567890123456789012345678901234567890"
+                                .to_vec(),
+                        data: vec![],
+                    }),
+                },
+            ),
+        ))),
+    case::server_response_invalid_status(
+        b"+SUCCESS 2 200\r\n",
+        Err(Error::from(NomError::new(b"" as &[u8], nom::error::ErrorKind::Tag)))),
+    )]
+    fn test_parse_response(input: &[u8], expected: Result<(&[u8], Option<Message>)>) {
+        let pop3 = POP3 {};
+        assert_eq!(pop3.parse(input, Direction::ToClient), expected);
+    }
+
+    #[rstest(
+        input,
+        expected,
+        case::empty(b"", Err(Error::incomplete_needed(1))),
+        case::incomplete(b"TOP", Err(Error::incomplete_needed(1))),
         case::unknown_keyword(
             b"HELLO WORLD\r\n", 
             Ok((b"".as_ref(),
@@ -413,10 +565,8 @@ mod tests {
             ))),
         case::invalid_keyword(
             b"\x01\x02\x03\0x04 WORLD\r\n", 
-            Err(
-                Error::parse(Some("Invalid Keyword".to_string()))
-            )),
-        case::client_command_no_args(
+            Err(Error::from(NomError::new(b"" as &[u8], nom::error::ErrorKind::Alpha)))),
+        case::no_args(
             b"CAPA\r\n",
             Ok((b"".as_ref(),
                 Some(Message {
@@ -428,7 +578,7 @@ mod tests {
                     },
                 ),
             ))),
-        case::client_command_one_arg(
+        case::one_arg(
             b"DELE 52\r\n",
             Ok((b"".as_ref(),
                 Some(Message {
@@ -442,7 +592,7 @@ mod tests {
                     },
                 ),
             ))),
-        case::client_command_two_args(
+        case::two_args(
             b"APOP sawp 05aaf79d37225973a00cddaaf568eb96\r\n",
             Ok((b"".as_ref(),
                 Some(Message {
@@ -457,7 +607,20 @@ mod tests {
                     },
                 ),
             ))),
-        case::client_command_too_long(
+        case::non_alphanum_args(b"USER moises.nunez@ingenierianumar.com\r\n",
+            Ok((b"".as_ref(),
+                Some(Message {
+                        error_flags: ErrorFlag::none(),
+                        inner: InnerMessage::Command(Command {
+                            keyword: Keyword::USER,
+                            args: vec![
+                                b"moises.nunez@ingenierianumar.com".to_vec(),
+                            ],
+                        }),
+                    },
+                ),
+            ))),
+        case::too_long(
             b"PASS 12345678901234567890123456789012345678901234567890\
             123456789012345678901234567890123456789012345678901234567890\
             123456789012345678901234567890123456789012345678901234567890\
@@ -479,7 +642,7 @@ mod tests {
                     },
                 ),
             ))),
-        case::client_command_missing_argument(
+        case::missing_argument(
             b"DELE\r\n",
             Ok((b"".as_ref(),
                 Some(Message {
@@ -491,7 +654,7 @@ mod tests {
                     },
                 ),
             ))),
-        case::client_command_missing_argument(
+        case::missing_argument(
             b"CAPA HELLO WORLD\r\n",
             Ok((b"".as_ref(),
                 Some(Message {
@@ -506,93 +669,46 @@ mod tests {
                     },
                 ),
             ))),
-        case::server_response(
-                b"+OK 2 200\r\n",
-                Ok((b"".as_ref(),
-                    Some(Message {
-                            error_flags: ErrorFlag::none(),
-                            inner: InnerMessage::Response(Response {
-                                status: Status::OK,
-                                header: b"2 200".to_vec(),
-                                data: vec![],
-                            }),
-                        },
-                    ),
-                ))),
-        case::server_response_multiline(
-            b"+OK Capability list follows\r\nTOP\r\nUSER\r\nUIDL\r\n.\r\n",
-            Ok((b"".as_ref(),
-                Some(Message {
-                        error_flags: ErrorFlag::none(),
-                        inner: InnerMessage::Response(Response {
-                            status: Status::OK,
-                            header: b"Capability list follows".to_vec(),
-                            data: vec![
-                                b"TOP".to_vec(),
-                                b"USER".to_vec(),
-                                b"UIDL".to_vec(),
-                            ],
-                        }),
-                    },
-                ),
-            ))),
-        case::server_response_multline_byte_stuffing(
-            b"+OK 120 octets\r\n\
-            Grocery list:\r\n\
-            ..6kg of flour\r\n\
-            .\r\n",
-            Ok((b"".as_ref(),
-                Some(Message {
-                        error_flags: ErrorFlag::none(),
-                        inner: InnerMessage::Response(Response {
-                            status: Status::OK,
-                            header: b"120 octets".to_vec(),
-                            data: vec![
-                                b"Grocery list:".to_vec(),
-                                b".6kg of flour".to_vec(),
-                            ],
-                        }),
-                    },
-                ),
-            ))),
+    )]
+    fn test_parse_request(input: &[u8], expected: Result<(&[u8], Option<Message>)>) {
+        let pop3 = POP3 {};
+        assert_eq!(pop3.parse(input, Direction::ToServer), expected);
+    }
+
+    #[rstest(
+        input,
+        expected,
+        case::empty(b"", ProbeStatus::Incomplete),
+        case::incomplete_request(b"TOP", ProbeStatus::Incomplete),
+        case::incomplete_response_ok(b"+OK", ProbeStatus::Incomplete),
+        case::incomplete_response_err(b"-ERR", ProbeStatus::Incomplete),
+        case::unknown_keyword(b"HELLO WORLD\r\n", ProbeStatus::Unrecognized),
+        case::quit(b"QUIT\r\n", ProbeStatus::Recognized),
+        case::incorrect_arguments(b"QUIT ARG\r\n", ProbeStatus::Unrecognized),
+        case::command_too_long(
+            b"PASS 12345678901234567890123456789012345678901234567890\
+            123456789012345678901234567890123456789012345678901234567890\
+            123456789012345678901234567890123456789012345678901234567890\
+            123456789012345678901234567890123456789012345678901234567890\
+            123456789012345678901234567890123456789012345678901234567890\r\n",
+            ProbeStatus::Unrecognized
+        ),
         case::server_response_too_long(
             b"-ERR 12345678901234567890123456789012345678901234567890 \
-            123456789012345678901234567890123456789012345678901234567890 \
-            123456789012345678901234567890123456789012345678901234567890 \
-            123456789012345678901234567890123456789012345678901234567890 \
-            123456789012345678901234567890123456789012345678901234567890 \
-            123456789012345678901234567890123456789012345678901234567890 \
-            123456789012345678901234567890123456789012345678901234567890 \
-            123456789012345678901234567890123456789012345678901234567890 \
-            123456789012345678901234567890123456789012345678901234567890 \
-            123456789012345678901234567890123456789012345678901234567890\r\n",
-            Ok((b"".as_ref(),
-                Some(Message {
-                        error_flags: ErrorFlag::ResponseTooLong.into(),
-                        inner: InnerMessage::Response(Response {
-                            status: Status::ERR,
-                            header: b"12345678901234567890123456789012345678901234567890 \
-                                    123456789012345678901234567890123456789012345678901234567890 \
-                                    123456789012345678901234567890123456789012345678901234567890 \
-                                    123456789012345678901234567890123456789012345678901234567890 \
-                                    123456789012345678901234567890123456789012345678901234567890 \
-                                    123456789012345678901234567890123456789012345678901234567890 \
-                                    123456789012345678901234567890123456789012345678901234567890 \
-                                    123456789012345678901234567890123456789012345678901234567890 \
-                                    123456789012345678901234567890123456789012345678901234567890 \
-                                    123456789012345678901234567890123456789012345678901234567890"
-                                    .to_vec(),
-                            data: vec![],
-                        }),
-                    },
-                ),
-            ))),
-        case::server_response_invalid_status(
-            b"+SUCCESS 2 200\r\n",
-            Err(Error::parse(Some("Keyword is response".to_string())))),
+        123456789012345678901234567890123456789012345678901234567890 \
+        123456789012345678901234567890123456789012345678901234567890 \
+        123456789012345678901234567890123456789012345678901234567890 \
+        123456789012345678901234567890123456789012345678901234567890 \
+        123456789012345678901234567890123456789012345678901234567890 \
+        123456789012345678901234567890123456789012345678901234567890 \
+        123456789012345678901234567890123456789012345678901234567890 \
+        123456789012345678901234567890123456789012345678901234567890 \
+        123456789012345678901234567890123456789012345678901234567890\r\n",
+            ProbeStatus::Unrecognized
+        )
     )]
-    fn test_parse(input: &[u8], expected: Result<(&[u8], Option<Message>)>) {
+    fn test_probe(input: &[u8], expected: ProbeStatus) {
         let pop3 = POP3 {};
-        assert_eq!(pop3.parse(input, Direction::Unknown), expected);
+        assert_eq!(pop3.probe(input, Direction::Unknown), expected);
     }
 }
