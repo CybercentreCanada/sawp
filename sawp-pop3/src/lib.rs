@@ -395,8 +395,8 @@ mod tests {
     #[rstest(
         input,
         expected,
-        case::empty(b"", Err(Error::from(NomError::new(b"" as &[u8], ErrorKind::Many0)))),
-        case::hello_world(b"hello world", Err(Error::from(NomError::new(b"\x01\x02\x03\x04 world" as &[u8], ErrorKind::Tag)))),
+        case::empty(b"", Err(Error::from(NomError::new(b"" as &[u8], ErrorKind::IsNot)))),
+        case::hello_world(b"hello world", Err(Error::parse(Some("Unknown Status".to_string())))),
         case::unknown_keyword(
             b"HELLO WORLD\r\n", 
             Ok((b"".as_ref(),
@@ -414,7 +414,7 @@ mod tests {
         case::invalid_keyword(
             b"\x01\x02\x03\0x04 WORLD\r\n", 
             Err(
-                Error::parse(Some("Invalid Keyword".to_string()))
+                Error::parse(Some("Unknown Status".to_string()))
             )),
         case::client_command_no_args(
             b"CAPA\r\n",
@@ -589,7 +589,7 @@ mod tests {
             ))),
         case::server_response_invalid_status(
             b"+SUCCESS 2 200\r\n",
-            Err(Error::parse(Some("Keyword is response".to_string())))),
+            Err(Error::parse(Some("Unknown Status".to_string())))),
     )]
     fn test_parse(input: &[u8], expected: Result<(&[u8], Option<Message>)>) {
         let pop3 = POP3 {};

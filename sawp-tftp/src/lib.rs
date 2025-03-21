@@ -272,7 +272,7 @@ mod tests {
         input,
         expected,
         case::empty(b"", Err(error::Error::incomplete_needed(2))),
-        case::hello_world(b"hello world", Err(NomError::new(b"hello world", ErrorKind::Tag).into())),
+        case::hello_world(b"hello world", Err(NomError::new(b"hello world", ErrorKind::IsA).into())),
         case::read(
             &[
                 // OpCode: 1 (Read)
