@@ -21,6 +21,9 @@ include = [
 sawp-ffi-derive = { path = "../sawp-ffi-derive", version = "^0.13.1" }
 sawp-flags = { path = "../sawp-flags", version = "^0.13.1" }
 
+[dev-dependencies]
+sawp-ffi-derive = { path = "../sawp-ffi-derive", version = "^0.13.1", features = ["unwind"] }
+
 # Override default replacements
 [package.metadata.release]
 pre-release-replacements = []
