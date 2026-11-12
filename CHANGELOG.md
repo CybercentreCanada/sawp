@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - sawp-dns: Cap length of eDNS OPT parsing
 - sawp-dns: Cap vector preallocation from untrusted wire value
 - sawp-ike: Fix memory amplification if spi\_size was 0, causing many empty Vec allocations
+- sawp-json: Treat fragments as incomplete to differentiate invalid vs incomplete JSON
 
 ## [0.13.1] - 2024-10-02
 ### Changed
