@@ -157,6 +157,10 @@ where
             match func(input_, reference) {
                 Ok((rem, out)) => {
                     res.push(out);
+                    // If parser makes no forward progress, short circuit
+                    if rem.len() >= input_.len() {
+                        return Ok((rem, res));
+                    }
                     input = rem;
                 }
                 Err(nom::Err::Error(NomError {
@@ -2641,6 +2645,39 @@ mod test {
             dns.parse(input, Direction::Unknown)
                 .map(|(rem, msg)| (rem.len(), msg)),
             expected
+        );
+    }
+
+    // Custom count can fail to make progress if the inner function consumes no input and could
+    // cause a large number of iterations on counts provided from the wire. Test ensures
+    // custom-count terminates when forward progress due to large untrusted counts are provided.
+    #[test]
+    fn regression_rr_count_no_progress() {
+        #[rustfmt::skip]
+        let input: &[u8] = &[
+            0xff, 0xff, // Transaction ID
+            0xff, 0xff, // Flags
+            0xff, 0x06, // QDCOUNT: 65286
+            0xff, 0xff, // ANCOUNT: 65535
+            0x31, 0x00, // NSCOUNT: 12544
+            0x00, 0x00, // ARCOUNT: 0
+            0xc0, 0x00, // ptr → offset 0 → 0xffff → ptr → offset 0x3fff (out of range)
+        ];
+        let start = std::time::Instant::now();
+        if let Ok((_, Some(msg))) = (Dns {}).parse(input, Direction::Unknown) {
+            assert!(msg.queries.len() <= 2, "queries={}", msg.queries.len());
+            assert!(msg.answers.len() <= 2, "answers={}", msg.answers.len());
+            assert!(
+                msg.nameservers.len() <= 2,
+                "nameservers={}",
+                msg.nameservers.len()
+            );
+        }
+        // Debug builds took ~50ms on this input pre-fix; 10ms is a wide margin.
+        assert!(
+            start.elapsed() < std::time::Duration::from_millis(10),
+            "14-byte input took {:?}",
+            start.elapsed()
         );
     }
 }

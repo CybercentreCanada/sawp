@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - sawp: Fix doc comment formatting warnings
+- sawp-dns: custom\_count no longer trusts wire-provided counts when counting sub-parsers
 
 ## [0.13.1] - 2024-10-02
 ### Changed
