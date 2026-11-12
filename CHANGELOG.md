@@ -14,6 +14,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - sawp: Upgrade MSRV to 1.75.0 to match Suricata
 - sawp: Added elided lifetimes on IResult types
 
+### Fixed
+- sawp: Fix doc comment formatting warnings
+
 ## [0.13.1] - 2024-10-02
 ### Changed
 - sawp-modbus: Make length field of Message public

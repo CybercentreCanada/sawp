@@ -161,8 +161,8 @@ pub struct Message {
 }
 
 impl Message {
-    /// Convenience functions for handling the various components of the flag/version bits in a
-    /// GRE header.
+    //! Convenience functions for handling the various components of the flag/version bits in a
+    //! GRE header.
 
     fn is_checksum_set(&self) -> bool {
         self.header.intersects(GreFlags::CHECKSUM)

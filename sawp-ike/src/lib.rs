@@ -54,7 +54,7 @@
 //! }
 //! ```
 
-#![deny(clippy::integer_arithmetic)]
+#![deny(clippy::arithmetic_side_effects)]
 
 pub mod header;
 pub mod payloads;

@@ -7,16 +7,16 @@
 //!
 //! Attributes: `#[sawp_ffi(...)]`
 //! - `copy`: Return `Type` instead of `*const Type`.
-//!           Useful for enums with `repr(Integer)`
+//!   Useful for enums with `repr(Integer)`
 //! - `skip`: Don't generate accessor for member.
-//!           Note: only public members will have accessors.
+//!   Note: only public members will have accessors.
 //! - `flag` = `flag_repr`: Return `flag_repr` instead of `*const Type`
-//!           `flag_repr` should be the `repr` type of `Flag`.
-//!           Requires member type to be sawp_flags::Flags
+//!   `flag_repr` should be the `repr` type of `Flag`.
+//!   Requires member type to be sawp_flags::Flags
 //! - `type_only`: Only generate enum `Type` and `<enum>_get_type`.
-//!             Won't generate accessors for variant fields
+//!   Won't generate accessors for variant fields
 //! - `prefix` = `prefix`: Prefix for all functions.
-//!             eg: `<prefix>_<struct_name>_get_<field>`
+//!   eg: `<prefix>_<struct_name>_get_<field>`
 //!
 //! Note: accessors are functions so they will be in snake_case.
 //! Struct and Enum names will be converted to snake_case in function names.
@@ -223,7 +223,7 @@ use heck::SnakeCase;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
 
-const ABI: &'static str = if cfg!(feature = "unwind") {
+const ABI: &str = if cfg!(feature = "unwind") {
     "C-unwind"
 } else {
     "C"

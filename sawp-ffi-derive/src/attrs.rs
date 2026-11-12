@@ -1,4 +1,4 @@
-/// This module handles parsing of `#[sawp_ffi(...)]` attributes.
+//! This module handles parsing of `#[sawp_ffi(...)]` attributes.
 
 /// Get sawp_ffi meta attributes
 pub fn get_ffi_meta(attr: &syn::Attribute) -> Vec<syn::NestedMeta> {
