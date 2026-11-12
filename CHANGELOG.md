@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - sawp: Remove usage of 'extern crate' and replace with 'use'.
 - sawp: Remove unused dependencies
+- sawp: Upgrade MSRV to 1.75.0 to match Suricata
 
 ## [0.13.1] - 2024-10-02
 ### Changed

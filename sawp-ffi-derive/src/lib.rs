@@ -829,12 +829,11 @@ fn gen_enum_named_accessor(
                 /// function will panic if called with null or an index outside bounds
                 #[no_mangle]
                 pub unsafe extern #ABI fn #idx_name(#enum_variable: *const Vec<#inner>, n: usize) -> *const #inner {
-                    if !#enum_variable.is_null() {
-                        &(*#enum_variable)[n]
-                    }
-                    else {
+                    if #enum_variable.is_null() {
                         panic!("{} is NULL ", stringify!(#enum_variable));
                     }
+                    let values: &Vec<#inner> = unsafe { &*#enum_variable };
+                    &values[n]
                 }
             });
         }
@@ -974,12 +973,11 @@ fn gen_enum_unnamed_accessor(
                 /// function will panic if called with null or an index outside bounds
                 #[no_mangle]
                 pub unsafe extern #ABI fn #idx_name(#enum_variable: *const Vec<#inner>, n: usize) -> *const #inner {
-                    if !#enum_variable.is_null() {
-                        &(*#enum_variable)[n]
-                    }
-                    else {
+                    if #enum_variable.is_null() {
                         panic!("{} is NULL ", stringify!(#enum_variable));
                     }
+                    let values: &Vec<#inner> = unsafe { &*#enum_variable };
+                    &values[n]
                 }
             });
         }

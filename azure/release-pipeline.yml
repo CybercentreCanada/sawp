@@ -36,7 +36,7 @@ variables:
 - name: rpm_dir
   value: target/rpmbuild/RPMS/x86_64/
 - name: rust_msrv
-  value: 1.63.0
+  value: 1.75.0
 
 trigger: none
 pr: none
