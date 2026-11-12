@@ -699,7 +699,9 @@ impl PayloadData {
                 be_u8,
                 peek(tuple((be_u8, be_u16))),
                 flat_map(tuple((be_u8, be_u16)), |(spi_size, num_spi)| {
-                    count(take(spi_size), num_spi as usize)
+                    // Guard against spi_size == 0 as take(0) trivially succeeds
+                    let n = if spi_size == 0 { 0 } else { num_spi };
+                    count(take(spi_size), n.into())
                 }),
             )),
             |(doi, protocol_id, (spi_size, num_spi), spis): (_, _, (_, _), Vec<&[u8]>)| {
@@ -1483,7 +1485,9 @@ impl PayloadData {
                 be_u8,
                 peek(tuple((be_u8, be_u16))),
                 flat_map(tuple((be_u8, be_u16)), |(spi_size, num_spi)| {
-                    count(take(spi_size), num_spi as usize)
+                    // Guard against spi_size == 0 as take(0) trivially succeeds
+                    let n = if spi_size == 0 { 0 } else { num_spi };
+                    count(take(spi_size), n.into())
                 }),
             )),
             |(protocol_id, (spi_size, num_spi), spis): (_, (_, _), Vec<&[u8]>)| {

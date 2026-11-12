@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - sawp-dns: Off-by-one shift mishandling of OPCODE flags
 - sawp-dns: Cap length of eDNS OPT parsing
 - sawp-dns: Cap vector preallocation from untrusted wire value
+- sawp-ike: Fix memory amplification if spi\_size was 0, causing many empty Vec allocations
 
 ## [0.13.1] - 2024-10-02
 ### Changed
