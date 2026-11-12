@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - ReleaseDate
 
+### Added
+- sawp: Bounds checking primitives in core library
+
 ### Changed
 - sawp: Remove usage of 'extern crate' and replace with 'use'.
 - sawp: Remove unused dependencies

@@ -40,5 +40,8 @@ pub mod probe;
 /// Describe a Protocol
 pub mod protocol;
 
+/// Bounds checking and guards
+pub mod bounds;
+
 #[cfg(feature = "ffi")]
 pub mod ffi;
