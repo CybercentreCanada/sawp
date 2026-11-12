@@ -1,6 +1,7 @@
 //! Protocol References:
 //!     https://tools.ietf.org/html/rfc6733
 
+use sawp::bounds::DepthGuard;
 use sawp::error::{NomError, Result};
 use sawp::parser::{Direction, Parse};
 use sawp::probe::Probe;
@@ -131,6 +132,14 @@ impl Value {
         code: &AttributeCode,
         data: &'a [u8],
     ) -> IResult<&'a [u8], (Self, Flags<ErrorFlags>)> {
+        Self::new_with_depth(code, data, DepthGuard::default())
+    }
+
+    pub fn new_with_depth<'a>(
+        code: &AttributeCode,
+        data: &'a [u8],
+        depth: DepthGuard,
+    ) -> IResult<&'a [u8], (Self, Flags<ErrorFlags>)> {
         match code {
             AttributeCode::AcctSessionId | AttributeCode::ProxyState => {
                 Ok((&[], (Value::OctetString(data.into()), ErrorFlags::none())))
@@ -174,10 +183,13 @@ impl Value {
             AttributeCode::ExperimentalResult
             | AttributeCode::FailedAVP
             | AttributeCode::ProxyInfo
-            | AttributeCode::VendorSpecificApplicationId => {
-                let (input, (avps, error_flags)) = parse_avps(data)?;
-                Ok((input, (Value::Grouped(avps), error_flags)))
-            }
+            | AttributeCode::VendorSpecificApplicationId => match depth.descend() {
+                Some(depth) => {
+                    let (input, (avps, error_flags)) = parse_avps_with_depth(data, depth)?;
+                    Ok((input, (Value::Grouped(avps), error_flags)))
+                }
+                None => Err(nom::Err::Error(NomError::new(data, ErrorKind::TooLarge))),
+            },
             AttributeCode::AcctMultiSessionId
             | AttributeCode::Class
             | AttributeCode::ErrorMessage
@@ -445,6 +457,13 @@ impl AVP {
     }
 
     pub fn parse(input: &[u8]) -> IResult<&[u8], (Self, Flags<ErrorFlags>)> {
+        Self::parse_with_depth(input, DepthGuard::default())
+    }
+
+    pub fn parse_with_depth(
+        input: &[u8],
+        depth: DepthGuard,
+    ) -> IResult<&[u8], (Self, Flags<ErrorFlags>)> {
         let mut error_flags = ErrorFlags::none();
         let (input, raw_code) = be_u32(input)?;
         let (input, flags) = be_u8(input)?;
@@ -477,7 +496,7 @@ impl AVP {
             error_flags |= ErrorFlags::NonZeroPadding;
         }
         let attribute = Attribute::new(raw_code);
-        let value = match Value::new(&attribute.code, data) {
+        let value = match Value::new_with_depth(&attribute.code, data, depth) {
             Ok((rest, (value, flags))) => {
                 if !rest.is_empty() {
                     error_flags |= ErrorFlags::DataLength;
@@ -525,7 +544,15 @@ impl Protocol<'_> for Diameter {
 }
 
 fn parse_avps(input: &[u8]) -> IResult<&[u8], (Vec<AVP>, Flags<ErrorFlags>)> {
-    let (rest, avps_flags) = many0(combinator::complete(AVP::parse))(input)?;
+    parse_avps_with_depth(input, DepthGuard::default())
+}
+
+fn parse_avps_with_depth(
+    input: &[u8],
+    depth: DepthGuard,
+) -> IResult<&[u8], (Vec<AVP>, Flags<ErrorFlags>)> {
+    let (rest, avps_flags) =
+        many0(combinator::complete(|i| AVP::parse_with_depth(i, depth)))(input)?;
     if !rest.is_empty() {
         // many0 will stop if subparser fails, but should read all
         Err(nom::Err::Error(NomError::new(input, ErrorKind::Many0)))
@@ -1458,5 +1485,36 @@ mod tests {
         let diameter = Diameter {};
 
         assert_eq!(diameter.probe(input, Direction::Unknown), expected);
+    }
+
+    #[test]
+    fn regression_grouped_avp_recursion_depth() {
+        // Deeply nested FailedAVP (code 279) Grouped AVPs. Prior to bounding
+        // recursion via DepthGuard this overflowed the stack. The fix caps
+        // descent at MAX_RECURSION_DEPTH and degrades the over-deep AVP to
+        // Value::Unhandled, so parse() must complete without panicking.
+        const DEPTH: usize = 200;
+        let total_len = Header::SIZE + AVP::PRE_LENGTH_SIZE * DEPTH;
+        let mut input = Vec::with_capacity(total_len);
+        // Diameter header
+        input.push(0x01); // version
+        input.extend_from_slice(&(total_len as u32).to_be_bytes()[1..]); // length (u24)
+        input.push(0x80); // flags: Request
+        input.extend_from_slice(&[0x00, 0x01, 0x01]); // command code 257
+        input.extend_from_slice(&[0x00; 4]); // app id
+        input.extend_from_slice(&[0x00; 4]); // hop-by-hop id
+        input.extend_from_slice(&[0x00; 4]); // end-to-end id
+                                             // Nested FailedAVP headers, outermost first
+        for i in 0..DEPTH {
+            let avp_len = (AVP::PRE_LENGTH_SIZE * (DEPTH - i)) as u32;
+            input.extend_from_slice(&[0x00, 0x00, 0x01, 0x17]); // code 279 = FailedAVP
+            input.push(0x00); // flags
+            input.extend_from_slice(&avp_len.to_be_bytes()[1..]); // length (u24)
+        }
+        assert_eq!(input.len(), total_len);
+
+        let diameter = Diameter {};
+        // Must not panic / stack-overflow; either Ok or Err is acceptable.
+        let _ = diameter.parse(&input, Direction::Unknown);
     }
 }
