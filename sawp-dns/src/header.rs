@@ -83,7 +83,7 @@ impl Header {
         } else {
             QueryResponse::Query
         };
-        let opcode: OpCode = OpCode::from_raw((wrapped_flags & header_masks::OPCODE).bits() >> 10);
+        let opcode: OpCode = OpCode::from_raw((wrapped_flags & header_masks::OPCODE).bits() >> 11);
         if opcode == OpCode::UNKNOWN {
             error_flags |= ErrorFlags::UnknownOpcode;
         }
@@ -181,7 +181,7 @@ mod test {
         case::parse_header_bad_opcode(
             & [
                 0x31, 0x21, // Transaction ID: 0x3121
-                0xb1, 0x00, // Flags: invalid opcode, recursion desired, authenticated data, format error
+                0xb9, 0x00, // Flags: response, opcode 7 (unassigned), recursion desired
                 0x00, 0x01, // QDCOUNT: 1
                 0x00, 0x01, // ANCOUNT: 1
                 0x00, 0x00, // NSCOUNT: 0
@@ -191,7 +191,7 @@ mod test {
                 b"".as_ref(),
                 (Header {
                     transaction_id: 0x3121,
-                    flags: 0b1011_0001_0000_0000,
+                    flags: 0b1011_1001_0000_0000,
                     query_response: QueryResponse::Response,
                     opcode: OpCode::UNKNOWN,
                     authoritative: false,
@@ -245,5 +245,30 @@ mod test {
     )]
     fn header(input: &[u8], expected: Result<(&[u8], (Header, Flags<ErrorFlags>))>) {
         assert_eq!(Header::parse(input), expected);
+    }
+
+    /// Opcode occupies bits 14..11 of the flags word and must be shifted by 11.
+    /// A previous off-by-one shift (>>10) misdecoded every non-QUERY opcode.
+    #[test]
+    fn regression_opcode_shift() {
+        // Opcode 1 (IQUERY): flags = 0b0000_1000_0000_0000
+        let (_, (hdr, flags)) = Header::parse(&[
+            0x00, 0x00, // Transaction ID
+            0x08, 0x00, // Flags: query, opcode=IQUERY
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        ])
+        .unwrap();
+        assert_eq!(hdr.opcode, OpCode::IQUERY);
+        assert_eq!(flags, ErrorFlags::none());
+
+        // Opcode 4 (NOTIFY): flags = 0b0010_0000_0000_0000
+        let (_, (hdr, flags)) = Header::parse(&[
+            0x00, 0x00, // Transaction ID
+            0x20, 0x00, // Flags: query, opcode=NOTIFY
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        ])
+        .unwrap();
+        assert_eq!(hdr.opcode, OpCode::NOTIFY);
+        assert_eq!(flags, ErrorFlags::none());
     }
 }

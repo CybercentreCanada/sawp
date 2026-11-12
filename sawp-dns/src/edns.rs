@@ -105,12 +105,10 @@ impl EdnsOption {
         Ok((input, (code, error_flags)))
     }
 
-    pub fn parse_options(
-        input: &[u8],
-        data_len: u16,
-    ) -> IResult<'_, (Vec<EdnsOption>, Flags<ErrorFlags>)> {
+    pub fn parse_options(input: &[u8]) -> IResult<'_, (Vec<EdnsOption>, Flags<ErrorFlags>)> {
         let mut error_flags = ErrorFlags::none();
-        if data_len < 4 {
+
+        if input.len() < 4 {
             return Ok((input, (vec![], error_flags)));
         }
 

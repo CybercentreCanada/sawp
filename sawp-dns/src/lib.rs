@@ -72,6 +72,9 @@
 //! }
 //! ```
 
+use std::num::NonZeroUsize;
+
+use sawp::bounds::bounded_capacity;
 use sawp::error::{NomError, Result};
 use sawp::parser::{Direction, Parse};
 use sawp::probe::Probe;
@@ -123,7 +126,8 @@ where
                 Err(nom::Err::Error(NomError {
                     input: _,
                     code: ErrorKind::LengthValue,
-                })) => return Ok((input, acc)),
+                }))
+                | Err(nom::Err::Incomplete(_)) => return Ok((input, acc)),
                 Ok((rem, out)) => {
                     if rem == input {
                         return Err(nom::Err::Error(NomError::new(input, ErrorKind::Many0)));
@@ -150,7 +154,11 @@ where
 {
     move |i, reference| {
         let mut input = i;
-        let mut res = Vec::with_capacity(count);
+        let mut res = Vec::with_capacity(bounded_capacity(
+            count,
+            input.len(),
+            NonZeroUsize::try_from(1).unwrap(),
+        ));
 
         for _ in 0..count {
             let input_ = input;
@@ -2020,9 +2028,9 @@ mod test {
             0x00, // Higher bits in extended RCode: 0x00
             0x00, // EDNS0 version: 0
             0x00, 0x00, // Z: 0
-            0x00, 0x10, // Data length: 10
+            0x00, 0x10, // Data length: 16
         ],
-        Err(Error::incomplete_needed(2))
+        Err(Error::incomplete_needed(16))
     ),
     case::parse_srv_response(
         &[
@@ -2679,5 +2687,54 @@ mod test {
             "14-byte input took {:?}",
             start.elapsed()
         );
+    }
+
+    /// A 12-byte header claiming 0xFFFF answers with no body must not drive a
+    /// huge `Vec::with_capacity` before any record bytes are validated.
+    #[test]
+    fn regression_rr_count_prealloc() {
+        let input: &[u8] = &[
+            0x00, 0x00, // Transaction ID
+            0x00, 0x00, // Flags
+            0x00, 0x00, // QDCOUNT: 0
+            0xff, 0xff, // ANCOUNT: 65535
+            0x00, 0x00, // NSCOUNT: 0
+            0x00, 0x00, // ARCOUNT: 0
+        ];
+        // Just assert the malicious input is handled (Ok or Err) without panicking / OOM.
+        let _ = Dns {}.parse(input, Direction::Unknown);
+    }
+
+    /// An OPT pseudo-RR whose RDLENGTH covers the rest of the message must not
+    /// cause the whole packet to be dropped as `Incomplete`; option parsing is
+    /// bounded to RDLENGTH and EOF inside that slice terminates the option list.
+    #[test]
+    fn regression_opt_rdata_bounded() {
+        let input: &[u8] = &[
+            0x00, 0x00, // Transaction ID
+            0x00, 0x00, // Flags
+            0x00, 0x00, // QDCOUNT: 0
+            0x00, 0x00, // ANCOUNT: 0
+            0x00, 0x00, // NSCOUNT: 0
+            0x00, 0x01, // ARCOUNT: 1
+            0x00, // Additional answer: <Root>
+            0x00, 0x29, // RType: OPT
+            0x04, 0x00, // UDP payload size: 1024
+            0x00, // Extended RCODE: 0
+            0x00, // EDNS0 version: 0
+            0x00, 0x00, // Z: 0
+            0x00, 0x04, // RDLENGTH: 4
+            0x00, 0x03, 0x00, 0x00, // option: NSID, length 0
+        ];
+        let (rem, msg) = Dns {}
+            .parse(input, Direction::Unknown)
+            .expect("OPT RR with non-empty RDATA must parse, not Incomplete");
+        assert!(rem.is_empty());
+        let msg = msg.expect("message");
+        assert_eq!(msg.additional.len(), 1);
+        match &msg.additional[0].data {
+            RDataType::OPT(opt) => assert_eq!(opt.data.len(), 1),
+            other => panic!("expected OPT rdata, got {:?}", other),
+        }
     }
 }

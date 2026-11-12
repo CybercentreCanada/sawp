@@ -228,7 +228,9 @@ impl RDataType {
         let (input, version) = be_u8(input)?;
         let (input, flags) = be_u16(input)?;
         let (input, data_len) = be_u16(input)?;
-        let (input, (data, options_error_flags)) = EdnsOption::parse_options(input, data_len)?;
+
+        let (input, opt_input) = take(data_len)(input)?;
+        let (_trailing, (data, options_error_flags)) = EdnsOption::parse_options(opt_input)?;
 
         Ok((
             input,

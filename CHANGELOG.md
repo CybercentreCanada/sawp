@@ -21,6 +21,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - sawp: Fix doc comment formatting warnings
 - sawp-dns: custom\_count no longer trusts wire-provided counts when counting sub-parsers
 - sawp-diameter: Use bound limiting primitives to prevent stack overflows on deep recursion
+- sawp-dns: Off-by-one shift mishandling of OPCODE flags
+- sawp-dns: Cap length of eDNS OPT parsing
+- sawp-dns: Cap vector preallocation from untrusted wire value
 
 ## [0.13.1] - 2024-10-02
 ### Changed
