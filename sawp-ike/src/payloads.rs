@@ -110,7 +110,10 @@ impl Payload {
      * each type specific parser. In these cases the generic payload is omitted from their
      * diagrams.
      */
-    pub fn parse_v1(input: &[u8], payload_type: PayloadType) -> IResult<(Self, Flags<ErrorFlags>)> {
+    pub fn parse_v1(
+        input: &[u8],
+        payload_type: PayloadType,
+    ) -> IResult<'_, (Self, Flags<ErrorFlags>)> {
         let mut error_flags = ErrorFlags::none();
 
         let (input, (raw_next_payload, reserved, payload_length)) =
@@ -158,7 +161,10 @@ impl Payload {
      *  | Next Payload  |C|  RESERVED   |         Payload Length        |
      *  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
      */
-    pub fn parse_v2(input: &[u8], payload_type: PayloadType) -> IResult<(Self, Flags<ErrorFlags>)> {
+    pub fn parse_v2(
+        input: &[u8],
+        payload_type: PayloadType,
+    ) -> IResult<'_, (Self, Flags<ErrorFlags>)> {
         let mut error_flags = ErrorFlags::none();
 
         let (input, (raw_next_payload, (critical_bit, reserved), payload_length)) =
@@ -309,7 +315,10 @@ pub enum PayloadData {
 }
 
 impl PayloadData {
-    pub fn parse(input: &[u8], payload_type: PayloadType) -> IResult<(Self, Flags<ErrorFlags>)> {
+    pub fn parse(
+        input: &[u8],
+        payload_type: PayloadType,
+    ) -> IResult<'_, (Self, Flags<ErrorFlags>)> {
         match payload_type {
             // V1
             PayloadType::V1SecurityAssociation => Self::parse_v1_sa(input),
@@ -401,7 +410,7 @@ impl PayloadData {
     // ~                           Situation                           ~
     // !                                                               !
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    fn parse_v1_sa(input: &[u8]) -> IResult<(Self, Flags<ErrorFlags>)> {
+    fn parse_v1_sa(input: &[u8]) -> IResult<'_, (Self, Flags<ErrorFlags>)> {
         map(
             tuple((
                 be_u32,
@@ -436,7 +445,7 @@ impl PayloadData {
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     // !                        SPI (variable)                         !
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    fn parse_v1_proposal(input: &[u8]) -> IResult<(V1Proposal, Flags<ErrorFlags>)> {
+    fn parse_v1_proposal(input: &[u8]) -> IResult<'_, (V1Proposal, Flags<ErrorFlags>)> {
         map(
             tuple((
                 be_u8,
@@ -503,7 +512,7 @@ impl PayloadData {
     // ~                        SA Attributes                          ~
     // !                                                               !
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    fn parse_v1_transform(input: &[u8]) -> IResult<(V1Transform, Flags<ErrorFlags>)> {
+    fn parse_v1_transform(input: &[u8]) -> IResult<'_, (V1Transform, Flags<ErrorFlags>)> {
         map(
             tuple((
                 be_u8,
@@ -560,7 +569,7 @@ impl PayloadData {
     // ~                   Identification Data                         ~
     // !                                                               !
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    fn parse_v1_identification(input: &[u8]) -> IResult<(Self, Flags<ErrorFlags>)> {
+    fn parse_v1_identification(input: &[u8]) -> IResult<'_, (Self, Flags<ErrorFlags>)> {
         map(
             tuple((be_u8, be_u24, rest)),
             |(id_type, doi_specific_data, id_data): (_, _, &[u8])| {
@@ -585,7 +594,7 @@ impl PayloadData {
     // ~                       Certificate Data                        ~
     // !                                                               !
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    fn parse_v1_certificate(input: &[u8]) -> IResult<(Self, Flags<ErrorFlags>)> {
+    fn parse_v1_certificate(input: &[u8]) -> IResult<'_, (Self, Flags<ErrorFlags>)> {
         map(
             tuple((be_u8, rest)),
             |(cert_encoding, certificate_data): (_, &[u8])| {
@@ -609,7 +618,7 @@ impl PayloadData {
     // ~                    Certificate Authority                      ~
     // !                                                               !
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    fn parse_v1_certificate_request(input: &[u8]) -> IResult<(Self, Flags<ErrorFlags>)> {
+    fn parse_v1_certificate_request(input: &[u8]) -> IResult<'_, (Self, Flags<ErrorFlags>)> {
         map(
             tuple((be_u8, rest)),
             |(cert_encoding, certification_authority): (_, &[u8])| {
@@ -640,7 +649,7 @@ impl PayloadData {
     // ~                       Notification Data                       ~
     // !                                                               !
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    fn parse_v1_notification(input: &[u8]) -> IResult<(Self, Flags<ErrorFlags>)> {
+    fn parse_v1_notification(input: &[u8]) -> IResult<'_, (Self, Flags<ErrorFlags>)> {
         map(
             tuple((
                 be_u32,
@@ -683,7 +692,7 @@ impl PayloadData {
     // ~               Security Parameter Index(es) (SPI)              ~
     // !                                                               !
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    fn parse_v1_delete(input: &[u8]) -> IResult<(Self, Flags<ErrorFlags>)> {
+    fn parse_v1_delete(input: &[u8]) -> IResult<'_, (Self, Flags<ErrorFlags>)> {
         map(
             tuple((
                 be_u32,
@@ -728,7 +737,7 @@ impl PayloadData {
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-!
     // ~                        KEK Attributes                         ~
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-!
-    fn parse_v1_sa_kek(input: &[u8]) -> IResult<(Self, Flags<ErrorFlags>)> {
+    fn parse_v1_sa_kek(input: &[u8]) -> IResult<'_, (Self, Flags<ErrorFlags>)> {
         map(
             tuple((
                 be_u8,
@@ -790,7 +799,7 @@ impl PayloadData {
     // +-+-+-+-+-+-+-+-+                                               ~
     // ~                                                               ~
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-!
-    fn parse_v1_sa_tek(input: &[u8]) -> IResult<(Self, Flags<ErrorFlags>)> {
+    fn parse_v1_sa_tek(input: &[u8]) -> IResult<'_, (Self, Flags<ErrorFlags>)> {
         map(
             tuple((be_u8, rest)),
             |(protocol_id, payload): (_, &[u8])| {
@@ -813,7 +822,7 @@ impl PayloadData {
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-!
     // ~                    Key Packets                                ~
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-!
-    fn parse_v1_key_download(input: &[u8]) -> IResult<(Self, Flags<ErrorFlags>)> {
+    fn parse_v1_key_download(input: &[u8]) -> IResult<'_, (Self, Flags<ErrorFlags>)> {
         map(
             tuple((
                 peek(tuple((be_u16, be_u16))),
@@ -856,7 +865,7 @@ impl PayloadData {
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-!
     // ~                    Key Packet Attributes                      ~
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-!
-    fn parse_v1_key_packet(input: &[u8]) -> IResult<(KeyPacket, Flags<ErrorFlags>)> {
+    fn parse_v1_key_packet(input: &[u8]) -> IResult<'_, (KeyPacket, Flags<ErrorFlags>)> {
         map(
             tuple((
                 be_u8,
@@ -895,7 +904,7 @@ impl PayloadData {
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     // !                      Sequence Number                          !
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    fn parse_v1_sequence_number(input: &[u8]) -> IResult<(Self, Flags<ErrorFlags>)> {
+    fn parse_v1_sequence_number(input: &[u8]) -> IResult<'_, (Self, Flags<ErrorFlags>)> {
         map(be_u32, |sequence| {
             (Self::V1SequenceNumber(sequence), ErrorFlags::none())
         })(input)
@@ -909,7 +918,7 @@ impl PayloadData {
     // ~                          <Proposals>                          ~
     // |                                                               |
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    fn parse_sa(input: &[u8]) -> IResult<(Self, Flags<ErrorFlags>)> {
+    fn parse_sa(input: &[u8]) -> IResult<'_, (Self, Flags<ErrorFlags>)> {
         map(
             map(many1(complete(Self::parse_proposal)), |proposals| {
                 let (proposals, errs): (Vec<_>, Vec<_>) = proposals.into_iter().unzip();
@@ -934,7 +943,7 @@ impl PayloadData {
     // ~                        <Transforms>                           ~
     // |                                                               |
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    fn parse_proposal(input: &[u8]) -> IResult<(Proposal, Flags<ErrorFlags>)> {
+    fn parse_proposal(input: &[u8]) -> IResult<'_, (Proposal, Flags<ErrorFlags>)> {
         map(
             tuple((
                 be_u8,
@@ -1001,7 +1010,7 @@ impl PayloadData {
     // ~                      Transform Attributes                     ~
     // |                                                               |
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    fn parse_transform(input: &[u8]) -> IResult<(Transform, Flags<ErrorFlags>)> {
+    fn parse_transform(input: &[u8]) -> IResult<'_, (Transform, Flags<ErrorFlags>)> {
         let mut error_flags = ErrorFlags::none();
         let (
             input,
@@ -1058,7 +1067,7 @@ impl PayloadData {
     // AF, or Attribute Format, dictates whether it is TLV (AF = 0) or TV (AF = 1) format.
     // In TLV mode, Attribute Length is present, nonzero, and measures Attribute Value.
     // In TV mode, Attribute Length is no present and Attribute Value is 2 octets.
-    pub fn parse_attribute(input: &[u8]) -> IResult<(Attribute, Flags<ErrorFlags>)> {
+    pub fn parse_attribute(input: &[u8]) -> IResult<'_, (Attribute, Flags<ErrorFlags>)> {
         let (input, (att_format, att_type)) = map(
             nom::bits::bits::<_, _, nom::error::Error<(&[u8], usize)>, _, _>(tuple((
                 bit_take(1usize),
@@ -1102,7 +1111,7 @@ impl PayloadData {
     // ~                       Key Exchange Data                       ~
     // |                                                               |
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    fn parse_ke(input: &[u8]) -> IResult<(Self, Flags<ErrorFlags>)> {
+    fn parse_ke(input: &[u8]) -> IResult<'_, (Self, Flags<ErrorFlags>)> {
         map(
             tuple((be_u16, be_u16, rest)),
             |(diffie_hellman_group_num, reserved, key_exchange_data): (_, _, &[u8])| {
@@ -1123,14 +1132,14 @@ impl PayloadData {
     }
 
     // See parse_traffic_selector
-    fn parse_traffic_selector_init(input: &[u8]) -> IResult<(Self, Flags<ErrorFlags>)> {
+    fn parse_traffic_selector_init(input: &[u8]) -> IResult<'_, (Self, Flags<ErrorFlags>)> {
         map(Self::parse_traffic_selector, |(ts, err)| {
             (Self::TrafficSelectorInitiator(ts), err)
         })(input)
     }
 
     // See parse_traffic_selector
-    fn parse_traffic_selector_resp(input: &[u8]) -> IResult<(Self, Flags<ErrorFlags>)> {
+    fn parse_traffic_selector_resp(input: &[u8]) -> IResult<'_, (Self, Flags<ErrorFlags>)> {
         map(Self::parse_traffic_selector, |(ts, err)| {
             (Self::TrafficSelectorResponder(ts), err)
         })(input)
@@ -1146,7 +1155,7 @@ impl PayloadData {
     // ~                       <Traffic Selectors>                     ~
     // |                                                               |
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    fn parse_traffic_selector(input: &[u8]) -> IResult<(TrafficSelector, Flags<ErrorFlags>)> {
+    fn parse_traffic_selector(input: &[u8]) -> IResult<'_, (TrafficSelector, Flags<ErrorFlags>)> {
         map(
             tuple((
                 peek(tuple((be_u8, be_u24))),
@@ -1196,7 +1205,7 @@ impl PayloadData {
     // handled ones are 7 (IPv4 addresses), 8 (IPv6 addresses), and 9 (Fibre).
     pub fn parse_traffic_selector_body(
         input: &[u8],
-    ) -> IResult<(TrafficSelectorBody, Flags<ErrorFlags>)> {
+    ) -> IResult<'_, (TrafficSelectorBody, Flags<ErrorFlags>)> {
         let mut error_flags = ErrorFlags::none();
         let (input, (ts_type, ip_protocol_id, selector_length)) =
             tuple((be_u8, be_u8, be_u16))(input)?;
@@ -1298,7 +1307,7 @@ impl PayloadData {
     // ~                       Certificate Data                        ~
     // |                                                               |
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    fn parse_certificate(input: &[u8]) -> IResult<(Self, Flags<ErrorFlags>)> {
+    fn parse_certificate(input: &[u8]) -> IResult<'_, (Self, Flags<ErrorFlags>)> {
         map(
             tuple((be_u8, rest)),
             |(cert_encoding, certificate_data): (_, &[u8])| {
@@ -1322,7 +1331,7 @@ impl PayloadData {
     // ~                    Certification Authority                    ~
     // |                                                               |
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    fn parse_certificate_request(input: &[u8]) -> IResult<(Self, Flags<ErrorFlags>)> {
+    fn parse_certificate_request(input: &[u8]) -> IResult<'_, (Self, Flags<ErrorFlags>)> {
         map(
             tuple((be_u8, rest)),
             |(cert_encoding, certification_authority): (_, &[u8])| {
@@ -1347,7 +1356,7 @@ impl PayloadData {
     // ~                      Authentication Data                      ~
     // |                                                               |
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    fn parse_authentication(input: &[u8]) -> IResult<(Self, Flags<ErrorFlags>)> {
+    fn parse_authentication(input: &[u8]) -> IResult<'_, (Self, Flags<ErrorFlags>)> {
         map(
             tuple((be_u8, be_u24, rest)),
             |(auth_method, reserved, authentication_data): (_, _, &[u8])| {
@@ -1369,7 +1378,7 @@ impl PayloadData {
 
     // Simply takes the rest of the buffer, clones it into a vec and returns it.
     // Used for several types which are simple data buffers with no other data.
-    fn parse_raw(input: &[u8]) -> IResult<(Vec<u8>, Flags<ErrorFlags>)> {
+    fn parse_raw(input: &[u8]) -> IResult<'_, (Vec<u8>, Flags<ErrorFlags>)> {
         rest(input).map(|(i, data)| (i, (data.to_vec(), ErrorFlags::none())))
     }
 
@@ -1387,7 +1396,7 @@ impl PayloadData {
     // ~                       Notification Data                       ~
     // |                                                               |
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    fn parse_notify(input: &[u8]) -> IResult<(Self, Flags<ErrorFlags>)> {
+    fn parse_notify(input: &[u8]) -> IResult<'_, (Self, Flags<ErrorFlags>)> {
         map(
             tuple((
                 be_u8,
@@ -1416,13 +1425,13 @@ impl PayloadData {
     }
 
     // See parse_identification
-    fn parse_identification_init(input: &[u8]) -> IResult<(Self, Flags<ErrorFlags>)> {
+    fn parse_identification_init(input: &[u8]) -> IResult<'_, (Self, Flags<ErrorFlags>)> {
         map(Self::parse_identification, |(identification, err)| {
             (Self::IdentificationInit(identification), err)
         })(input)
     }
 
-    fn parse_identification_resp(input: &[u8]) -> IResult<(Self, Flags<ErrorFlags>)> {
+    fn parse_identification_resp(input: &[u8]) -> IResult<'_, (Self, Flags<ErrorFlags>)> {
         map(Self::parse_identification, |(identification, err)| {
             (Self::IdentificationResp(identification), err)
         })(input)
@@ -1438,7 +1447,7 @@ impl PayloadData {
     // ~                   Identification Data                         ~
     // |                                                               |
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    fn parse_identification(input: &[u8]) -> IResult<(Identification, Flags<ErrorFlags>)> {
+    fn parse_identification(input: &[u8]) -> IResult<'_, (Identification, Flags<ErrorFlags>)> {
         map(
             tuple((be_u8, be_u24, rest)),
             |(id_type, reserved, identification_data): (_, _, &[u8])| {
@@ -1468,7 +1477,7 @@ impl PayloadData {
     // ~               Security Parameter Index(es) (SPI)              ~
     // |                                                               |
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    fn parse_delete(input: &[u8]) -> IResult<(Self, Flags<ErrorFlags>)> {
+    fn parse_delete(input: &[u8]) -> IResult<'_, (Self, Flags<ErrorFlags>)> {
         map(
             tuple((
                 be_u8,
@@ -1501,7 +1510,7 @@ impl PayloadData {
     // ~               Security Parameter Index(es) (SPI)              ~
     // |                                                               |
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    fn parse_config(input: &[u8]) -> IResult<(Self, Flags<ErrorFlags>)> {
+    fn parse_config(input: &[u8]) -> IResult<'_, (Self, Flags<ErrorFlags>)> {
         map(
             tuple((
                 be_u8,
@@ -1537,7 +1546,7 @@ impl PayloadData {
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     // |     Type      | Type_Data...                                  ~
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    fn parse_eap(input: &[u8]) -> IResult<(Self, Flags<ErrorFlags>)> {
+    fn parse_eap(input: &[u8]) -> IResult<'_, (Self, Flags<ErrorFlags>)> {
         map(
             tuple((be_u8, be_u8, be_u16, be_u8, rest)),
             |(code, identifier, length, r#type, type_data): (_, _, _, _, &[u8])| {

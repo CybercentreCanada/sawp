@@ -77,7 +77,7 @@ pub struct EdnsOption {
 }
 
 impl EdnsOption {
-    pub fn parse(input: &[u8]) -> IResult<(EdnsOption, Flags<ErrorFlags>)> {
+    pub fn parse(input: &[u8]) -> IResult<'_, (EdnsOption, Flags<ErrorFlags>)> {
         let (input, (code, inner_error_flags)) = EdnsOption::parse_option_code(input)?;
         let (input, option_length) = be_u16(input)?;
         let (input, data) = take(option_length)(input)?;
@@ -94,7 +94,7 @@ impl EdnsOption {
         ))
     }
 
-    fn parse_option_code(input: &[u8]) -> IResult<(OptionCode, Flags<ErrorFlags>)> {
+    fn parse_option_code(input: &[u8]) -> IResult<'_, (OptionCode, Flags<ErrorFlags>)> {
         let mut error_flags = ErrorFlags::none();
 
         let (input, raw_option_code) = be_u16(input)?;
@@ -108,7 +108,7 @@ impl EdnsOption {
     pub fn parse_options(
         input: &[u8],
         data_len: u16,
-    ) -> IResult<(Vec<EdnsOption>, Flags<ErrorFlags>)> {
+    ) -> IResult<'_, (Vec<EdnsOption>, Flags<ErrorFlags>)> {
         let mut error_flags = ErrorFlags::none();
         if data_len < 4 {
             return Ok((input, (vec![], error_flags)));

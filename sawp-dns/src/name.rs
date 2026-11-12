@@ -19,7 +19,7 @@ const MSG_COMPRESSION_OFFSET_MASK: u16 = 0b0011_1111_1111_1111;
 pub struct Name {}
 
 impl Name {
-    fn parse_label(input: &[u8]) -> IResult<(&[u8], Flags<ErrorFlags>)> {
+    fn parse_label(input: &[u8]) -> IResult<'_, (&[u8], Flags<ErrorFlags>)> {
         let (rem, label) = length_data::<_, _, sawp::error::NomError<&[u8]>, _>(be_u8)(input)?;
 
         let error_flags = if label.len() > DNS_MAX_LABEL_LEN {

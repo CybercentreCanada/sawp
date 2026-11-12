@@ -200,7 +200,7 @@ impl Resp {
             .unwrap_or(input)
     }
 
-    fn parse_integer(input: &[u8]) -> Result<(&[u8], IntegerResult, Flags<ErrorFlags>)> {
+    fn parse_integer(input: &[u8]) -> Result<(&[u8], IntegerResult<'_>, Flags<ErrorFlags>)> {
         let (rem, raw_len) = take_until(CRLF)(input)?;
         // We don't know how long ret is but it is supposed to be valid text.
         match std::str::from_utf8(raw_len) {
@@ -227,7 +227,7 @@ impl Resp {
     /// The TypeOr looks a bit complicated but essentially means that if there are no errors we just return the parsed string data TypeOr::Left.
     /// If there is an error with the integer calculation we'll try to return the <integer data, string data> TyperOr::Right.
     /// Indicates a nil entry return for the caller via the returned bool
-    fn parse_bulk_string(input: &[u8]) -> Result<(&[u8], StringResult, Flags<ErrorFlags>)> {
+    fn parse_bulk_string(input: &[u8]) -> Result<(&[u8], StringResult<'_>, Flags<ErrorFlags>)> {
         let (rem, wrapped_length, mut error_flags) = Resp::parse_integer(input)?;
         match wrapped_length {
             IntegerResult::Integer(length) => {

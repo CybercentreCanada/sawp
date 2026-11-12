@@ -172,17 +172,17 @@ impl RDataType {
         }
     }
 
-    fn parse_rdata_a(input: &[u8]) -> IResult<RDataType> {
+    fn parse_rdata_a(input: &[u8]) -> IResult<'_, RDataType> {
         let (input, data) = rest(input)?;
         Ok((input, RDataType::A(data.to_vec())))
     }
 
-    fn parse_rdata_aaaa(input: &[u8]) -> IResult<RDataType> {
+    fn parse_rdata_aaaa(input: &[u8]) -> IResult<'_, RDataType> {
         let (input, data) = rest(input)?;
         Ok((input, RDataType::AAAA(data.to_vec())))
     }
 
-    fn parse_rdata_caa(input: &[u8]) -> IResult<RDataType> {
+    fn parse_rdata_caa(input: &[u8]) -> IResult<'_, RDataType> {
         let (input, flags) = be_u8(input)?;
         let (input, tag_length) = be_u8(input)?;
         let (input, tag) = take(tag_length)(input)?;
@@ -222,7 +222,7 @@ impl RDataType {
         Ok((input, (RDataType::PTR(name), error_flags)))
     }
 
-    pub fn parse_rdata_opt(input: &[u8]) -> IResult<(RDataType, Flags<ErrorFlags>)> {
+    pub fn parse_rdata_opt(input: &[u8]) -> IResult<'_, (RDataType, Flags<ErrorFlags>)> {
         let (input, udp_payload_size) = be_u16(input)?;
         let (input, extended_rcode) = be_u8(input)?;
         let (input, version) = be_u8(input)?;
@@ -372,18 +372,18 @@ impl RDataType {
         ))
     }
 
-    fn parse_rdata_txt(input: &[u8]) -> IResult<RDataType> {
+    fn parse_rdata_txt(input: &[u8]) -> IResult<'_, RDataType> {
         let (input, len) = be_u8(input)?;
         let (input, txt) = take(len)(input)?;
         Ok((input, RDataType::TXT(txt.to_vec())))
     }
 
-    fn parse_rdata_null(input: &[u8]) -> IResult<RDataType> {
+    fn parse_rdata_null(input: &[u8]) -> IResult<'_, RDataType> {
         let (input, data) = rest(input)?;
         Ok((input, RDataType::NUL(data.to_vec())))
     }
 
-    fn parse_rdata_sshfp(input: &[u8]) -> IResult<RDataType> {
+    fn parse_rdata_sshfp(input: &[u8]) -> IResult<'_, RDataType> {
         let (input, algorithm) = be_u8(input)?;
         let (input, fingerprint_type) = be_u8(input)?;
         let (input, fingerprint) = rest(input)?;
@@ -398,7 +398,7 @@ impl RDataType {
         ))
     }
 
-    fn parse_rdata_unknown(input: &[u8]) -> IResult<RDataType> {
+    fn parse_rdata_unknown(input: &[u8]) -> IResult<'_, RDataType> {
         let (input, data) = rest(input)?;
         Ok((input, RDataType::UNKNOWN(data.to_vec())))
     }
