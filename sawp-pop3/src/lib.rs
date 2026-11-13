@@ -33,6 +33,10 @@
 //!                     InnerMessage::Command(_) => println!("POP3 Command {:?}", message.inner),
 //!                     // Response sent by server
 //!                     InnerMessage::Response(_) => println!("POP3 Response {:?}", message.inner),
+//!                     InnerMessage::ServerChallenge(_) => println!("POP3 Server Challenge {:?}",
+//!                     message.inner),
+//!                     InnerMessage::SaslResponse(_) => println!("POP3 SASL Response: {:?}",
+//!                     message.inner),
 //!                 }
 //!             }
 //!             // This should never occur with POP3 but is included for consistency with other parsers
@@ -118,6 +122,7 @@ pub enum ErrorFlag {
     UnknownKeyword = 0b0000_0100,
     /// First line of server response + CRLF must not exceed 512 octets (RFC 2449)
     ResponseTooLong = 0b0000_1000,
+    MalformedChallenge = 0b0001_0000,
 }
 
 impl TryFrom<&[u8]> for Keyword {
@@ -218,11 +223,31 @@ pub struct Response {
     pub data: Vec<Vec<u8>>,
 }
 
+/// SASL server challenge (RFC 5034). `data` is the undecoded base64; an empty challenge has empty
+/// data
+#[cfg_attr(feature = "ffi", derive(GenerateFFI), sawp_ffi(prefix = "sawp_pop3"))]
+#[derive(Debug, PartialEq, Eq)]
+pub struct ServerChallenge {
+    pub data: Vec<u8>,
+}
+
+/// SASL client response (RFC 5034). `data` is the undecoded base64, or '*' if the client cancelled
+/// the exchange
+#[cfg_attr(feature = "ffi", derive(GenerateFFI), sawp_ffi(prefix = "sawp_pop3"))]
+#[derive(Debug, PartialEq, Eq)]
+pub struct SaslResponse {
+    // TODO: Option<Vec<u8>> may be the better API, if '*' is seen set None so we can avoid
+    // stringy checks.
+    pub data: Vec<u8>,
+}
+
 #[cfg_attr(feature = "ffi", derive(GenerateFFI), sawp_ffi(prefix = "sawp_pop3"))]
 #[derive(Debug, PartialEq, Eq)]
 pub enum InnerMessage {
     Command(Command),
     Response(Response),
+    ServerChallenge(ServerChallenge),
+    SaslResponse(SaslResponse),
 }
 
 #[cfg_attr(feature = "ffi", derive(GenerateFFI), sawp_ffi(prefix = "sawp_pop3"))]
@@ -350,6 +375,75 @@ impl POP3 {
 
         Ok((input, message))
     }
+
+    fn is_challenge(input: &[u8]) -> bool {
+        input.first() == Some(&b'+') && !input.starts_with(b"+OK")
+    }
+
+    fn parse_challenge(input: &[u8]) -> Result<(&[u8], Message)> {
+        let mut error_flags: Flags<ErrorFlag> = ErrorFlag::none();
+
+        let (input, _) = char('+')(input)?;
+        let (input, space) = opt(char(' '))(input)?;
+        let (input, data) = terminated(take_until(CRLF), crlf)(input)?;
+
+        if space.is_none() {
+            if !data.is_empty() {
+                return Err(Error::parse(Some("Invalid server challenge".to_string())));
+            }
+            error_flags |= ErrorFlag::MalformedChallenge;
+        }
+
+        let message = Message {
+            error_flags,
+            inner: InnerMessage::ServerChallenge(ServerChallenge {
+                data: data.to_vec(),
+            }),
+        };
+        Ok((input, message))
+    }
+
+    fn parse_server(input: &[u8]) -> Result<(&[u8], Message)> {
+        if Self::is_challenge(input) {
+            Self::parse_challenge(input)
+        } else {
+            Self::parse_response(input)
+        }
+    }
+
+    fn is_sasl_response(input: &[u8]) -> bool {
+        input == b"*"
+            || input
+                .iter()
+                .all(|b| b.is_ascii_alphanumeric() || matches!(b, b'+' | b'/' | b'='))
+    }
+
+    /// Fallback: A client line that isn't a valid command but is valid base64 characters (or '*')
+    /// is treated as a SASL response.
+    fn parse_sasl_response(input: &[u8]) -> Result<(&[u8], Message)> {
+        let (input, line) = terminated(take_until(CRLF), crlf)(input)?;
+        if !Self::is_sasl_response(line) {
+            return Err(Error::parse(Some(
+                "Not a command or SASL response".to_string(),
+            )));
+        }
+
+        let message = Message {
+            error_flags: ErrorFlag::none(),
+            inner: InnerMessage::SaslResponse(SaslResponse {
+                data: line.to_vec(),
+            }),
+        };
+        Ok((input, message))
+    }
+
+    /// Fallback: If parse_command fails, try it as a sasl response
+    fn parse_client(input: &[u8]) -> Result<(&[u8], Message)> {
+        match Self::parse_command(input) {
+            Ok(res) => Ok(res),
+            Err(_) => Self::parse_sasl_response(input),
+        }
+    }
 }
 
 impl<'a> Parse<'a> for POP3 {
@@ -360,19 +454,21 @@ impl<'a> Parse<'a> for POP3 {
     ) -> Result<(&'a [u8], Option<Self::Message>)> {
         match direction {
             Direction::ToServer => {
-                let (input, msg) = POP3::parse_command(input)?;
+                let (input, msg) = Self::parse_client(input)?;
                 Ok((input, Some(msg)))
             }
             Direction::ToClient => {
-                let (input, msg) = POP3::parse_response(input)?;
+                let (input, msg) = Self::parse_server(input)?;
                 Ok((input, Some(msg)))
             }
             Direction::Unknown => {
                 // Can't use nom::branch::alt since parse_* return sawp::error
-                if let Ok((input, msg)) = POP3::parse_command(input) {
+                if let Ok((input, msg)) = Self::parse_command(input) {
+                    Ok((input, Some(msg)))
+                } else if let Ok((input, msg)) = Self::parse_server(input) {
                     Ok((input, Some(msg)))
                 } else {
-                    let (input, msg) = POP3::parse_response(input)?;
+                    let (input, msg) = Self::parse_sasl_response(input)?;
                     Ok((input, Some(msg)))
                 }
             }
