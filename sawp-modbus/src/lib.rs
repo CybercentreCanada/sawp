@@ -490,6 +490,17 @@ pub struct Message {
     pub error_flags: Flags<ErrorFlags>,
 }
 
+/// Expected number of data octets in the response to a read of `quantity`
+/// items: one bit per coil or discrete input, two octets per register.
+fn read_response_len(access_type: Flags<AccessType>, quantity: u16) -> usize {
+    let count = usize::from(quantity);
+    if access_type.intersects(AccessType::BIT_ACCESS_MASK) {
+        count / 8 + usize::from(count % 8 != 0)
+    } else {
+        2 * count
+    }
+}
+
 impl Message {
     /// Subtracts 2 from the length (the unit id and function bytes)
     /// so that length checks do not need to account for the 2 bytes
@@ -914,9 +925,7 @@ impl Message {
                     quantity,
                 }),
             ) => {
-                let other_count = usize::from(*quantity);
-
-                if data.len() != (other_count / 8) + usize::from((other_count % 8) != 0) {
+                if data.len() != read_response_len(self.access_type, *quantity) {
                     self.error_flags |= ErrorFlags::DATA_VALUE;
                 }
 
@@ -946,9 +955,7 @@ impl Message {
                 }),
                 Data::Read(Read::Response(data)),
             ) => {
-                let count = usize::from(*quantity);
-
-                if data.len() != (count / 8) + usize::from((count % 8) != 0) {
+                if data.len() != read_response_len(self.access_type, *quantity) {
                     self.error_flags |= ErrorFlags::DATA_VALUE;
                 }
 
@@ -3074,6 +3081,74 @@ mod tests {
     fn test_matching(mut req: Message, mut resp: Message, expected: bool) {
         assert_eq!(req.matches(&resp), expected);
         assert_eq!(resp.matches(&req), expected);
+    }
+
+    #[rstest(
+        req,
+        resp,
+        data_value,
+        // read coils: 11 bits fit in 2 octets
+        case::read_coils(
+            &[0x00, 0x01, 0x00, 0x00, 0x00, 0x06, 0x01, 0x01, 0x00, 0x00, 0x00, 0x0b],
+            &[0x00, 0x01, 0x00, 0x00, 0x00, 0x05, 0x01, 0x01, 0x02, 0xff, 0x07],
+            false
+        ),
+        // read discrete inputs: 8 bits fit in 1 octet
+        case::read_discrete_inputs(
+            &[0x00, 0x01, 0x00, 0x00, 0x00, 0x06, 0x01, 0x02, 0x00, 0x00, 0x00, 0x08],
+            &[0x00, 0x01, 0x00, 0x00, 0x00, 0x04, 0x01, 0x02, 0x01, 0xff],
+            false
+        ),
+        // read holding registers: 3 registers take 6 octets
+        case::read_holding_registers(
+            &[0x00, 0x01, 0x00, 0x00, 0x00, 0x06, 0x01, 0x03, 0x00, 0x00, 0x00, 0x03],
+            &[0x00, 0x01, 0x00, 0x00, 0x00, 0x09, 0x01, 0x03, 0x06, 0x00, 0x01, 0x00, 0x02,
+              0x00, 0x03],
+            false
+        ),
+        // read input registers: 1 register takes 2 octets
+        case::read_input_registers(
+            &[0x00, 0x01, 0x00, 0x00, 0x00, 0x06, 0x01, 0x04, 0x00, 0x00, 0x00, 0x01],
+            &[0x00, 0x01, 0x00, 0x00, 0x00, 0x05, 0x01, 0x04, 0x02, 0x12, 0x34],
+            false
+        ),
+        // read holding registers: 2 registers requested, 1 returned
+        case::read_holding_registers_short(
+            &[0x00, 0x01, 0x00, 0x00, 0x00, 0x06, 0x01, 0x03, 0x00, 0x00, 0x00, 0x02],
+            &[0x00, 0x01, 0x00, 0x00, 0x00, 0x05, 0x01, 0x03, 0x02, 0x12, 0x34],
+            true
+        ),
+        // read coils: 8 bits requested, 2 octets returned
+        case::read_coils_long(
+            &[0x00, 0x01, 0x00, 0x00, 0x00, 0x06, 0x01, 0x01, 0x00, 0x00, 0x00, 0x08],
+            &[0x00, 0x01, 0x00, 0x00, 0x00, 0x05, 0x01, 0x01, 0x02, 0xff, 0x00],
+            true
+        ),
+    )]
+    fn test_matching_read_length(req: &[u8], resp: &[u8], data_value: bool) {
+        let modbus = Modbus::default();
+        let parse = |input: &[u8], direction| {
+            let (_, msg) = modbus.parse(input, direction).unwrap();
+            let msg = msg.unwrap();
+            assert_eq!(msg.error_flags, ErrorFlags::none());
+            msg
+        };
+
+        // response checked against its request
+        let mut checked = parse(resp, Direction::ToClient);
+        assert!(checked.matches(&parse(req, Direction::ToServer)));
+        assert_eq!(
+            checked.error_flags.contains(ErrorFlags::DATA_VALUE),
+            data_value
+        );
+
+        // request checked against its response
+        let mut checked = parse(req, Direction::ToServer);
+        assert!(checked.matches(&parse(resp, Direction::ToClient)));
+        assert_eq!(
+            checked.error_flags.contains(ErrorFlags::DATA_VALUE),
+            data_value
+        );
     }
 
     #[rstest(

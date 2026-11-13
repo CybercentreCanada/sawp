@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+### Fixed
+- sawp-modbus: Read Holding/Input Registers responses no longer get `DATA_VALUE` in `Message::matches()`: register reads expect two octets per register, not one bit
 
 ## [0.13.1] - 2024-10-02
 ### Changed
