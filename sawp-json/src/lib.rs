@@ -31,10 +31,12 @@ impl Protocol<'_> for Json {
 }
 
 impl<'a> Parse<'a> for Json {
+    type State = ();
     fn parse(
         &self,
         input: &'a [u8],
         _direction: Direction,
+        _state: &mut Self::State,
     ) -> Result<(&'a [u8], Option<Self::Message>)> {
         let mut stream = Deserializer::from_slice(input).into_iter::<Value>();
 
@@ -80,7 +82,7 @@ mod tests {
         let json = Json {};
         assert_eq!(
             expected,
-            json.parse(input, Direction::Unknown)
+            json.parse(input, Direction::Unknown, &mut ())
                 .map(|(left, msg)| (left.len(), msg)),
         );
     }
@@ -112,7 +114,7 @@ mod tests {
         ] {
             assert_eq!(
                 Err(Error::new(ErrorKind::Incomplete(Needed::Unknown))),
-                json.parse(frag, Direction::Unknown),
+                json.parse(frag, Direction::Unknown, &mut ()),
             );
             assert_eq!(Status::Incomplete, json.probe(frag, Direction::Unknown));
         }
@@ -120,7 +122,7 @@ mod tests {
         // Genuinely malformed input must still be reported as InvalidData.
         assert_eq!(
             Err(Error::new(ErrorKind::InvalidData)),
-            json.parse(b"''", Direction::Unknown),
+            json.parse(b"''", Direction::Unknown, &mut ()),
         );
     }
 }

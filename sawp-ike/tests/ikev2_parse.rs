@@ -276,8 +276,9 @@ use sawp_ike::{header::*, payloads::*, *};
     )]
 fn ikev2_full_parse(input: &[u8], expected: Result<(usize, Option<<Ike as Protocol>::Message>)>) {
     let ike = Ike::default();
+    let mut ike_state = State::default();
     assert_eq!(
-        ike.parse(input, Direction::Unknown)
+        ike.parse(input, Direction::Unknown, &mut ike_state)
             .map(|(left, msg)| (left.len(), msg)),
         expected
     );
@@ -482,11 +483,12 @@ fn ikev2_payload_parse(
     )]
 fn esp(input: &[u8], expected: &[Option<sawp_ike::Message>; 2]) {
     let ike = Ike::default();
-    let message1 = ike.parse(input, Direction::Unknown);
+    let mut ike_state = State::default();
+    let message1 = ike.parse(input, Direction::Unknown, &mut ike_state);
     assert!(message1.is_ok());
     let (input, message1) = message1.unwrap();
 
-    let message2 = ike.parse(input, Direction::Unknown);
+    let message2 = ike.parse(input, Direction::Unknown, &mut ike_state);
     assert!(message2.is_ok());
     let (input, message2) = message2.unwrap();
 

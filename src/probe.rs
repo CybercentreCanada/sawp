@@ -20,7 +20,7 @@ pub trait Probe<'a>: Protocol<'a> + Parse<'a> {
     /// Returns a probe status. Probe again once more data is available when the
     /// status is `Status::Incomplete`.
     fn probe(&self, input: &'a [u8], direction: Direction) -> Status {
-        match self.parse(input, direction) {
+        match self.parse(input, direction, &mut Default::default()) {
             Ok((_, _)) => Status::Recognized,
             Err(Error {
                 kind: ErrorKind::Incomplete(_),
