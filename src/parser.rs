@@ -15,6 +15,14 @@ pub enum Direction {
 
 /// Trait for parsing message from an input byte stream.
 pub trait Parse<'a>: Protocol<'a> {
+    /// Per-flow parser state, owned by the caller. Stateless parsers use `()`. Reset with
+    /// Default::default() on midstream pickups or gaps.
+    ///
+    /// `probe` does not accept a state as it passes a `default` initialized state object.
+    ///
+    /// [default]: `Default::default()`
+    type State: Default;
+
     /// Returns a tuple containing the remaining unparsed data and the parsed `Message`.
     ///
     /// A return value of `Result::Ok` indicates that the parser has *made progress*
@@ -35,5 +43,6 @@ pub trait Parse<'a>: Protocol<'a> {
         &self,
         input: &'a [u8],
         direction: Direction,
+        state: &mut Self::State,
     ) -> Result<(&'a [u8], Option<Self::Message>)>;
 }

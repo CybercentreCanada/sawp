@@ -18,7 +18,7 @@
 //!     let parser = TFTP {};
 //!     let mut bytes = input;
 //!     while bytes.len() > 0 {
-//!         match parser.parse(bytes, Direction::Unknown) {
+//!         match parser.parse(bytes, Direction::Unknown, &mut ()) {
 //!             // The parser succeeded and returned the remaining bytes and the parsed TFTP message
 //!             Ok((rest, Some(message))) => {
 //!                 println!("TFTP message: {:?}", message);
@@ -175,10 +175,12 @@ fn parse_options(input: &'_ [u8]) -> Result<(&'_ [u8], Vec<OptionExtension>)> {
 }
 
 impl<'a> Parse<'a> for TFTP {
+    type State = ();
     fn parse(
         &self,
         input: &'a [u8],
         _direction: Direction,
+        _state: &mut Self::State,
     ) -> Result<(&'a [u8], Option<Self::Message>)> {
         let (input, op_code) = be_u16(input)?;
         if let Ok(op_code) = OpCode::try_from(op_code) {
@@ -479,7 +481,7 @@ mod tests {
     )]
     fn test_parse(input: &[u8], expected: Result<(&[u8], Option<Message>)>) {
         let tftp = TFTP {};
-        assert_eq!(tftp.parse(input, Direction::Unknown), expected);
+        assert_eq!(tftp.parse(input, Direction::Unknown, &mut ()), expected);
     }
 
     #[rstest(

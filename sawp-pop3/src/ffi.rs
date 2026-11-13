@@ -34,7 +34,7 @@ pub unsafe extern "C" fn sawp_pop3_parse(
     length: usize,
 ) -> *mut ParseResult {
     let input = std::slice::from_raw_parts(data, length);
-    match (*parser).parse(input, direction) {
+    match (*parser).parse(input, direction, &mut Default::default()) {
         Ok((sl, message)) => ParseResult {
             message: message.into_ffi_ptr(),
             size_read: length - sl.len(),

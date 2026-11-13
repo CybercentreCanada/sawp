@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-use super::{payloads::Attribute, Direction, Ike, Message};
+use super::{payloads::Attribute, Direction, Ike, Message, State};
 
 use sawp::{error::Error, parser::Parse};
 
@@ -34,9 +34,10 @@ pub unsafe extern "C" fn sawp_ike_parse(
     direction: Direction,
     data: *const u8,
     length: usize,
+    state: *mut State,
 ) -> *mut ParseResult {
     let input = std::slice::from_raw_parts(data, length);
-    match (*parser).parse(input, direction) {
+    match (*parser).parse(input, direction, &mut *state) {
         Ok((sl, message)) => ParseResult {
             message: message.into_ffi_ptr(),
             // Should never actually underflow as parse cannot grow the input slice

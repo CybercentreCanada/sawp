@@ -22,7 +22,7 @@
 //!     while bytes.len() > 0 {
 //!         // If we know that this is a request or response, change the Direction
 //!         // for a more accurate parsing
-//!         match modbus.parse(bytes, Direction::Unknown) {
+//!         match modbus.parse(bytes, Direction::Unknown, &mut ()) {
 //!             // The parser succeeded and returned the remaining bytes and the parsed modbus message
 //!             Ok((rest, Some(message))) => {
 //!                 println!("Modbus message: {:?}", message);
@@ -1186,7 +1186,7 @@ impl Protocol<'_> for Modbus {
 
 impl<'a> Probe<'a> for Modbus {
     fn probe(&self, input: &'a [u8], direction: Direction) -> Status {
-        match self.parse(input, direction) {
+        match self.parse(input, direction, &mut Default::default()) {
             Ok((_, Some(msg))) => {
                 if msg.error_flags == ErrorFlags::none()
                     && (!self.probe_strict || msg.function.code != FunctionCode::Unknown)
@@ -1206,10 +1206,12 @@ impl<'a> Probe<'a> for Modbus {
 }
 
 impl<'a> Parse<'a> for Modbus {
+    type State = ();
     fn parse(
         &self,
         input: &'a [u8],
         direction: Direction,
+        _state: &mut Self::State,
     ) -> Result<(&'a [u8], Option<Self::Message>)> {
         let (input, transaction_id) = be_u16(input)?;
         let (input, protocol_id) = be_u16(input)?;
@@ -1978,7 +1980,7 @@ mod tests {
         let modbus = Modbus::default();
         assert_eq!(
             modbus
-                .parse(input, Direction::Unknown)
+                .parse(input, Direction::Unknown, &mut ())
                 .map(|(left, msg)| (left.len(), msg)),
             expected
         );
@@ -2587,7 +2589,7 @@ mod tests {
         let modbus = Modbus::default();
         assert_eq!(
             modbus
-                .parse(input, sawp::parser::Direction::ToServer)
+                .parse(input, sawp::parser::Direction::ToServer, &mut ())
                 .map(|(left, msg)| (left.len(), msg)),
             expected
         );
@@ -2879,7 +2881,7 @@ mod tests {
         let modbus = Modbus::default();
         assert_eq!(
             modbus
-                .parse(input, sawp::parser::Direction::ToClient)
+                .parse(input, sawp::parser::Direction::ToClient, &mut ())
                 .map(|(left, msg)| (left.len(), msg)),
             expected
         );
@@ -3128,7 +3130,7 @@ mod tests {
     fn test_matching_read_length(req: &[u8], resp: &[u8], data_value: bool) {
         let modbus = Modbus::default();
         let parse = |input: &[u8], direction| {
-            let (_, msg) = modbus.parse(input, direction).unwrap();
+            let (_, msg) = modbus.parse(input, direction, &mut ()).unwrap();
             let msg = msg.unwrap();
             assert_eq!(msg.error_flags, ErrorFlags::none());
             msg

@@ -16,7 +16,7 @@ const SAMPLE_JSON: &[u8] = br#"{
 }"#;
 
 fn parse_json<'a>(json: &'a Json, input: &'a [u8]) -> (&'a [u8], Option<Message>) {
-    json.parse(input, Direction::Unknown).unwrap()
+    json.parse(input, Direction::Unknown, &mut ()).unwrap()
 }
 
 fn criterion_benchmark(c: &mut Criterion) {

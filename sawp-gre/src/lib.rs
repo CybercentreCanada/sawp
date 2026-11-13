@@ -20,7 +20,7 @@
 //!     let gre = Gre {};
 //!     let mut bytes = input;
 //!     while bytes.len() > 0 {
-//!         match gre.parse(bytes, Direction::Unknown) {
+//!         match gre.parse(bytes, Direction::Unknown, &mut ()) {
 //!             // The parser succeeded and returned the remaining bytes and the parsed gre message.
 //!             Ok((rest, Some(message))) => {
 //!                 println!("Gre message: {:?}", message);
@@ -401,7 +401,7 @@ impl Protocol<'_> for Gre {
 
 impl<'a> Probe<'a> for Gre {
     fn probe(&self, input: &'a [u8], direction: Direction) -> Status {
-        match self.parse(input, direction) {
+        match self.parse(input, direction, &mut Default::default()) {
             Ok((_, Some(msg))) => {
                 if msg.error_flags == ErrorFlags::none() {
                     Status::Recognized
@@ -419,10 +419,12 @@ impl<'a> Probe<'a> for Gre {
 }
 
 impl<'a> Parse<'a> for Gre {
+    type State = ();
     fn parse(
         &self,
         input: &'a [u8],
         _direction: Direction,
+        _state: &mut Self::State,
     ) -> Result<(&'a [u8], Option<Self::Message>)> {
         let (input, gre_flags_raw) = be_u16(input)?;
         let (input, protocol_type) = be_u16(input)?;
@@ -1044,7 +1046,7 @@ mod tests {
     )]
     fn test_parse(input: &[u8], expected: Result<(&[u8], Option<Message>)>) {
         let gre = Gre {};
-        assert_eq!(gre.parse(input, Direction::Unknown), expected);
+        assert_eq!(gre.parse(input, Direction::Unknown, &mut ()), expected);
     }
 
     #[rstest(

@@ -162,7 +162,7 @@ use sawp_ike::{header::*, payloads::*, *};
 fn ikev1_full_parse(input: &[u8], expected: Result<(usize, Option<<Ike as Protocol>::Message>)>) {
     let ike = Ike::default();
     assert_eq!(
-        ike.parse(input, Direction::Unknown)
+        ike.parse(input, Direction::Unknown, &mut Default::default())
             .map(|(left, msg)| (left.len(), msg)),
         expected
     );

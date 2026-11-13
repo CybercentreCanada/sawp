@@ -19,7 +19,7 @@
 //!     let pop3 = POP3 {};
 //!     let mut bytes = input;
 //!     while bytes.len() > 0 {
-//!         match pop3.parse(bytes, Direction::Unknown) {
+//!         match pop3.parse(bytes, Direction::Unknown, &mut ()) {
 //!             // The parser succeeded and returned the remaining bytes and the parsed POP3 message
 //!             Ok((rest, Some(message))) => {
 //!                 bytes = rest;
@@ -447,10 +447,12 @@ impl POP3 {
 }
 
 impl<'a> Parse<'a> for POP3 {
+    type State = ();
     fn parse(
         &self,
         input: &'a [u8],
         direction: Direction,
+        _state: &mut Self::State,
     ) -> Result<(&'a [u8], Option<Self::Message>)> {
         match direction {
             Direction::ToServer => {
@@ -758,6 +760,6 @@ mod tests {
     )]
     fn test_parse(input: &[u8], expected: Result<(&[u8], Option<Message>)>) {
         let pop3 = POP3 {};
-        assert_eq!(pop3.parse(input, Direction::Unknown), expected);
+        assert_eq!(pop3.parse(input, Direction::Unknown, &mut ()), expected);
     }
 }

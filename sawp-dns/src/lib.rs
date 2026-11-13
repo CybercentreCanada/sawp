@@ -51,7 +51,7 @@
 //!     while bytes.len() > 0 {
 //!         // If we know that this is a request or response, change the Direction
 //!         // for a more accurate parsing
-//!         match dns.parse(bytes, Direction::Unknown) {
+//!         match dns.parse(bytes, Direction::Unknown, &mut ()) {
 //!             // The parser succeeded and returned the remaining bytes and the parsed DNS message
 //!             Ok((rest, Some(message))) => {
 //!                 println!("Dns message: {:?}", message);
@@ -243,10 +243,13 @@ impl<'a> Probe<'a> for Dns {}
 /// If part of the message was parsed successfully will attempt to return a partial message
 /// with an appropriate error_flags field indicating what went wrong.
 impl<'a> Parse<'a> for Dns {
+    type State = ();
+
     fn parse(
         &self,
         input: &'a [u8],
         _direction: Direction,
+        _state: &mut Self::State,
     ) -> Result<(&'a [u8], Option<Self::Message>)> {
         let reference_bytes = input; // An internal copy of the full input used to dereference pointers during parsing.
         let mut message = Message {
@@ -2650,7 +2653,7 @@ mod test {
     fn dns(input: &[u8], expected: Result<(usize, Option<Message>)>) {
         let dns = Dns {};
         assert_eq!(
-            dns.parse(input, Direction::Unknown)
+            dns.parse(input, Direction::Unknown, &mut ())
                 .map(|(rem, msg)| (rem.len(), msg)),
             expected
         );
@@ -2672,7 +2675,7 @@ mod test {
             0xc0, 0x00, // ptr → offset 0 → 0xffff → ptr → offset 0x3fff (out of range)
         ];
         let start = std::time::Instant::now();
-        if let Ok((_, Some(msg))) = (Dns {}).parse(input, Direction::Unknown) {
+        if let Ok((_, Some(msg))) = (Dns {}).parse(input, Direction::Unknown, &mut ()) {
             assert!(msg.queries.len() <= 2, "queries={}", msg.queries.len());
             assert!(msg.answers.len() <= 2, "answers={}", msg.answers.len());
             assert!(
@@ -2702,7 +2705,7 @@ mod test {
             0x00, 0x00, // ARCOUNT: 0
         ];
         // Just assert the malicious input is handled (Ok or Err) without panicking / OOM.
-        let _ = Dns {}.parse(input, Direction::Unknown);
+        let _ = Dns {}.parse(input, Direction::Unknown, &mut ());
     }
 
     /// An OPT pseudo-RR whose RDLENGTH covers the rest of the message must not
@@ -2727,7 +2730,7 @@ mod test {
             0x00, 0x03, 0x00, 0x00, // option: NSID, length 0
         ];
         let (rem, msg) = Dns {}
-            .parse(input, Direction::Unknown)
+            .parse(input, Direction::Unknown, &mut ())
             .expect("OPT RR with non-empty RDATA must parse, not Incomplete");
         assert!(rem.is_empty());
         let msg = msg.expect("message");

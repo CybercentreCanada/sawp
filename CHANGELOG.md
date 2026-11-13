@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+### Changed
+- sawp: Add State to Parser trait so parsers can become stateful. Satte is managed by caller.
+- sawp-ike: Use new State object with API so `Ike` object is Send + Sync and is not stateful.
+
 ### Fixed
 - sawp-modbus: Read Holding/Input Registers responses no longer get `DATA_VALUE` in `Message::matches()`: register reads expect two octets per register, not one bit
 

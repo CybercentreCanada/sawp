@@ -20,7 +20,7 @@
 //!     while bytes.len() > 0 {
 //!         // If we know that this is a request or response, change the Direction
 //!         // for a more accurate parsing
-//!         match resp.parse(bytes, Direction::Unknown) {
+//!         match resp.parse(bytes, Direction::Unknown, &mut ()) {
 //!             // The parser succeeded and returned the remaining bytes and the parsed RESP message
 //!             Ok((rest, Some(message))) => {
 //!                 println!("Resp message: {:?}", message);
@@ -176,7 +176,7 @@ impl<'a> Probe<'a> for Resp {
     /// Returns a probe status. Probe again once more data is available when the
     /// status is `Status::Incomplete`.
     fn probe(&self, input: &'a [u8], direction: Direction) -> Status {
-        match self.parse(input, direction) {
+        match self.parse(input, direction, &mut Default::default()) {
             Ok((
                 _,
                 Some(Message {
@@ -371,10 +371,12 @@ impl Resp {
 /// If part of the message was parsed successfully will attempt to return a partial message
 /// with an appropriate error_flags field indicating what went wrong.
 impl<'a> Parse<'a> for Resp {
+    type State = ();
     fn parse(
         &self,
         input: &'a [u8],
         _direction: Direction,
+        _state: &mut Self::State,
     ) -> Result<(&'a [u8], Option<Self::Message>)> {
         let (rem, entry, error_flags) = Resp::parse_entry(input, 0)?;
 
@@ -646,7 +648,7 @@ mod test {
     fn resp(input: &[u8], expected: Result<(usize, Option<Message>)>) {
         let resp = Resp {};
         assert_eq!(
-            resp.parse(input, Direction::Unknown)
+            resp.parse(input, Direction::Unknown, &mut ())
                 .map(|(rem, msg)| (rem.len(), msg)),
             expected
         );

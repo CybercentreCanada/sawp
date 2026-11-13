@@ -569,10 +569,12 @@ fn parse_avps_with_depth(
 }
 
 impl<'a> Parse<'a> for Diameter {
+    type State = ();
     fn parse(
         &self,
         input: &'a [u8],
         _direction: Direction,
+        _state: &mut Self::State,
     ) -> Result<(&'a [u8], Option<Self::Message>)> {
         let mut error_flags = ErrorFlags::none();
         let (input, (header, flags)) = Header::parse(input)?;
@@ -1453,7 +1455,7 @@ mod tests {
     fn test_parse(input: &[u8], expected: Result<(&[u8], Option<Message>)>) {
         let diameter = Diameter {};
 
-        assert_eq!(diameter.parse(input, Direction::Unknown), expected);
+        assert_eq!(diameter.parse(input, Direction::Unknown, &mut ()), expected);
     }
 
     #[rstest(
@@ -1515,6 +1517,6 @@ mod tests {
 
         let diameter = Diameter {};
         // Must not panic / stack-overflow; either Ok or Err is acceptable.
-        let _ = diameter.parse(&input, Direction::Unknown);
+        let _ = diameter.parse(&input, Direction::Unknown, &mut ());
     }
 }

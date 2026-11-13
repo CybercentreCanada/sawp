@@ -35,7 +35,7 @@ fn regression_delete_zero_spi_size_amplification() {
 
     let ike = Ike::default();
     // Must not panic / OOM regardless of outcome.
-    let result = ike.parse(input, Direction::Unknown);
+    let result = ike.parse(input, Direction::Unknown, &mut Default::default());
     let (_rest, msg) = result.expect("malicious delete payload should parse without error");
     match msg {
         Some(Message::Ike(m)) => {
@@ -88,7 +88,7 @@ fn regression_v1_delete_zero_spi_size_amplification() {
 
     let ike = Ike::default();
     // Must not panic / OOM regardless of outcome.
-    let result = ike.parse(input, Direction::Unknown);
+    let result = ike.parse(input, Direction::Unknown, &mut Default::default());
     let (_rest, msg) = result.expect("malicious v1 delete payload should parse without error");
     match msg {
         Some(Message::Ike(m)) => {

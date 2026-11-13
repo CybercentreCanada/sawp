@@ -25,15 +25,16 @@
 //! use sawp::parser::{Direction, Parse};
 //! use sawp::error::Error;
 //! use sawp::error::ErrorKind;
-//! use sawp_ike::{Ike, Message};
+//! use sawp_ike::{Ike, Message, State};
 //!
 //! fn parse_bytes(input: &[u8]) -> std::result::Result<&[u8], Error> {
+//!     let mut ike_state = State::default();
 //!     let ike = Ike::default();
 //!     let mut bytes = input;
 //!     while bytes.len() > 0 {
 //!         // If we know that this is a request or response, change the Direction
 //!         // for a more accurate parsing
-//!         match ike.parse(bytes, Direction::Unknown) {
+//!         match ike.parse(bytes, Direction::Unknown, &mut ike_state) {
 //!             // The parser succeeded and returned the remaining bytes and the parsed ike message
 //!             Ok((rest, Some(message))) => {
 //!                 println!("IKE message: {:?}", message);
@@ -178,7 +179,12 @@ pub struct EspMessage {
 /// this means a `std::shared_ptr<Ike>` is not enough! std::mutex or other locking primitives must be
 /// used to ensure data races do not occur.
 #[derive(Debug, Default)]
-pub struct Ike {
+pub struct Ike {}
+
+#[cfg_attr(feature = "ffi", derive(GenerateFFI))]
+#[cfg_attr(feature = "ffi", sawp_ffi(prefix = "sawp_ike"))]
+#[derive(Default, Debug)]
+pub struct State {
     // On port 4500 ESP payloads are encapsulated in UDP but on port 500 they are not.
     // When UDP encapsulation for ESP is present IKE payloads are prefixed with 4 octets
     // 0x00 to differentiate them from ESP.
@@ -187,7 +193,7 @@ pub struct Ike {
     // it as ESP payloads. When IKE was not prefixed with 0x00 then all packets should
     // be IKE. As such we have 3 states - ESP encapsulation present (Some(true)), ESP
     // encapsulation not present (Some(false)), and not yet determined (None).
-    saw_udp_encapsulation: std::cell::Cell<Option<bool>>,
+    saw_udp_encapsulation: Option<bool>,
 }
 
 impl Probe<'_> for Ike {}
@@ -201,12 +207,14 @@ impl Protocol<'_> for Ike {
 }
 
 impl<'a> Parse<'a> for Ike {
+    type State = State;
     fn parse(
         &self,
         input: &'a [u8],
         _direction: Direction,
+        state: &mut Self::State,
     ) -> Result<(&'a [u8], Option<Self::Message>)> {
-        let input = match self.saw_udp_encapsulation.get() {
+        let input = match state.saw_udp_encapsulation {
             // Previously saw encapsulation
             Some(true) => {
                 let (input, non_esp_marker) = opt(tag(b"\x00\x00\x00\x00"))(input)?;
@@ -226,8 +234,7 @@ impl<'a> Parse<'a> for Ike {
             // Not yet determined
             None => {
                 let (input, non_esp_marker) = opt(tag(b"\x00\x00\x00\x00"))(input)?;
-                self.saw_udp_encapsulation
-                    .set(Some(non_esp_marker.is_some()));
+                state.saw_udp_encapsulation = Some(non_esp_marker.is_some());
                 input
             }
         };
