@@ -1,5 +1,5 @@
 //! Protocol References:
-//!     https://tools.ietf.org/html/rfc6733
+//!     <https://tools.ietf.org/html/rfc6733>
 
 use sawp::bounds::DepthGuard;
 use sawp::error::{NomError, Result};

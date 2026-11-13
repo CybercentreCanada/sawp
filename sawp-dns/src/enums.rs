@@ -17,21 +17,21 @@ pub enum RecordType {
     CNAME = 5,
     /// Start of authority record
     SOA = 6,
-    /// Unlikely to be adopted. See https://tools.ietf.org/html/rfc2505
+    /// Unlikely to be adopted. See <https://tools.ietf.org/html/rfc2505>
     MB = 7,
-    /// Unlikely to be adopted. See https://tools.ietf.org/html/rfc2505
+    /// Unlikely to be adopted. See <https://tools.ietf.org/html/rfc2505>
     MG = 8,
-    /// Unlikely to be adopted. See https://tools.ietf.org/html/rfc2505
+    /// Unlikely to be adopted. See <https://tools.ietf.org/html/rfc2505>
     MR = 9,
     /// Obsolete
     NUL = 10,
-    /// Not to be relied upon. See https://tools.ietf.org/html/rfc1123
+    /// Not to be relied upon. See <https://tools.ietf.org/html/rfc1123>
     WKS = 11,
     /// PTR resource record (pointer to a canonical name)
     PTR = 12,
     /// Host information
     HINFO = 13,
-    /// Unlikely to be adopted. See https://tools.ietf.org/html/rfc2505
+    /// Unlikely to be adopted. See <https://tools.ietf.org/html/rfc2505>
     MINFO = 14,
     /// Mail exchange record
     MX = 15,
@@ -65,9 +65,9 @@ pub enum RecordType {
     LOC = 29,
     /// Obsolete
     NXT = 30,
-    /// Never made it to RFC status. See https://tools.ietf.org/html/draft-ietf-nimrod-dns-00
+    /// Never made it to RFC status. See <https://tools.ietf.org/html/draft-ietf-nimrod-dns-00>
     EID = 31,
-    /// Never made it to RFC status. See https://tools.ietf.org/html/draft-ietf-nimrod-dns-00
+    /// Never made it to RFC status. See <https://tools.ietf.org/html/draft-ietf-nimrod-dns-00>
     NIMLOC = 32,
     /// Service locator
     SRV = 33,
@@ -83,7 +83,7 @@ pub enum RecordType {
     A6 = 38,
     /// Delegation name record
     DNAME = 39,
-    /// Never made it to RFC status. See https://tools.ietf.org/html/draft-eastlake-kitchen-sink
+    /// Never made it to RFC status. See <https://tools.ietf.org/html/draft-eastlake-kitchen-sink>
     SINK = 40,
     /// Option (needed to support EDNS)
     OPT = 41,
@@ -117,7 +117,7 @@ pub enum RecordType {
     NINFO = 56,
     /// Expired without adoption by IETF
     RKEY = 57,
-    /// Never made it to RFC status. See https://tools.ietf.org/html/draft-wijngaards-dnsop-trust-history-02
+    /// Never made it to RFC status. See <https://tools.ietf.org/html/draft-wijngaards-dnsop-trust-history-02>
     TALINK = 58,
     /// Child DS
     CDS = 59,
@@ -127,11 +127,11 @@ pub enum RecordType {
     OPENPGPKEY = 61,
     /// Child-to-parent synchronization
     CSYNC = 62,
-    /// Draft: see https://tools.ietf.org/html/draft-ietf-dnsop-dns-zone-digest-14
+    /// Draft: see <https://tools.ietf.org/html/draft-ietf-dnsop-dns-zone-digest-14>
     ZONEMD = 63,
-    /// Draft: see https://datatracker.ietf.org/doc/draft-ietf-dnsop-svcb-https/00
+    /// Draft: see <https://datatracker.ietf.org/doc/draft-ietf-dnsop-svcb-https/00>
     SVCB = 64,
-    /// Draft: see https://datatracker.ietf.org/doc/draft-ietf-dnsop-svcb-https/00
+    /// Draft: see <https://datatracker.ietf.org/doc/draft-ietf-dnsop-svcb-https/00>
     HTTPS = 65,
     /// Obsolete
     SPF = 99,
@@ -143,13 +143,13 @@ pub enum RecordType {
     GID = 102,
     /// IANA reserved
     UNSPEC = 103,
-    /// Experimental: see https://tools.ietf.org/html/rfc6742
+    /// Experimental: see <https://tools.ietf.org/html/rfc6742>
     NID = 104,
-    /// Experimental: see https://tools.ietf.org/html/rfc6742
+    /// Experimental: see <https://tools.ietf.org/html/rfc6742>
     L32 = 105,
-    /// Experimental: see https://tools.ietf.org/html/rfc6742
+    /// Experimental: see <https://tools.ietf.org/html/rfc6742>
     L64 = 106,
-    /// Experimental: see https://tools.ietf.org/html/rfc6742
+    /// Experimental: see <https://tools.ietf.org/html/rfc6742>
     LP = 107,
     /// MAC address (EUI-48)
     EUI48 = 108,

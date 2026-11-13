@@ -5,9 +5,9 @@
 //!
 //! The following protocol references were used to create this module:
 //!
-//! [CURRENT GRE RFC2784] https://tools.ietf.org/html/rfc2784
-//! [DEPRECATED GRE RFC1701] https://tools.ietf.org/html/rfc1701
-//! [POINT TO POINT TUNNELING RFC2637] https://tools.ietf.org/html/rfc2637
+//! [CURRENT GRE RFC2784] <https://tools.ietf.org/html/rfc2784>
+//! [DEPRECATED GRE RFC1701] <https://tools.ietf.org/html/rfc1701>
+//! [POINT TO POINT TUNNELING RFC2637] <https://tools.ietf.org/html/rfc2637>
 //!
 //! # Example
 //! ```
@@ -110,8 +110,8 @@ pub enum GreFlags {
 }
 
 /// Source Route Entries are present in deprecated GRE and need to be handled.
-/// See https://tools.ietf.org/html/rfc1701 for implementation in GRE headers
-/// and https://tools.ietf.org/html/rfc1702 for further details.
+/// See <https://tools.ietf.org/html/rfc1701> for implementation in GRE headers
+/// and <https://tools.ietf.org/html/rfc1702> for further details.
 #[derive(Debug, PartialEq, Eq)]
 pub struct SourceRouteEntry {
     address_family: u16,
@@ -122,9 +122,9 @@ pub struct SourceRouteEntry {
 
 /// Enum for handling the different GRE headers supported.
 /// GRE Versions supported:
-///  Current GRE: https://tools.ietf.org/html/rfc2784
-///  Deprecated GRE: https://tools.ietf.org/html/rfc1701
-///  Point-to-Point Tunneling Protocol (Enhanced GRE Header): https://tools.ietf.org/html/rfc2637
+///  Current GRE: <https://tools.ietf.org/html/rfc2784>
+///  Deprecated GRE: <https://tools.ietf.org/html/rfc1701>
+///  Point-to-Point Tunneling Protocol (Enhanced GRE Header): <https://tools.ietf.org/html/rfc2637>
 #[derive(Debug, PartialEq, Eq)]
 pub enum Data {
     Gre {

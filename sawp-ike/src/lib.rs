@@ -175,7 +175,7 @@ pub struct EspMessage {
 /// # FFI SAFETY
 /// This type is not [`Sync`] and this must be considered in FFI uses. This struct may be sent from
 /// one thread to another but it may not be shared between threads without locking access. In C++
-/// this means a std::shared_ptr<Ike> is not enough! std::mutex or other locking primitives must be
+/// this means a `std::shared_ptr<Ike>` is not enough! std::mutex or other locking primitives must be
 /// used to ensure data races do not occur.
 #[derive(Debug, Default)]
 pub struct Ike {

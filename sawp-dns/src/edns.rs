@@ -38,9 +38,9 @@ pub enum OptionCode {
     N3U = 7,
     /// EDNS0 option to allow Recursive Resolvers, if they are willing, to forward details about the origin network from which a query is coming when talking to other nameservers
     EDNSCLIENTSUBNET = 8,
-    /// See https://tools.ietf.org/html/rfc7314
+    /// See <https://tools.ietf.org/html/rfc7314>
     EDNSEXPIRE = 9,
-    /// See https://tools.ietf.org/html/rfc7873#section-4
+    /// See <https://tools.ietf.org/html/rfc7873#section-4>
     COOKIE = 10,
     /// Signals a variable idle timeout
     EDNSTCPKEEPALIVE = 11,
@@ -52,9 +52,9 @@ pub enum OptionCode {
     EDNSKEYTAG = 14,
     /// Returning additional information about the cause of DNS errors
     EDNSERROR = 15,
-    /// Draft, usage is being determined. See https://www.ietf.org/archive/id/draft-bellis-dnsop-edns-tags-01.txt
+    /// Draft, usage is being determined. See <https://www.ietf.org/archive/id/draft-bellis-dnsop-edns-tags-01.txt>
     EDNSCLIENTTAG = 16,
-    /// Draft, usage is being determined. See https://www.ietf.org/archive/id/draft-bellis-dnsop-edns-tags-01.txt
+    /// Draft, usage is being determined. See <https://www.ietf.org/archive/id/draft-bellis-dnsop-edns-tags-01.txt>
     EDNSSERVERTAG = 17,
     /// A way of identifying a device via DNS in the OPT RDATA
     DEVICEID = 26946,
