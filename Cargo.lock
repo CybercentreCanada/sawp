@@ -549,7 +549,7 @@ dependencies = [
 
 [[package]]
 name = "sawp"
-version = "0.13.1"
+version = "0.14.0"
 dependencies = [
  "cbindgen",
  "criterion",
@@ -559,7 +559,7 @@ dependencies = [
 
 [[package]]
 name = "sawp-diameter"
-version = "0.13.1"
+version = "0.14.0"
 dependencies = [
  "nom",
  "num_enum",
@@ -570,7 +570,7 @@ dependencies = [
 
 [[package]]
 name = "sawp-dns"
-version = "0.13.1"
+version = "0.14.0"
 dependencies = [
  "byteorder",
  "cbindgen",
@@ -584,7 +584,7 @@ dependencies = [
 
 [[package]]
 name = "sawp-ffi"
-version = "0.13.1"
+version = "0.14.0"
 dependencies = [
  "sawp-ffi-derive",
  "sawp-flags",
@@ -592,7 +592,7 @@ dependencies = [
 
 [[package]]
 name = "sawp-ffi-derive"
-version = "0.13.1"
+version = "0.14.0"
 dependencies = [
  "heck",
  "proc-macro2",
@@ -603,7 +603,7 @@ dependencies = [
 
 [[package]]
 name = "sawp-file"
-version = "0.13.1"
+version = "0.14.0"
 dependencies = [
  "rmp-serde",
  "sawp",
@@ -612,14 +612,14 @@ dependencies = [
 
 [[package]]
 name = "sawp-flags"
-version = "0.13.1"
+version = "0.14.0"
 dependencies = [
  "sawp-flags-derive",
 ]
 
 [[package]]
 name = "sawp-flags-derive"
-version = "0.13.1"
+version = "0.14.0"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -628,7 +628,7 @@ dependencies = [
 
 [[package]]
 name = "sawp-gre"
-version = "0.13.1"
+version = "0.14.0"
 dependencies = [
  "cbindgen",
  "nom",
@@ -640,7 +640,7 @@ dependencies = [
 
 [[package]]
 name = "sawp-ike"
-version = "0.13.1"
+version = "0.14.0"
 dependencies = [
  "cbindgen",
  "nom",
@@ -653,7 +653,7 @@ dependencies = [
 
 [[package]]
 name = "sawp-json"
-version = "0.13.1"
+version = "0.14.0"
 dependencies = [
  "criterion",
  "rstest",
@@ -664,7 +664,7 @@ dependencies = [
 
 [[package]]
 name = "sawp-modbus"
-version = "0.13.1"
+version = "0.14.0"
 dependencies = [
  "cbindgen",
  "nom",
@@ -677,7 +677,7 @@ dependencies = [
 
 [[package]]
 name = "sawp-pop3"
-version = "0.13.1"
+version = "0.14.0"
 dependencies = [
  "cbindgen",
  "nom",
@@ -689,7 +689,7 @@ dependencies = [
 
 [[package]]
 name = "sawp-resp"
-version = "0.13.1"
+version = "0.14.0"
 dependencies = [
  "cbindgen",
  "nom",
@@ -702,7 +702,7 @@ dependencies = [
 
 [[package]]
 name = "sawp-tftp"
-version = "0.13.1"
+version = "0.14.0"
 dependencies = [
  "cbindgen",
  "nom",

@@ -1,6 +1,6 @@
 [package]
 name = "sawp-file"
-version = "0.13.1"
+version = "0.14.0"
 authors = ["Canadian Centre for Cyber Security <sa-sawp@cyber.gc.ca>"]
 description = "SAWP File Format"
 readme = "../README.md"
@@ -19,7 +19,7 @@ include = [
 ]
 
 [dependencies]
-sawp = { path = "..", version = "^0.13.1" }
+sawp = { path = "..", version = "^0.14.0" }
 rmp-serde = "1.1.1"
 serde = { version = "1.0.116", features = ["derive"] }
 

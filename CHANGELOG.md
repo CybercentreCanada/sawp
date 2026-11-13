@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - ReleaseDate
 
+## [0.14.0] - 2026-11-13
 ### Added
 - sawp: Bounds checking primitives in core library
 
@@ -192,7 +193,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - sawp-modbus: FFI support.
 
 <!-- next-url -->
-[Unreleased]: https://github.com/CybercentreCanada/sawp/compare/sawp-0.13.1...HEAD
+[Unreleased]: https://github.com/CybercentreCanada/sawp/compare/sawp-0.14.0...HEAD
+[0.14.0]: https://github.com/CybercentreCanada/sawp/releases/tag/sawp-0.14.0
 [0.13.1]: https://github.com/CybercentreCanada/sawp/releases/tag/sawp-0.13.1
 [0.13.0]: https://github.com/CybercentreCanada/sawp/releases/tag/sawp-0.13.0
 [0.12.1]: https://github.com/CybercentreCanada/sawp/releases/tag/sawp-0.12.1

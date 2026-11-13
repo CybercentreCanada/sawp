@@ -13,7 +13,7 @@ cargo-fuzz = true
 
 [dependencies]
 libfuzzer-sys = "0.3"
-sawp = { path = ".." }
+sawp = { path = "..", version = "^0.14.0" }
 sawp-modbus = { path = "../sawp-modbus" }
 sawp-diameter = { path = "../sawp-diameter" }
 
