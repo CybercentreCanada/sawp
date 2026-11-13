@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- next-header -->
 
 ## [Unreleased] - ReleaseDate
+
+## [0.13.2] - 2026-11-13
 ### Fixed
 - sawp-modbus: Read Holding/Input Registers responses no longer get `DATA_VALUE` in `Message::matches()`: register reads expect two octets per register, not one bit
 
@@ -174,7 +176,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - sawp-modbus: FFI support.
 
 <!-- next-url -->
-[Unreleased]: https://github.com/CybercentreCanada/sawp/compare/sawp-0.13.1...HEAD
+[Unreleased]: https://github.com/CybercentreCanada/sawp/compare/sawp-0.13.2...HEAD
+[0.13.2]: https://github.com/CybercentreCanada/sawp/releases/tag/sawp-0.13.2
 [0.13.1]: https://github.com/CybercentreCanada/sawp/releases/tag/sawp-0.13.1
 [0.13.0]: https://github.com/CybercentreCanada/sawp/releases/tag/sawp-0.13.0
 [0.12.1]: https://github.com/CybercentreCanada/sawp/releases/tag/sawp-0.12.1

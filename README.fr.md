@@ -38,8 +38,8 @@ vos projets. La bibliothèque de base sera également nécessaire à l’utilisa
 ## Exemple 
 ``` 
 [dependencies]
-sawp-modbus = "0.8.0"
-sawp = "0.8.0"
+sawp-modbus = "0.13.2"
+sawp = "0.13.2"
 ```
 
 ## Prise en charge d’une interface de fonction extérieure (FFI)
