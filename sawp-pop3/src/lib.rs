@@ -686,6 +686,75 @@ mod tests {
         case::server_response_invalid_status(
             b"+SUCCESS 2 200\r\n",
             Err(Error::parse(Some("Unknown Status".to_string())))),
+        // RFC 5034 tests
+        case::empty_challenge(
+            b"+ \r\n",
+            Ok((b"".as_ref(), Some(Message {
+                error_flags: ErrorFlag::none(),
+                inner: InnerMessage::ServerChallenge(ServerChallenge { data: vec![] }),
+            })))
+        ),
+        case::challenge_with_data(
+            b"+ dGVzdA==\r\n",
+            Ok((b"".as_ref(), Some(Message {
+                error_flags: ErrorFlag::none(),
+                inner: InnerMessage::ServerChallenge(ServerChallenge { data: b"dGVzdA==".to_vec() }),
+            })))
+        ),
+        case::bare_plus_challenge(
+            b"+\r\n",
+            Ok((b"".as_ref(), Some(Message {
+                error_flags: ErrorFlag::MalformedChallenge.into(),
+                inner: InnerMessage::ServerChallenge(ServerChallenge { data: vec![] }),
+            })))
+        ),
+        // XOAUTH2 client response (second failure in the issue)
+        case::sasl_response(
+            b"dXNlcj1mb29AZXhhbXBsZS5jb20BYXV0aD1CZWFyZXIgeHl6AQE=\r\n",
+            Ok((b"".as_ref(), Some(Message {
+                error_flags: ErrorFlag::none(),
+                inner: InnerMessage::SaslResponse(SaslResponse {
+                    data: b"dXNlcj1mb29AZXhhbXBsZS5jb20BYXV0aD1CZWFyZXIgeHl6AQE=".to_vec(),
+                }),
+            })))
+        ),
+        case::sasl_cancel(
+            b"*\r\n",
+            Ok((b"".as_ref(), Some(Message {
+                error_flags: ErrorFlag::none(),
+                inner: InnerMessage::SaslResponse(SaslResponse { data: b"*".to_vec() }),
+            })))
+        ),
+        // Guard: multi-line +OK must not be routed into parse_challenge
+        case::gmail_capa_response(
+            b"+OK Capability list follows\r\n\
+              USER\r\n\
+              RESP-CODES\r\n\
+              EXPIRE 0\r\n\
+              LOGIN-DELAY 300\r\n\
+              TOP\r\n\
+              UIDL\r\n\
+              X-GOOGLE-RICO\r\n\
+              SASL PLAIN XOAUTH2 OAUTHBEARER\r\n\
+              .\r\n",
+            Ok((b"".as_ref(), Some(Message {
+                error_flags: ErrorFlag::none(),
+                inner: InnerMessage::Response(Response {
+                    status: Status::OK,
+                    header: b"Capability list follows".to_vec(),
+                    data: vec![
+                        b"USER".to_vec(),
+                        b"RESP-CODES".to_vec(),
+                        b"EXPIRE 0".to_vec(),
+                        b"LOGIN-DELAY 300".to_vec(),
+                        b"TOP".to_vec(),
+                        b"UIDL".to_vec(),
+                        b"X-GOOGLE-RICO".to_vec(),
+                        b"SASL PLAIN XOAUTH2 OAUTHBEARER".to_vec(),
+                    ],
+                }),
+            })))
+        ),
     )]
     fn test_parse(input: &[u8], expected: Result<(&[u8], Option<Message>)>) {
         let pop3 = POP3 {};
